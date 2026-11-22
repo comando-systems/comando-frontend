@@ -1,29 +1,14 @@
 import { useState } from 'react';
-import {
-  ActivityIndicator,
-  KeyboardAvoidingView,
-  Pressable,
-  ScrollView,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { KeyboardAvoidingView, Text, View } from 'react-native';
 
+import { Button } from '@/components/button';
+import { ErrorBanner } from '@/components/error-banner';
+import { Field } from '@/components/field';
 import { Icon } from '@/components/icon';
+import { Screen } from '@/components/screen';
 import { useSession } from '@/providers/session-provider';
 import { ApiError, getErrorMessage } from '@/services/api';
 import { colors, radii, spacing, typography } from '@/theme';
-
-const inputStyle = {
-  backgroundColor: colors.surface,
-  borderColor: colors.border,
-  borderRadius: radii.md,
-  borderWidth: 1,
-  color: colors.text,
-  paddingHorizontal: spacing.lg,
-  paddingVertical: spacing.md,
-  ...typography.body,
-};
 
 export default function Login() {
   const { signIn } = useSession();
@@ -63,15 +48,7 @@ export default function Login() {
 
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
-      <ScrollView
-        contentContainerStyle={{
-          flexGrow: 1,
-          justifyContent: 'center',
-          padding: spacing.xl,
-          backgroundColor: colors.background,
-        }}
-        keyboardShouldPersistTaps="handled"
-      >
+      <Screen scroll topInset bottomInset>
         <View style={{ alignItems: 'center', marginBottom: spacing.xxl }}>
           <View
             style={{
@@ -85,17 +62,18 @@ export default function Login() {
           >
             <Icon name="food" size="lg" color={colors.white} />
           </View>
-          <Text style={{ ...typography.display, color: colors.primary, marginTop: spacing.lg }}>
+          <Text style={[typography.display, { color: colors.primary, marginTop: spacing.lg }]}>
             Comando
           </Text>
-          <Text style={{ ...typography.body, color: colors.textMuted, marginTop: spacing.xs }}>
+          <Text
+            style={[typography.body, { color: colors.textMuted, marginTop: spacing.xs, textAlign: 'center' }]}
+          >
             Sign in to manage your orders.
           </Text>
         </View>
 
-        <Text style={{ ...typography.label, color: colors.text, marginBottom: spacing.xs }}>Email</Text>
-        <TextInput
-          accessibilityLabel="Email"
+        <Field
+          label="Email"
           testID="email-input"
           value={email}
           onChangeText={setEmail}
@@ -103,16 +81,12 @@ export default function Login() {
           autoComplete="email"
           keyboardType="email-address"
           placeholder="you@example.com"
-          placeholderTextColor={colors.textMuted}
           editable={!isSubmitting}
-          style={[inputStyle, { marginBottom: spacing.lg }]}
+          containerStyle={{ marginBottom: spacing.lg }}
         />
 
-        <Text style={{ ...typography.label, color: colors.text, marginBottom: spacing.xs }}>
-          Password
-        </Text>
-        <TextInput
-          accessibilityLabel="Password"
+        <Field
+          label="Password"
           testID="password-input"
           value={password}
           onChangeText={setPassword}
@@ -120,42 +94,28 @@ export default function Login() {
           autoComplete="current-password"
           secureTextEntry
           placeholder="Enter your password"
-          placeholderTextColor={colors.textMuted}
           editable={!isSubmitting}
-          style={inputStyle}
         />
 
         {error === null ? null : (
-          <Text testID="login-error" style={{ ...typography.caption, color: colors.danger, marginTop: spacing.md }}>
-            {error}
-          </Text>
+          <View style={{ marginTop: spacing.md }}>
+            <ErrorBanner message={error} testID="login-error" />
+          </View>
         )}
 
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Sign in"
-          testID="sign-in-button"
-          disabled={isSubmitting}
-          onPress={() => {
-            void handleSubmit();
-          }}
-          style={{
-            marginTop: spacing.xl,
-            borderRadius: radii.md,
-            backgroundColor: isSubmitting ? colors.textMuted : colors.primary,
-            paddingVertical: spacing.md,
-            alignItems: 'center',
-            justifyContent: 'center',
-            flexDirection: 'row',
-          }}
-        >
-          {isSubmitting ? (
-            <ActivityIndicator color={colors.white} />
-          ) : (
-            <Text style={{ ...typography.label, color: colors.white }}>Sign in</Text>
-          )}
-        </Pressable>
-      </ScrollView>
+        <View style={{ marginTop: spacing.xl }}>
+          <Button
+            label="Sign in"
+            onPress={() => {
+              void handleSubmit();
+            }}
+            loading={isSubmitting}
+            fullWidth
+            size="lg"
+            testID="sign-in-button"
+          />
+        </View>
+      </Screen>
     </KeyboardAvoidingView>
   );
 }
