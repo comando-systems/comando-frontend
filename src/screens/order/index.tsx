@@ -104,6 +104,9 @@ export default function Order() {
   const canCancel =
     permissions.canCancelOrders(user) &&
     (order.status === 'OPEN' || order.status === 'AWAITING_PAYMENT');
+  const canOpenPayment =
+    permissions.canCloseOrders(user) &&
+    (order.status === 'OPEN' || order.status === 'AWAITING_PAYMENT');
 
   return (
     <Screen title={order.tableCode ?? `Order ${order.id}`} subtitle={order.label ?? undefined}>
@@ -163,6 +166,19 @@ export default function Order() {
             </View>
           ) : null}
         </View>
+
+        {canOpenPayment ? (
+          <View style={{ marginTop: spacing.md }}>
+            <Button
+              label="Payment"
+              onPress={() => router.push(`/orders/${order.id}/payment`)}
+              variant="secondary"
+              icon="payment"
+              fullWidth
+              testID="order-payment-button"
+            />
+          </View>
+        ) : null}
 
         {canCancel ? (
           <View style={{ marginTop: spacing.md }}>
