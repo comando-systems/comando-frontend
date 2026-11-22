@@ -150,6 +150,38 @@ describe('<OrderBuilder />', () => {
     expect(await screen.findByTestId('add-item-1')).toBeTruthy();
   });
 
+  it('reports pricing preview changes to the parent', async () => {
+    const onPreviewChange = jest.fn();
+
+    function DraftHarness() {
+      const [draft, setDraft] = useState(EMPTY_ORDER_DRAFT);
+
+      return (
+        <OrderBuilder
+          mode="draft"
+          draft={draft}
+          onDraftChange={setDraft}
+          catalog={catalog}
+          onPreviewChange={onPreviewChange}
+        />
+      );
+    }
+
+    await render(<DraftHarness />);
+
+    expect(onPreviewChange).toHaveBeenLastCalledWith(
+      expect.objectContaining({ subtotalCents: 0, totalCents: 0 }),
+    );
+
+    await fireEvent.press(await screen.findByTestId('add-item-1'));
+
+    await waitFor(() =>
+      expect(onPreviewChange).toHaveBeenLastCalledWith(
+        expect.objectContaining({ subtotalCents: 500, totalCents: 500 }),
+      ),
+    );
+  });
+
   it('filters the catalog and hides disabled or removed items', async () => {
     await render(
       <OrderBuilder

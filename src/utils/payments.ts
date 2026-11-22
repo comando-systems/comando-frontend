@@ -77,7 +77,7 @@ export function validatePaymentRows(
   totalCents: number,
 ): string | null {
   if (rows.length === 0) {
-    return 'Add at least one payment.';
+    return totalCents === 0 ? null : 'Add at least one payment.';
   }
 
   for (const row of rows) {
