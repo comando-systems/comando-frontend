@@ -130,6 +130,7 @@ describe('<Order />', () => {
     expect(screen.getByTestId('order-item-count').props.children).toBe('3 items');
     expect(screen.getByText('Open')).toBeTruthy();
     expect(screen.getByTestId('request-payment-button')).toBeTruthy();
+    expect(screen.queryByTestId('order-payment-button')).toBeNull();
     expect(screen.getByTestId('cancel-order-button')).toBeTruthy();
     expect(await screen.findByTestId('builder-line-1')).toBeTruthy();
     expect(screen.getByTestId('line-stepper-1-increase')).toBeTruthy();
@@ -149,7 +150,17 @@ describe('<Order />', () => {
     expect(screen.getByTestId('cancel-order-button')).toBeTruthy();
   });
 
-  it('hides editing and payment actions from administrators', async () => {
+  it('opens payment for a cashier', async () => {
+    mockRoles(['CASHIER']);
+
+    await render(<Order />);
+
+    await fireEvent.press(await screen.findByTestId('order-payment-button'));
+
+    expect(push).toHaveBeenCalledWith('/orders/10/payment');
+  });
+
+  it('hides table editing and request-payment actions from administrators', async () => {
     mockRoles(['ADMIN']);
 
     await render(<Order />);
@@ -158,6 +169,7 @@ describe('<Order />', () => {
     expect(screen.queryByTestId('line-stepper-1-increase')).toBeNull();
     expect(screen.getByTestId('line-quantity-1')).toBeTruthy();
     expect(screen.queryByTestId('request-payment-button')).toBeNull();
+    expect(screen.getByTestId('order-payment-button')).toBeTruthy();
     expect(screen.getByTestId('cancel-order-button')).toBeTruthy();
   });
 
