@@ -1,4 +1,4 @@
-import { memo, useCallback, useMemo, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -33,6 +33,7 @@ import {
   buildOrderPreview,
   clampDiscountCents,
   parseCentsInput,
+  type OrderPreview,
   type OrderPreviewLine,
   type OrderPreviewLineResult,
 } from '@/utils/order-pricing';
@@ -44,6 +45,7 @@ interface OrderBuilderBaseProps {
   readonly error?: string | null;
   readonly onRetry?: () => void;
   readonly canEdit?: boolean;
+  readonly onPreviewChange?: (preview: OrderPreview) => void;
 }
 
 export type OrderBuilderProps = OrderBuilderBaseProps &
@@ -444,6 +446,12 @@ export function OrderBuilder(props: OrderBuilderProps) {
       }),
     [applyServiceFee, fields.discount, fields.surcharge, previewLines, serviceFeeBasisPoints],
   );
+
+  const { onPreviewChange } = props;
+
+  useEffect(() => {
+    onPreviewChange?.(preview);
+  }, [onPreviewChange, preview]);
 
   const isEditable = canEdit && (orderStatus === null || orderStatus === 'OPEN');
   const displayedError = error ?? actionError;

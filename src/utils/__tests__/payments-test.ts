@@ -31,6 +31,11 @@ describe('payment helpers', () => {
     );
   });
 
+  it('accepts no payments for a zero-total order', () => {
+    expect(validatePaymentRows([], 0)).toBeNull();
+    expect(paymentInputsFromRows([])).toEqual([]);
+  });
+
   it('accepts an exact split total', () => {
     const rows = [
       createPaymentRow({ id: 'cash', method: 'CASH', amountCents: '600' }),

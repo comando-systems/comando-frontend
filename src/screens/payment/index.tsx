@@ -29,6 +29,10 @@ import { permissions } from '@/utils/permissions';
 type PaymentAction = 'close' | 'request-payment' | 'reopen' | 'cancel' | null;
 
 function rowsFromOrder(order: OrderResponse): readonly PaymentDraftRow[] {
+  if (order.totalCents === 0) {
+    return [];
+  }
+
   if (order.payments.length === 0) {
     return [createPaymentRow({ amountCents: String(order.totalCents) })];
   }
