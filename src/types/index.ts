@@ -179,6 +179,15 @@ export interface OrderLineInput {
   readonly quantity: number;
 }
 
+export type OrderDraftLine = OrderLineInput;
+
+export interface OrderDraft {
+  readonly items: readonly OrderDraftLine[];
+  readonly surchargeCents: number;
+  readonly discountCents: number;
+  readonly applyServiceFee: boolean;
+}
+
 export interface PaymentInput {
   readonly method: PaymentMethod;
   readonly amountCents: number;
