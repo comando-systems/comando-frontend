@@ -29,7 +29,7 @@ A universal Expo client for the Comando order-management system. One TypeScript 
 | Navigation | Expo Router (file-based routes in `src/app/`) |
 | Language | TypeScript, strict mode |
 | Web | `react-native-web`, `react-dom`, `@expo/metro-runtime` |
-| Icons | `@expo/vector-icons` behind the internal `Icon` adapter |
+| Icons | `@expo/vector-icons` and `expo-font` behind the internal `Icon` adapter |
 | Session storage | `expo-secure-store` on native, `localStorage` on web |
 | Tests | Jest 30 + `jest-expo` + React Native Testing Library |
 | Lint | `eslint-config-expo` through `npx expo lint` |
