@@ -43,7 +43,8 @@ describe('<Login />', () => {
     await fireEvent.press(screen.getByTestId('sign-in-button'));
 
     await waitFor(() => {
-      expect(screen.getByTestId('login-error').props.children).toBe('Enter a valid email address.');
+      expect(screen.getByTestId('login-error')).toBeTruthy();
+      expect(screen.getByText('Enter a valid email address.')).toBeTruthy();
     });
     expect(signIn).not.toHaveBeenCalled();
   });
@@ -55,7 +56,8 @@ describe('<Login />', () => {
     await fireEvent.press(screen.getByTestId('sign-in-button'));
 
     await waitFor(() => {
-      expect(screen.getByTestId('login-error').props.children).toBe('Enter your password.');
+      expect(screen.getByTestId('login-error')).toBeTruthy();
+      expect(screen.getByText('Enter your password.')).toBeTruthy();
     });
     expect(signIn).not.toHaveBeenCalled();
   });
@@ -79,7 +81,8 @@ describe('<Login />', () => {
     await fireEvent.press(screen.getByTestId('sign-in-button'));
 
     await waitFor(() => {
-      expect(screen.getByTestId('login-error').props.children).toBe('Authentication is required.');
+      expect(screen.getByTestId('login-error')).toBeTruthy();
+      expect(screen.getByText('Authentication is required.')).toBeTruthy();
     });
   });
 });
