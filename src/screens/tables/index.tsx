@@ -2,11 +2,11 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { memo, useCallback, useState } from 'react';
 import { FlatList, RefreshControl, Text, View } from 'react-native';
 
-import { Button } from '@/components/button';
 import { Card } from '@/components/card';
 import { EmptyState } from '@/components/empty-state';
 import { ErrorBanner } from '@/components/error-banner';
 import { Field } from '@/components/field';
+import { Form } from '@/components/form';
 import { Icon } from '@/components/icon';
 import { LoadingState } from '@/components/loading-state';
 import { MoneyText } from '@/components/money-text';
@@ -136,7 +136,15 @@ export default function Tables() {
   const listHeader = (
     <View>
       {canOpenTable ? (
-        <View style={{ marginBottom: spacing.xl }}>
+        <Form
+          testID="open-table-form"
+          submit="Open table"
+          onSubmit={() => {
+            void handleOpenTable();
+          }}
+          submitButtonProps={{ icon: 'table', loading: opening, testID: 'open-table-button' }}
+          style={{ marginBottom: spacing.xl }}
+        >
           <Field
             label="Table code"
             testID="table-code-input"
@@ -146,19 +154,7 @@ export default function Tables() {
             autoCapitalize="characters"
             editable={!opening}
           />
-          <View style={{ marginTop: spacing.md }}>
-            <Button
-              label="Open table"
-              onPress={() => {
-                void handleOpenTable();
-              }}
-              icon="table"
-              loading={opening}
-              fullWidth
-              testID="open-table-button"
-            />
-          </View>
-        </View>
+        </Form>
       ) : null}
 
       {error === null ? null : (

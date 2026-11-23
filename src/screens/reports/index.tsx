@@ -2,10 +2,10 @@ import { Redirect, useFocusEffect } from 'expo-router';
 import { useCallback, useState, type ReactNode } from 'react';
 import { ScrollView, Text, View } from 'react-native';
 
-import { Button } from '@/components/button';
 import { Card } from '@/components/card';
 import { ErrorBanner } from '@/components/error-banner';
 import { Field } from '@/components/field';
+import { Form } from '@/components/form';
 import { LoadingState } from '@/components/loading-state';
 import { MoneyText } from '@/components/money-text';
 import { Screen } from '@/components/screen';
@@ -124,7 +124,15 @@ export default function Reports() {
   return (
     <Screen title="Reports" subtitle="Sales summary">
       <ScrollView contentContainerStyle={{ paddingBottom: spacing.xl }}>
-        <Card testID="reports-range">
+        <Form
+          testID="reports-range"
+          submit="Apply range"
+          onSubmit={applyRange}
+          cancel="Today (UTC)"
+          onCancel={useToday}
+          submitButtonProps={{ disabled: loading, testID: 'reports-apply' }}
+          cancelButtonProps={{ disabled: loading, testID: 'reports-today' }}
+        >
           <Text style={[typography.subtitle, { color: colors.text }]}>Date range (UTC)</Text>
           <View style={{ marginTop: spacing.md }}>
             <Field
@@ -165,26 +173,7 @@ export default function Reports() {
               />
             </View>
           )}
-          <View style={{ flexDirection: 'row', marginTop: spacing.md }}>
-            <View style={{ flex: 1, marginRight: spacing.sm }}>
-              <Button
-                label="Today (UTC)"
-                onPress={useToday}
-                variant="secondary"
-                disabled={loading}
-                testID="reports-today"
-              />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Button
-                label="Apply range"
-                onPress={applyRange}
-                disabled={loading}
-                testID="reports-apply"
-              />
-            </View>
-          </View>
-        </Card>
+        </Form>
 
         {summary === null ? null : (
           <View style={{ marginTop: spacing.lg }}>

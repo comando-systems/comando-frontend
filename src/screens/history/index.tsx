@@ -7,6 +7,7 @@ import { Card } from '@/components/card';
 import { EmptyState } from '@/components/empty-state';
 import { ErrorBanner } from '@/components/error-banner';
 import { Field } from '@/components/field';
+import { Form } from '@/components/form';
 import { LoadingState } from '@/components/loading-state';
 import { MoneyText } from '@/components/money-text';
 import { OrderStatusBadge } from '@/components/order-status-badge';
@@ -201,7 +202,15 @@ export default function History() {
 
   const listHeader = (
     <View>
-      <Card testID="history-filters">
+      <Form
+        testID="history-filters"
+        submit="Apply filters"
+        onSubmit={applyFilters}
+        cancel="Clear filters"
+        onCancel={clearFilters}
+        submitButtonProps={{ icon: 'search', testID: 'history-apply' }}
+        cancelButtonProps={{ testID: 'history-clear' }}
+      >
         <Text style={[typography.subtitle, { color: colors.text }]}>Filters</Text>
         <View style={{ marginTop: spacing.md }}>
           <Segment
@@ -261,25 +270,7 @@ export default function History() {
             />
           </View>
         </View>
-        <View style={{ marginTop: spacing.lg }}>
-          <Button
-            label="Apply filters"
-            onPress={applyFilters}
-            icon="search"
-            fullWidth
-            testID="history-apply"
-          />
-        </View>
-        <View style={{ marginTop: spacing.sm }}>
-          <Button
-            label="Clear filters"
-            onPress={clearFilters}
-            variant="secondary"
-            fullWidth
-            testID="history-clear"
-          />
-        </View>
-      </Card>
+      </Form>
 
       <Card testID="history-summary" style={{ marginTop: spacing.md }}>
         <Text

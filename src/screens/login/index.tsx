@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { KeyboardAvoidingView, Text, View } from 'react-native';
 
-import { Button } from '@/components/button';
 import { ErrorBanner } from '@/components/error-banner';
 import { Field } from '@/components/field';
+import { Form } from '@/components/form';
 import { Icon } from '@/components/icon';
 import { Screen } from '@/components/screen';
 import { useSession } from '@/providers/session-provider';
@@ -72,49 +72,49 @@ export default function Login() {
           </Text>
         </View>
 
-        <Field
-          label="Email"
-          testID="email-input"
-          value={email}
-          onChangeText={setEmail}
-          autoCapitalize="none"
-          autoComplete="email"
-          keyboardType="email-address"
-          placeholder="you@example.com"
-          editable={!isSubmitting}
-          containerStyle={{ marginBottom: spacing.lg }}
-        />
-
-        <Field
-          label="Password"
-          testID="password-input"
-          value={password}
-          onChangeText={setPassword}
-          autoCapitalize="none"
-          autoComplete="current-password"
-          secureTextEntry
-          placeholder="Enter your password"
-          editable={!isSubmitting}
-        />
-
-        {error === null ? null : (
-          <View style={{ marginTop: spacing.md }}>
-            <ErrorBanner message={error} testID="login-error" />
-          </View>
-        )}
-
-        <View style={{ marginTop: spacing.xl }}>
-          <Button
-            label="Sign in"
-            onPress={() => {
-              void handleSubmit();
-            }}
-            loading={isSubmitting}
-            fullWidth
-            size="lg"
-            testID="sign-in-button"
+        <Form
+          submit="Sign in"
+          onSubmit={() => {
+            void handleSubmit();
+          }}
+          submitButtonProps={{
+            loading: isSubmitting,
+            disabled: isSubmitting,
+            size: 'lg',
+            testID: 'sign-in-button',
+          }}
+        >
+          <Field
+            label="Email"
+            testID="email-input"
+            value={email}
+            onChangeText={setEmail}
+            autoCapitalize="none"
+            autoComplete="email"
+            keyboardType="email-address"
+            placeholder="you@example.com"
+            editable={!isSubmitting}
+            containerStyle={{ marginBottom: spacing.lg }}
           />
-        </View>
+
+          <Field
+            label="Password"
+            testID="password-input"
+            value={password}
+            onChangeText={setPassword}
+            autoCapitalize="none"
+            autoComplete="current-password"
+            secureTextEntry
+            placeholder="Enter your password"
+            editable={!isSubmitting}
+          />
+
+          {error === null ? null : (
+            <View style={{ marginTop: spacing.md }}>
+              <ErrorBanner message={error} testID="login-error" />
+            </View>
+          )}
+        </Form>
       </Screen>
     </KeyboardAvoidingView>
   );

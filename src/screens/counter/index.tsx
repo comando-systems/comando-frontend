@@ -2,11 +2,11 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { memo, useCallback, useMemo, useState } from 'react';
 import { Text, View } from 'react-native';
 
-import { Button } from '@/components/button';
 import { Card } from '@/components/card';
 import { EmptyState } from '@/components/empty-state';
 import { ErrorBanner } from '@/components/error-banner';
 import { Field } from '@/components/field';
+import { Form } from '@/components/form';
 import { LoadingState } from '@/components/loading-state';
 import { MoneyText } from '@/components/money-text';
 import { EMPTY_ORDER_DRAFT, OrderBuilder } from '@/components/order-builder';
@@ -244,7 +244,23 @@ export default function Counter() {
 
   return (
     <Screen scroll title="Counter" subtitle="Closed, paid sales">
-      <View style={{ paddingBottom: spacing.xl }}>
+      <Form
+        testID="counter-form"
+        submit={orderType === 'COUNTER' ? 'Finish sale' : 'Export to table'}
+        onSubmit={() => {
+          if (orderType === 'COUNTER') {
+            void handleFinishSale();
+          } else {
+            void handleExportToTable();
+          }
+        }}
+        submitButtonProps={{
+          loading: busy,
+          icon: orderType === 'COUNTER' ? 'check' : 'table',
+          testID: orderType === 'COUNTER' ? 'counter-finish-button' : 'counter-export-button',
+        }}
+        style={{ paddingBottom: spacing.xl }}
+      >
         {error === null ? null : (
           <View style={{ marginBottom: spacing.lg }}>
             <ErrorBanner
@@ -315,34 +331,9 @@ export default function Counter() {
               totalCents={totalCents}
               disabled={busy}
             />
-            <View style={{ marginTop: spacing.lg }}>
-              <Button
-                label="Finish sale"
-                onPress={() => {
-                  void handleFinishSale();
-                }}
-                loading={busy}
-                icon="check"
-                fullWidth
-                testID="counter-finish-button"
-              />
-            </View>
           </View>
-        ) : (
-          <View style={{ marginTop: spacing.lg }}>
-            <Button
-              label="Export to table"
-              onPress={() => {
-                void handleExportToTable();
-              }}
-              loading={busy}
-              icon="table"
-              fullWidth
-              testID="counter-export-button"
-            />
-          </View>
-        )}
-      </View>
+        ) : null}
+      </Form>
     </Screen>
   );
 }

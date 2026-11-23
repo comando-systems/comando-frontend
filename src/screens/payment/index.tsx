@@ -6,6 +6,7 @@ import { Button } from '@/components/button';
 import { Card } from '@/components/card';
 import { EmptyState } from '@/components/empty-state';
 import { ErrorBanner } from '@/components/error-banner';
+import { Form } from '@/components/form';
 import { LoadingState } from '@/components/loading-state';
 import { MoneyText } from '@/components/money-text';
 import { OrderStatusBadge } from '@/components/order-status-badge';
@@ -212,25 +213,25 @@ export default function Payment() {
         )}
 
         {!isActive || !canClose ? null : (
-          <View style={{ marginTop: spacing.lg }}>
+          <Form
+            testID="payment-form"
+            submit="Close order"
+            onSubmit={handleClose}
+            submitButtonProps={{
+              loading: busy === 'close',
+              disabled: actionDisabled,
+              icon: 'check',
+              testID: 'payment-close-button',
+            }}
+            style={{ marginTop: spacing.lg }}
+          >
             <PaymentEditor
               rows={rows}
               onRowsChange={setRows}
               totalCents={order.totalCents}
               disabled={actionDisabled}
             />
-            <View style={{ marginTop: spacing.lg }}>
-              <Button
-                label="Close order"
-                onPress={handleClose}
-                loading={busy === 'close'}
-                disabled={actionDisabled}
-                icon="check"
-                fullWidth
-                testID="payment-close-button"
-              />
-            </View>
-          </View>
+          </Form>
         )}
 
         {!isActive || !canRequestPayment ? null : (

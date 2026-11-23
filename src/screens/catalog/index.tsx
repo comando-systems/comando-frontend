@@ -8,6 +8,7 @@ import { Card } from '@/components/card';
 import { EmptyState } from '@/components/empty-state';
 import { ErrorBanner } from '@/components/error-banner';
 import { Field } from '@/components/field';
+import { Form } from '@/components/form';
 import { LoadingState } from '@/components/loading-state';
 import { MoneyText } from '@/components/money-text';
 import { Screen } from '@/components/screen';
@@ -126,7 +127,15 @@ function ItemForm({ initialItem, busy, error, onSubmit, onCancel }: ItemFormProp
 
   return (
     <Screen scroll title={isEdit ? 'Edit item' : 'Add item'} subtitle="Catalog management">
-      <Card testID="catalog-item-form">
+      <Form
+        testID="catalog-item-form"
+        submit={isEdit ? 'Save item' : 'Add item'}
+        onSubmit={handleSubmit}
+        cancel="Cancel"
+        onCancel={onCancel}
+        submitButtonProps={{ loading: busy, icon: 'check', size: 'lg', testID: 'catalog-item-submit' }}
+        cancelButtonProps={{ disabled: busy, testID: 'catalog-item-cancel' }}
+      >
         <Field
           label="Name"
           value={values.name}
@@ -218,28 +227,7 @@ function ItemForm({ initialItem, busy, error, onSubmit, onCancel }: ItemFormProp
           </View>
         )}
 
-        <View style={{ marginTop: spacing.lg }}>
-          <Button
-            label={isEdit ? 'Save item' : 'Add item'}
-            onPress={handleSubmit}
-            loading={busy}
-            icon="check"
-            fullWidth
-            size="lg"
-            testID="catalog-item-submit"
-          />
-        </View>
-        <View style={{ marginTop: spacing.sm }}>
-          <Button
-            label="Cancel"
-            onPress={onCancel}
-            variant="secondary"
-            disabled={busy}
-            fullWidth
-            testID="catalog-item-cancel"
-          />
-        </View>
-      </Card>
+      </Form>
     </Screen>
   );
 }
