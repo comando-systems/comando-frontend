@@ -1,0 +1,16 @@
+#!/bin/sh
+set -e
+
+message_file=$1
+subject=$(head -n 1 "$message_file")
+
+case "$subject" in
+  Merge*|Revert*)
+    exit 0
+    ;;
+esac
+
+if ! printf '%s\n' "$subject" | grep -Eq '^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\([^)]+\))?!?: .+'; then
+  printf 'Commit message must follow Conventional Commits: type: subject\n' >&2
+  exit 1
+fi

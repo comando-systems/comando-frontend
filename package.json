@@ -9,7 +9,8 @@
     "web": "expo start --web",
     "lint": "expo lint",
     "typecheck": "tsc --noEmit",
-    "test": "jest --runInBand"
+    "test": "jest --runInBand",
+    "prepare": "node scripts/setup-git-hooks.mjs"
   },
   "dependencies": {
     "@expo/metro-runtime": "~58.0.17",

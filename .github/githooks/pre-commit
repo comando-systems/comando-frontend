@@ -1,0 +1,48 @@
+#!/bin/sh
+set -e
+
+printf 'Running lint...\n'
+pnpm exec expo lint
+
+printf 'Running typecheck...\n'
+pnpm exec tsc --noEmit
+
+printf 'Running full test suite...\n'
+pnpm test
+
+scoped_tests=$(
+  git diff --cached --name-only --diff-filter=ACMR -- src | while IFS= read -r file; do
+    case "$file" in
+      *-test.ts|*-test.tsx)
+        printf '%s\n' "$file"
+        continue
+        ;;
+    esac
+
+    directory=$(dirname "$file")
+    filename=$(basename "$file")
+
+    case "$filename" in
+      index.ts|index.tsx)
+        stem=$(basename "$directory")
+        ;;
+      *)
+        stem=${filename%.*}
+        ;;
+    esac
+
+    for extension in ts tsx; do
+      candidate="$directory/$stem-test.$extension"
+
+      if [ -f "$candidate" ]; then
+        printf '%s\n' "$candidate"
+        break
+      fi
+    done
+  done | sort -u
+)
+
+if [ -n "$scoped_tests" ]; then
+  printf 'Running tests scoped to staged changes...\n'
+  printf '%s\n' "$scoped_tests" | xargs pnpm test -- --runTestsByPath
+fi
