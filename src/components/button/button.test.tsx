@@ -1,6 +1,8 @@
 import { fireEvent, render, screen } from '@testing-library/react-native';
+import { StyleSheet } from 'react-native';
 
 import { Button } from '@/components/button';
+import { layout } from '@/theme';
 
 describe('<Button />', () => {
   it('renders its label and icon', async () => {
@@ -36,5 +38,13 @@ describe('<Button />', () => {
     await fireEvent.press(screen.getByTestId('button'));
 
     expect(onPress).not.toHaveBeenCalled();
+  });
+
+  it('caps full-width buttons at the shared width token', async () => {
+    await render(<Button label="Continue" onPress={jest.fn()} fullWidth />);
+
+    expect(StyleSheet.flatten(screen.getByTestId('button').props.style)).toEqual(
+      expect.objectContaining({ maxWidth: layout.formMaxWidth, width: '100%' }),
+    );
   });
 });
