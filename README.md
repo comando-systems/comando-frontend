@@ -81,8 +81,8 @@ The backend must allow the web origin through `CORS_ORIGIN`.
 src/
   index.tsx              Single entry point; imports expo-router/entry last
   app/                   Route files and layouts (thin re-exports only)
-  components/            Reusable components, one directory and test folder each
-  screens/               Feature screens, one directory and test folder each
+  components/            Reusable components, one directory and colocated test file each
+  screens/               Feature screens, one directory and colocated test file each
   services/              API client, token storage, and backend adapters
   types/                 Types mirrored from the backend contract
   providers/             Session and shared context providers
