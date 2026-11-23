@@ -41,10 +41,10 @@ src/
   app/                      Expo Router route files only; thin re-exports
   components/<name>/        One directory per reusable component
     index.tsx               Component implementation
-    <name>-test.tsx         Colocated test
+    <name>.test.tsx         Colocated test
   screens/<name>/           One directory per screen
     index.tsx               Screen implementation
-    <name>-test.tsx         Colocated test
+    <name>.test.tsx         Colocated test
   services/                 API client, storage, and backend adapters
   types/                    Shared domain and API types
   providers/                React context providers
@@ -56,7 +56,7 @@ src/
 - Routes in `src/app/` only declare navigation and re-export screens, for example `export { default } from '@/screens/login';`. Business logic never lives in a route file.
 - Use `@/*` as the TypeScript alias for `src/*`. Import from a package's `index.ts` instead of reaching into internals.
 - Name components after what they are: `Button`, `Card`, `Login`, `Tables`. Never use `ButtonComponent`, `HomeScreen`, or `LoginView` suffixes.
-- Every component and screen directory contains at least one meaningful test file beside its implementation. Name test files `<name>-test.tsx`.
+- Every component and screen directory contains at least one meaningful test file beside its implementation. Name test files `<name>.test.tsx`.
 - Keep files focused. Do not create a layer or abstraction until two concrete call sites need it.
 
 ## Navigation and access control
