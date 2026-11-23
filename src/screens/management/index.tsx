@@ -1,4 +1,4 @@
-import { Redirect, useRouter } from 'expo-router';
+import { Redirect, useRouter, type Href } from 'expo-router';
 import { Text, View } from 'react-native';
 
 import { Card } from '@/components/card';
@@ -11,7 +11,7 @@ import { permissions } from '@/utils/permissions';
 interface ManagementLink {
   readonly label: string;
   readonly description: string;
-  readonly href: string;
+  readonly href: Href;
   readonly icon: IconName;
 }
 
@@ -54,7 +54,7 @@ export default function Management() {
     <Screen scroll title="Management" subtitle="Administration tools">
       {links.map((link) => (
         <Card
-          key={link.href}
+          key={link.label}
           testID={`management-${link.label.toLowerCase()}-link`}
           onPress={() => router.push(link.href)}
           style={{ marginBottom: spacing.md }}
