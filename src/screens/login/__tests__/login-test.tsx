@@ -34,6 +34,7 @@ describe('<Login />', () => {
     expect(screen.getByText('Comando')).toBeTruthy();
     expect(screen.getByTestId('email-input')).toBeTruthy();
     expect(screen.getByTestId('password-input')).toBeTruthy();
+    expect(screen.queryByText(/sign up/i)).toBeNull();
   });
 
   it('rejects an invalid email without signing in', async () => {

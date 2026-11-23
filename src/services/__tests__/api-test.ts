@@ -76,7 +76,7 @@ function errorResponse(code: string, status: number, details?: unknown): Respons
     {
       error: {
         code,
-        message: 'Mensagem do backend que nao deve aparecer.',
+        message: 'Backend detail that must not appear.',
         ...(details === undefined ? {} : { details }),
         requestId: 'request-1',
       },
@@ -194,7 +194,7 @@ describe('API client', () => {
       expect(apiError.message).toBe('This table is already occupied.');
       expect(apiError.details).toEqual({ orderId: '77' });
       expect(apiError.requestId).toBe('request-1');
-      expect(apiError.message).not.toContain('Mensagem');
+      expect(apiError.message).not.toContain('Backend detail');
     }
   });
 
