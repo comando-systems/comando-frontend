@@ -2,10 +2,9 @@ import { Redirect, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Switch, Text, View } from 'react-native';
 
-import { Button } from '@/components/button';
-import { Card } from '@/components/card';
 import { ErrorBanner } from '@/components/error-banner';
 import { Field } from '@/components/field';
+import { Form } from '@/components/form';
 import { LoadingState } from '@/components/loading-state';
 import { Screen } from '@/components/screen';
 import { useSession } from '@/providers/session-provider';
@@ -145,7 +144,12 @@ export default function Settings() {
 
   return (
     <Screen scroll title="Settings" subtitle="Service fee configuration">
-      <Card testID="settings-form">
+      <Form
+        testID="settings-form"
+        submit="Save settings"
+        onSubmit={() => void saveSettings()}
+        submitButtonProps={{ loading: saving, icon: 'check', size: 'lg', testID: 'settings-save' }}
+      >
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
           <View style={{ flex: 1, marginRight: spacing.md }}>
             <Text style={[typography.subtitle, { color: colors.text }]}>Service fee</Text>
@@ -198,18 +202,7 @@ export default function Settings() {
             </Text>
           </View>
         ) : null}
-        <View style={{ marginTop: spacing.lg }}>
-          <Button
-            label="Save settings"
-            onPress={() => void saveSettings()}
-            loading={saving}
-            icon="check"
-            fullWidth
-            size="lg"
-            testID="settings-save"
-          />
-        </View>
-      </Card>
+      </Form>
     </Screen>
   );
 }

@@ -81,10 +81,15 @@ export const shadows = {
   },
 } as const;
 
+export const layout = {
+  formMaxWidth: 320,
+} as const;
+
 export const theme = {
   colors,
   spacing,
   radii,
   typography,
   shadows,
+  layout,
 } as const;

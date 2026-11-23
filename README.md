@@ -20,6 +20,7 @@ A universal Expo client for the Comando order-management system. One TypeScript 
 - **Counter export**: move the current counter build into an existing or newly opened table.
 - **Role-aware UI**: management is visible only to `ADMIN`; the backend remains the authority.
 - **Icon adapter**: application code uses semantic `IconName` values, never raw vendor icon names.
+- **Consistent forms**: a shared `Form` component caps forms at 320px on wide screens and owns the submit/cancel actions; `Field` uses the same width token.
 
 ## Stack
 

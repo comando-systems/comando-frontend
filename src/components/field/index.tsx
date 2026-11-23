@@ -1,7 +1,7 @@
 import { Text, TextInput, View } from 'react-native';
 import type { StyleProp, TextInputProps, TextStyle, ViewStyle } from 'react-native';
 
-import { colors, radii, spacing, typography } from '@/theme';
+import { colors, layout, radii, spacing, typography } from '@/theme';
 
 export interface FieldProps extends Omit<TextInputProps, 'style'> {
   readonly label: string;
@@ -13,6 +13,7 @@ export interface FieldProps extends Omit<TextInputProps, 'style'> {
 
 const styles = {
   container: {
+    maxWidth: layout.formMaxWidth,
     width: '100%',
   },
   label: {

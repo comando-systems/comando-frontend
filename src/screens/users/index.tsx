@@ -8,6 +8,7 @@ import { Card } from '@/components/card';
 import { EmptyState } from '@/components/empty-state';
 import { ErrorBanner } from '@/components/error-banner';
 import { Field } from '@/components/field';
+import { Form } from '@/components/form';
 import { LoadingState } from '@/components/loading-state';
 import { Screen } from '@/components/screen';
 import { useSession } from '@/providers/session-provider';
@@ -139,7 +140,15 @@ function UserForm({
 
   return (
     <Screen scroll title={isEdit ? 'Edit user' : 'Create user'} subtitle="Administrator access">
-      <Card testID="user-form">
+      <Form
+        testID="user-form"
+        submit={isEdit ? 'Save user' : 'Create user'}
+        onSubmit={handleSubmit}
+        cancel="Cancel"
+        onCancel={onCancel}
+        submitButtonProps={{ loading: busy, icon: 'check', size: 'lg', testID: 'user-submit' }}
+        cancelButtonProps={{ disabled: busy, testID: 'user-cancel' }}
+      >
         <Field
           label="Name"
           value={values.name}
@@ -231,28 +240,7 @@ function UserForm({
           </View>
         )}
 
-        <View style={{ marginTop: spacing.lg }}>
-          <Button
-            label={isEdit ? 'Save user' : 'Create user'}
-            onPress={handleSubmit}
-            loading={busy}
-            icon="check"
-            fullWidth
-            size="lg"
-            testID="user-submit"
-          />
-        </View>
-        <View style={{ marginTop: spacing.sm }}>
-          <Button
-            label="Cancel"
-            onPress={onCancel}
-            variant="secondary"
-            disabled={busy}
-            fullWidth
-            testID="user-cancel"
-          />
-        </View>
-      </Card>
+      </Form>
     </Screen>
   );
 }
