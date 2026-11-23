@@ -165,6 +165,22 @@ describe('<Tables />', () => {
     expect(push).not.toHaveBeenCalled();
   });
 
+  it('filters the table grid locally by table name', async () => {
+    jest
+      .spyOn(api.orders, 'list')
+      .mockResolvedValue(
+        makePage([makeOrder('10', 'T-01', 'OPEN'), makeOrder('11', 'T-02', 'OPEN')]),
+      );
+
+    await render(<Tables />);
+
+    expect(await screen.findByTestId('table-order-10')).toBeTruthy();
+    await fireEvent.changeText(screen.getByTestId('table-search'), 'T-02');
+
+    expect(screen.queryByTestId('table-order-10')).toBeNull();
+    expect(screen.getByTestId('table-order-11')).toBeTruthy();
+  });
+
   it('hides the table opener from administrators', async () => {
     mockRoles(['ADMIN']);
 

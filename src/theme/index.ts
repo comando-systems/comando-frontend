@@ -1,13 +1,13 @@
 export const colors = {
-  primary: '#E85D04',
-  primaryDark: '#B94803',
-  primarySoft: '#FDE8D7',
-  background: '#FFF8F3',
+  primary: '#FF9026',
+  primaryDark: '#B85C00',
+  primarySoft: '#FFF1E3',
+  background: '#F4F4F4',
   surface: '#FFFFFF',
-  surfaceMuted: '#F5EFEA',
-  border: '#E7DED7',
-  text: '#241C15',
-  textMuted: '#6B625B',
+  surfaceMuted: '#F0F0F0',
+  border: '#E0E0E0',
+  text: '#000000',
+  textMuted: '#666666',
   success: '#2E9E5B',
   successSoft: '#E6F5EC',
   warning: '#B45309',
@@ -85,6 +85,10 @@ export const layout = {
   formMaxWidth: 320,
 } as const;
 
+export const fonts = {
+  mono: 'monospace',
+} as const;
+
 export const theme = {
   colors,
   spacing,
@@ -92,4 +96,5 @@ export const theme = {
   typography,
   shadows,
   layout,
+  fonts,
 } as const;

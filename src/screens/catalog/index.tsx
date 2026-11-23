@@ -574,7 +574,7 @@ export default function Catalog() {
             <Button
               label="Clear filters"
               onPress={() => setFilters(EMPTY_CATALOG_FILTERS)}
-              variant="ghost"
+              variant="tertiary"
               testID="catalog-clear-filters"
             />
           </View>

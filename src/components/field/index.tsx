@@ -1,7 +1,7 @@
 import { Text, TextInput, View } from 'react-native';
 import type { StyleProp, TextInputProps, TextStyle, ViewStyle } from 'react-native';
 
-import { colors, layout, radii, spacing, typography } from '@/theme';
+import { colors, fonts, layout, radii, spacing, typography } from '@/theme';
 
 export interface FieldProps extends Omit<TextInputProps, 'style'> {
   readonly label: string;
@@ -25,6 +25,7 @@ const styles = {
     borderRadius: radii.md,
     borderWidth: 1,
     color: colors.text,
+    fontFamily: fonts.mono,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
     ...typography.body,

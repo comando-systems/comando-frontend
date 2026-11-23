@@ -1,12 +1,12 @@
 import { useFocusEffect, useRouter } from 'expo-router';
-import { memo, useCallback, useState } from 'react';
-import { FlatList, RefreshControl, Text, View } from 'react-native';
+import { memo, useCallback, useMemo, useState } from 'react';
+import { FlatList, RefreshControl, Text, View, useWindowDimensions } from 'react-native';
 
+import { Button } from '@/components/button';
 import { Card } from '@/components/card';
 import { EmptyState } from '@/components/empty-state';
 import { ErrorBanner } from '@/components/error-banner';
 import { Field } from '@/components/field';
-import { Form } from '@/components/form';
 import { Icon } from '@/components/icon';
 import { LoadingState } from '@/components/loading-state';
 import { MoneyText } from '@/components/money-text';
@@ -14,7 +14,7 @@ import { OrderStatusBadge } from '@/components/order-status-badge';
 import { Screen } from '@/components/screen';
 import { useSession } from '@/providers/session-provider';
 import { api } from '@/services/api';
-import { colors, spacing, typography } from '@/theme';
+import { colors, fonts, spacing, typography } from '@/theme';
 import type { OrderResponse } from '@/types';
 import { occupiedOrderId, toErrorMessage } from '@/utils/errors';
 import { orderItemCountLabel } from '@/utils/order-display';
@@ -30,7 +30,7 @@ const OrderRow = memo(function OrderRow({ order, onPress }: OrderRowProps) {
     <Card
       testID={`table-order-${order.id}`}
       onPress={() => onPress(order.id)}
-      style={{ marginBottom: spacing.md }}
+      style={{ flex: 1, marginBottom: spacing.md }}
     >
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
         <OrderStatusBadge
@@ -42,7 +42,7 @@ const OrderRow = memo(function OrderRow({ order, onPress }: OrderRowProps) {
       <View style={{ marginTop: spacing.md, flexDirection: 'row', alignItems: 'center' }}>
         <Icon name="table" size="sm" color={colors.primaryDark} />
         <View style={{ marginLeft: spacing.sm, flex: 1 }}>
-          <Text style={[typography.subtitle, { color: colors.text }]}>
+          <Text style={[typography.subtitle, { color: colors.text, fontFamily: fonts.mono }]}>
             {order.tableCode ?? `Order ${order.id}`}
           </Text>
           <Text style={[typography.caption, { color: colors.textMuted, marginTop: spacing.xs }]}>
@@ -57,7 +57,9 @@ const OrderRow = memo(function OrderRow({ order, onPress }: OrderRowProps) {
 export default function Tables() {
   const { user } = useSession();
   const router = useRouter();
+  const { width } = useWindowDimensions();
   const [orders, setOrders] = useState<readonly OrderResponse[]>([]);
+  const [query, setQuery] = useState('');
   const [tableCode, setTableCode] = useState('');
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -133,18 +135,32 @@ export default function Tables() {
     }
   }
 
+  const normalizedQuery = query.trim().toLowerCase();
+  const visibleOrders = useMemo(
+    () =>
+      normalizedQuery.length === 0
+        ? orders
+        : orders.filter((order) =>
+            (order.tableCode ?? `Order ${order.id}`).toLowerCase().includes(normalizedQuery),
+          ),
+    [normalizedQuery, orders],
+  );
+  const columns = width >= 900 ? 4 : width >= 600 ? 3 : 2;
+
   const listHeader = (
     <View>
+      <Field
+        label="Search tables"
+        testID="table-search"
+        value={query}
+        onChangeText={setQuery}
+        placeholder="Name or code"
+        autoCorrect={false}
+        editable={!opening}
+        containerStyle={{ marginBottom: spacing.lg }}
+      />
       {canOpenTable ? (
-        <Form
-          testID="open-table-form"
-          submit="Open table"
-          onSubmit={() => {
-            void handleOpenTable();
-          }}
-          submitButtonProps={{ icon: 'table', loading: opening, testID: 'open-table-button' }}
-          style={{ marginBottom: spacing.xl }}
-        >
+        <View style={{ marginBottom: spacing.xl }}>
           <Field
             label="Table code"
             testID="table-code-input"
@@ -154,7 +170,19 @@ export default function Tables() {
             autoCapitalize="characters"
             editable={!opening}
           />
-        </Form>
+          <View style={{ marginTop: spacing.md }}>
+            <Button
+              label="Open table"
+              onPress={() => {
+                void handleOpenTable();
+              }}
+              icon="table"
+              loading={opening}
+              fullWidth
+              testID="open-table-button"
+            />
+          </View>
+        </View>
       ) : null}
 
       {error === null ? null : (
@@ -189,13 +217,19 @@ export default function Tables() {
     <Screen title="Tables" subtitle="Live table orders">
       <FlatList
         testID="tables-list"
-        data={orders}
+        data={visibleOrders}
         keyExtractor={(order) => order.id}
+        numColumns={columns}
+        columnWrapperStyle={{ gap: spacing.md }}
         ListHeaderComponent={listHeader}
         ListEmptyComponent={
           <EmptyState
-            title="No open tables"
-            description="Table orders will appear here."
+            title={normalizedQuery.length === 0 ? 'No open tables' : 'No tables found'}
+            description={
+              normalizedQuery.length === 0
+                ? 'Table orders will appear here.'
+                : 'No open table matches your search.'
+            }
             icon="table"
           />
         }

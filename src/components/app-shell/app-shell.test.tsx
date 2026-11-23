@@ -116,4 +116,14 @@ describe('<AppShell />', () => {
 
     expect(signOut).toHaveBeenCalled();
   });
+
+  it('highlights the active navigation item', async () => {
+    jest.mocked(usePathname).mockReturnValue('/counter');
+    mockRoles(['CASHIER']);
+
+    await renderShell();
+
+    expect(screen.getByTestId('nav-counter').props.accessibilityState.selected).toBe(true);
+    expect(screen.getByTestId('nav-tables').props.accessibilityState.selected).toBe(false);
+  });
 });

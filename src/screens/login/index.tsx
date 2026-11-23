@@ -8,7 +8,7 @@ import { Icon } from '@/components/icon';
 import { Screen } from '@/components/screen';
 import { useSession } from '@/providers/session-provider';
 import { ApiError, getErrorMessage } from '@/services/api';
-import { colors, radii, spacing, typography } from '@/theme';
+import { colors, fonts, radii, spacing, typography } from '@/theme';
 
 export default function Login() {
   const { signIn } = useSession();
@@ -62,7 +62,12 @@ export default function Login() {
           >
             <Icon name="food" size="lg" color={colors.white} />
           </View>
-          <Text style={[typography.display, { color: colors.primary, marginTop: spacing.lg }]}>
+          <Text
+            style={[
+              typography.display,
+              { color: colors.primaryDark, fontFamily: fonts.mono, marginTop: spacing.lg },
+            ]}
+          >
             Comando
           </Text>
           <Text

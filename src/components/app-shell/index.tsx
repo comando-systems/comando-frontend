@@ -1,12 +1,12 @@
 import { usePathname, useRouter } from 'expo-router';
 import { useCallback } from 'react';
 import type { ReactNode } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Icon, type IconName } from '@/components/icon';
 import { useSession } from '@/providers/session-provider';
-import { colors, radii, spacing, typography } from '@/theme';
+import { colors, fonts, radii, spacing, typography } from '@/theme';
 import { ROLE_CODES, type RoleCode } from '@/types';
 import { permissions } from '@/utils/permissions';
 
@@ -25,6 +25,103 @@ const roleLabels: Record<RoleCode, string> = {
   SERVER: 'Server',
 };
 
+const WIDE_HEADER_WIDTH = 700;
+
+const styles = StyleSheet.create({
+  container: {
+    backgroundColor: colors.background,
+    flex: 1,
+  },
+  header: {
+    alignItems: 'center',
+    backgroundColor: colors.surface,
+    borderBottomColor: colors.border,
+    borderBottomWidth: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.md,
+  },
+  brand: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexShrink: 0,
+  },
+  brandMark: {
+    alignItems: 'center',
+    backgroundColor: colors.primary,
+    borderRadius: radii.md,
+    height: 36,
+    justifyContent: 'center',
+    width: 36,
+  },
+  brandName: {
+    color: colors.primaryDark,
+    fontFamily: fonts.mono,
+    ...typography.title,
+    marginLeft: spacing.sm,
+  },
+  userName: {
+    color: colors.textMuted,
+    fontFamily: fonts.mono,
+    ...typography.caption,
+    marginTop: spacing.xs,
+  },
+  headerNav: {
+    flexGrow: 0,
+    flexShrink: 1,
+    marginHorizontal: spacing.md,
+  },
+  headerNavItem: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+  },
+  headerNavLabel: {
+    color: colors.textMuted,
+    fontFamily: fonts.mono,
+    ...typography.label,
+  },
+  headerNavLabelActive: {
+    color: colors.primaryDark,
+  },
+  headerNavUnderline: {
+    borderBottomColor: colors.primary,
+    borderBottomWidth: 2,
+  },
+  signOut: {
+    alignItems: 'center',
+    height: 40,
+    justifyContent: 'center',
+    width: 40,
+  },
+  bottomNav: {
+    backgroundColor: colors.surface,
+    borderTopColor: colors.border,
+    borderTopWidth: 1,
+    flexDirection: 'row',
+    paddingTop: spacing.sm,
+  },
+  bottomNavItem: {
+    alignItems: 'center',
+    borderRadius: radii.md,
+    flex: 1,
+    justifyContent: 'center',
+    paddingVertical: spacing.sm,
+  },
+  bottomNavItemActive: {
+    backgroundColor: colors.primarySoft,
+  },
+  bottomNavLabel: {
+    color: colors.textMuted,
+    fontFamily: fonts.mono,
+    ...typography.caption,
+    marginTop: spacing.xs,
+  },
+  bottomNavLabelActive: {
+    color: colors.primaryDark,
+  },
+});
+
 interface AppShellProps {
   readonly children: ReactNode;
 }
@@ -34,6 +131,8 @@ export function AppShell({ children }: AppShellProps) {
   const pathname = usePathname();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
+  const wideHeader = width >= WIDE_HEADER_WIDTH;
 
   const items: readonly NavItem[] = [
     {
@@ -76,25 +175,82 @@ export function AppShell({ children }: AppShellProps) {
           .map((role) => roleLabels[role])
           .join(' · ');
 
+  const isActive = (href: NavHref) => pathname === href || pathname.startsWith(`${href}/`);
+  const visibleItems = items.filter((item) => item.enabled);
+
+  const headerNav = (
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.headerNav}>
+      {visibleItems.map((item) => {
+        const active = isActive(item.href);
+
+        return (
+          <Pressable
+            key={item.href}
+            accessibilityRole="button"
+            accessibilityLabel={item.label}
+            accessibilityState={{ selected: active }}
+            testID={`nav-${item.label.toLowerCase()}`}
+            onPress={() => navigate(item.href)}
+            style={[styles.headerNavItem, active ? styles.headerNavUnderline : null]}
+          >
+            <Text style={[styles.headerNavLabel, active ? styles.headerNavLabelActive : null]}>
+              {item.label}
+            </Text>
+          </Pressable>
+        );
+      })}
+    </ScrollView>
+  );
+
+  const bottomNav = (
+    <View
+      style={[
+        styles.bottomNav,
+        { paddingBottom: insets.bottom + spacing.sm },
+      ]}
+    >
+      {visibleItems.map((item) => {
+        const active = isActive(item.href);
+
+        return (
+          <Pressable
+            key={item.href}
+            accessibilityRole="button"
+            accessibilityLabel={item.label}
+            accessibilityState={{ selected: active }}
+            testID={`nav-${item.label.toLowerCase()}`}
+            onPress={() => navigate(item.href)}
+            style={[styles.bottomNavItem, active ? styles.bottomNavItemActive : null]}
+          >
+            <Icon
+              name={item.icon}
+              size="sm"
+              color={active ? colors.primaryDark : colors.textMuted}
+            />
+            <Text style={[styles.bottomNavLabel, active ? styles.bottomNavLabelActive : null]}>
+              {item.label}
+            </Text>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+
   return (
-    <View style={{ flex: 1, backgroundColor: colors.background }}>
-      <View
-        style={{
-          backgroundColor: colors.primary,
-          paddingTop: insets.top + spacing.lg,
-          paddingHorizontal: spacing.lg,
-          paddingBottom: spacing.lg,
-          flexDirection: 'row',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-        }}
-      >
+    <View style={styles.container}>
+      <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
         <View>
-          <Text style={{ ...typography.title, color: colors.white }}>Comando</Text>
-          <Text style={{ ...typography.caption, color: colors.white, marginTop: spacing.xs }}>
-            {user?.name ?? 'Team member'} · {roleText}
-          </Text>
+          <View style={styles.brand}>
+            <View style={styles.brandMark}>
+              <Icon name="food" size="sm" color={colors.white} />
+            </View>
+            <Text style={styles.brandName}>Comando</Text>
+          </View>
+          {wideHeader ? null : (
+            <Text style={styles.userName}>{user?.name ?? roleText}</Text>
+          )}
         </View>
+        {wideHeader ? headerNav : null}
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Sign out"
@@ -102,70 +258,15 @@ export function AppShell({ children }: AppShellProps) {
           onPress={() => {
             void signOut();
           }}
-          style={{
-            width: 40,
-            height: 40,
-            borderRadius: radii.md,
-            alignItems: 'center',
-            justifyContent: 'center',
-            backgroundColor: colors.primaryDark,
-          }}
+          style={styles.signOut}
         >
-          <Icon name="logout" size="md" color={colors.white} />
+          <Icon name="logout" size="md" color={colors.primaryDark} />
         </Pressable>
       </View>
 
       <View style={{ flex: 1 }}>{children}</View>
 
-      <View
-        style={{
-          flexDirection: 'row',
-          backgroundColor: colors.surface,
-          borderTopWidth: 1,
-          borderTopColor: colors.border,
-          paddingBottom: insets.bottom + spacing.sm,
-          paddingTop: spacing.sm,
-        }}
-      >
-        {items
-          .filter((item) => item.enabled)
-          .map((item) => {
-            const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
-
-            return (
-              <Pressable
-                key={item.href}
-                accessibilityRole="button"
-                accessibilityLabel={item.label}
-                testID={`nav-${item.label.toLowerCase()}`}
-                onPress={() => navigate(item.href)}
-                style={{
-                  flex: 1,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  paddingVertical: spacing.sm,
-                  borderRadius: radii.md,
-                  backgroundColor: isActive ? colors.primarySoft : colors.surface,
-                }}
-              >
-                <Icon
-                  name={item.icon}
-                  size="sm"
-                  color={isActive ? colors.primaryDark : colors.textMuted}
-                />
-                <Text
-                  style={{
-                    ...typography.caption,
-                    color: isActive ? colors.primaryDark : colors.textMuted,
-                    marginTop: spacing.xs,
-                  }}
-                >
-                  {item.label}
-                </Text>
-              </Pressable>
-            );
-          })}
-      </View>
+      {wideHeader ? null : bottomNav}
     </View>
   );
 }
