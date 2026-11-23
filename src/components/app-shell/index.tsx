@@ -1,12 +1,12 @@
 import { usePathname, useRouter } from 'expo-router';
 import { useCallback } from 'react';
 import type { ReactNode } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { Image, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Icon, type IconName } from '@/components/icon';
 import { useSession } from '@/providers/session-provider';
-import { colors, fonts, radii, spacing, typography } from '@/theme';
+import { colors, radii, spacing, typography } from '@/theme';
 import { ROLE_CODES, type RoleCode } from '@/types';
 import { permissions } from '@/utils/permissions';
 
@@ -25,8 +25,6 @@ const roleLabels: Record<RoleCode, string> = {
   SERVER: 'Server',
 };
 
-const WIDE_HEADER_WIDTH = 700;
-
 const styles = StyleSheet.create({
   container: {
     backgroundColor: colors.background,
@@ -38,87 +36,79 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.border,
     borderBottomWidth: 1,
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg,
+    gap: spacing.lg,
     paddingBottom: spacing.md,
   },
   brand: {
+    flexShrink: 0,
+  },
+  logo: {
+    height: 40,
+    width: 158,
+  },
+  logoCompact: {
+    height: 30,
+    width: 120,
+  },
+  nav: {
+    flex: 1,
+  },
+  navContent: {
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  navItem: {
+    alignItems: 'center',
+    borderRadius: radii.md,
+    flexDirection: 'row',
+    gap: spacing.sm,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+  },
+  navItemActive: {
+    backgroundColor: colors.primarySoft,
+  },
+  navLabel: {
+    color: colors.textMuted,
+    ...typography.label,
+  },
+  navLabelActive: {
+    color: colors.primaryDark,
+  },
+  user: {
     alignItems: 'center',
     flexDirection: 'row',
     flexShrink: 0,
+    gap: spacing.sm,
   },
-  brandMark: {
+  avatar: {
     alignItems: 'center',
-    backgroundColor: colors.primary,
-    borderRadius: radii.md,
+    backgroundColor: colors.primarySoft,
+    borderRadius: radii.pill,
     height: 36,
     justifyContent: 'center',
     width: 36,
   },
-  brandName: {
+  avatarText: {
     color: colors.primaryDark,
-    fontFamily: fonts.mono,
-    ...typography.title,
-    marginLeft: spacing.sm,
+    fontSize: 11,
+    fontWeight: '800',
   },
   userName: {
-    color: colors.textMuted,
-    fontFamily: fonts.mono,
+    color: colors.text,
     ...typography.caption,
-    marginTop: spacing.xs,
+    fontWeight: '700',
   },
-  headerNav: {
-    flexGrow: 0,
-    flexShrink: 1,
-    marginHorizontal: spacing.md,
-  },
-  headerNavItem: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-  },
-  headerNavLabel: {
+  userRole: {
     color: colors.textMuted,
-    fontFamily: fonts.mono,
-    ...typography.label,
-  },
-  headerNavLabelActive: {
-    color: colors.primaryDark,
-  },
-  headerNavUnderline: {
-    borderBottomColor: colors.primary,
-    borderBottomWidth: 2,
+    fontSize: 10,
+    marginTop: 2,
   },
   signOut: {
     alignItems: 'center',
     height: 40,
     justifyContent: 'center',
     width: 40,
-  },
-  bottomNav: {
-    backgroundColor: colors.surface,
-    borderTopColor: colors.border,
-    borderTopWidth: 1,
-    flexDirection: 'row',
-    paddingTop: spacing.sm,
-  },
-  bottomNavItem: {
-    alignItems: 'center',
-    borderRadius: radii.md,
-    flex: 1,
-    justifyContent: 'center',
-    paddingVertical: spacing.sm,
-  },
-  bottomNavItemActive: {
-    backgroundColor: colors.primarySoft,
-  },
-  bottomNavLabel: {
-    color: colors.textMuted,
-    fontFamily: fonts.mono,
-    ...typography.caption,
-    marginTop: spacing.xs,
-  },
-  bottomNavLabelActive: {
-    color: colors.primaryDark,
   },
 });
 
@@ -132,7 +122,7 @@ export function AppShell({ children }: AppShellProps) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
-  const wideHeader = width >= WIDE_HEADER_WIDTH;
+  const wide = width >= 700;
 
   const items: readonly NavItem[] = [
     {
@@ -174,83 +164,84 @@ export function AppShell({ children }: AppShellProps) {
       : ROLE_CODES.filter((role) => user.roles[role] === role)
           .map((role) => roleLabels[role])
           .join(' · ');
-
+  const initials =
+    user === null
+      ? 'TM'
+      : user.name
+          .split(' ')
+          .map((part) => part[0])
+          .filter(Boolean)
+          .slice(0, 2)
+          .join('')
+          .toUpperCase();
   const isActive = (href: NavHref) => pathname === href || pathname.startsWith(`${href}/`);
   const visibleItems = items.filter((item) => item.enabled);
 
-  const headerNav = (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.headerNav}>
-      {visibleItems.map((item) => {
-        const active = isActive(item.href);
-
-        return (
-          <Pressable
-            key={item.href}
-            accessibilityRole="button"
-            accessibilityLabel={item.label}
-            accessibilityState={{ selected: active }}
-            testID={`nav-${item.label.toLowerCase()}`}
-            onPress={() => navigate(item.href)}
-            style={[styles.headerNavItem, active ? styles.headerNavUnderline : null]}
-          >
-            <Text style={[styles.headerNavLabel, active ? styles.headerNavLabelActive : null]}>
-              {item.label}
-            </Text>
-          </Pressable>
-        );
-      })}
-    </ScrollView>
-  );
-
-  const bottomNav = (
-    <View
-      style={[
-        styles.bottomNav,
-        { paddingBottom: insets.bottom + spacing.sm },
-      ]}
-    >
-      {visibleItems.map((item) => {
-        const active = isActive(item.href);
-
-        return (
-          <Pressable
-            key={item.href}
-            accessibilityRole="button"
-            accessibilityLabel={item.label}
-            accessibilityState={{ selected: active }}
-            testID={`nav-${item.label.toLowerCase()}`}
-            onPress={() => navigate(item.href)}
-            style={[styles.bottomNavItem, active ? styles.bottomNavItemActive : null]}
-          >
-            <Icon
-              name={item.icon}
-              size="sm"
-              color={active ? colors.primaryDark : colors.textMuted}
-            />
-            <Text style={[styles.bottomNavLabel, active ? styles.bottomNavLabelActive : null]}>
-              {item.label}
-            </Text>
-          </Pressable>
-        );
-      })}
-    </View>
-  );
-
   return (
     <View style={styles.container}>
-      <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
-        <View>
-          <View style={styles.brand}>
-            <View style={styles.brandMark}>
-              <Icon name="food" size="sm" color={colors.white} />
-            </View>
-            <Text style={styles.brandName}>Comando</Text>
-          </View>
-          {wideHeader ? null : (
-            <Text style={styles.userName}>{user?.name ?? roleText}</Text>
-          )}
+      <View
+        style={[
+          styles.header,
+          {
+            paddingTop: insets.top + spacing.sm,
+            paddingHorizontal: wide ? spacing.xl : spacing.md,
+            gap: wide ? spacing.lg : spacing.sm,
+          },
+        ]}
+      >
+        <View style={styles.brand}>
+          <Image
+            source={require('../../../assets/full-logo.png')}
+            style={[styles.logo, wide ? null : styles.logoCompact]}
+            resizeMode="contain"
+            testID="app-logo"
+          />
         </View>
-        {wideHeader ? headerNav : null}
+
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.nav}
+          contentContainerStyle={styles.navContent}
+        >
+          {visibleItems.map((item) => {
+            const active = isActive(item.href);
+
+            return (
+              <Pressable
+                key={item.href}
+                accessibilityRole="button"
+                accessibilityLabel={item.label}
+                accessibilityState={{ selected: active }}
+                testID={`nav-${item.label.toLowerCase()}`}
+                onPress={() => navigate(item.href)}
+                style={[styles.navItem, active ? styles.navItemActive : null]}
+              >
+                <Icon
+                  name={item.icon}
+                  size="sm"
+                  color={active ? colors.primaryDark : colors.textMuted}
+                />
+                <Text style={[styles.navLabel, active ? styles.navLabelActive : null]}>
+                  {item.label}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+
+        <View style={styles.user}>
+          <View style={styles.avatar}>
+            <Text style={styles.avatarText}>{initials}</Text>
+          </View>
+          {wide ? (
+            <View>
+              <Text style={styles.userName}>{user?.name ?? roleText}</Text>
+              <Text style={styles.userRole}>{roleText}</Text>
+            </View>
+          ) : null}
+        </View>
+
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Sign out"
@@ -260,13 +251,11 @@ export function AppShell({ children }: AppShellProps) {
           }}
           style={styles.signOut}
         >
-          <Icon name="logout" size="md" color={colors.primaryDark} />
+          <Icon name="logout" size="md" color={colors.textMuted} />
         </Pressable>
       </View>
 
       <View style={{ flex: 1 }}>{children}</View>
-
-      {wideHeader ? null : bottomNav}
     </View>
   );
 }

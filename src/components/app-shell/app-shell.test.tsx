@@ -75,6 +75,7 @@ describe('<AppShell />', () => {
     const { getByText, getByTestId, queryByTestId } = await renderShell();
 
     expect(getByText('Screen content')).toBeTruthy();
+    expect(getByTestId('app-logo')).toBeTruthy();
     expect(getByTestId('nav-counter')).toBeTruthy();
     expect(getByTestId('nav-history')).toBeTruthy();
     expect(getByTestId('nav-management')).toBeTruthy();

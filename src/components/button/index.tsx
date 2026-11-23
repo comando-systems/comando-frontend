@@ -1,7 +1,7 @@
 import { ActivityIndicator, Pressable, Text } from 'react-native';
 
 import { Icon, type IconName } from '@/components/icon';
-import { colors, fonts, layout, radii, spacing, typography } from '@/theme';
+import { colors, layout, radii, spacing, typography } from '@/theme';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'tertiary' | 'danger' | 'ghost';
 export type ButtonSize = 'md' | 'lg';
@@ -119,7 +119,6 @@ export function Button({
               typography.label,
               {
                 color: isDisabled ? colors.textMuted : palette.text,
-                fontFamily: fonts.mono,
                 marginLeft: leadingIcon === null ? 0 : spacing.sm,
                 marginRight: trailingIcon === null ? 0 : spacing.sm,
               },

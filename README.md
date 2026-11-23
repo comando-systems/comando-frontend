@@ -19,7 +19,7 @@ A universal Expo client for the Comando order-management system. One TypeScript 
 - **Flexible payments**: split payments, cash change calculated by the backend, and "pay later" for tables.
 - **Counter export**: move the current counter build into an existing or newly opened table.
 - **Role-aware UI**: management is visible only to `ADMIN`; the backend remains the authority.
-- **Visual system**: orange primary actions and active navigation, white cards on neutral gray, and a monospace-leaning treatment for money, buttons, fields, and table names.
+- **Visual system**: full-width white header with brand and highlighted navigation, white cards on neutral gray, and orange accents for money and active states.
 - **Icon adapter**: application code uses semantic `IconName` values, never raw vendor icon names.
 - **Consistent forms**: a shared `Form` component caps dedicated forms at 320px on wide screens and owns the submit/cancel actions; `Field` and full-width `Button` use the same token, so tables and counter screens stay full width.
 

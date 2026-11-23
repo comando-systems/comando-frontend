@@ -1,7 +1,7 @@
 import { Text } from 'react-native';
 import type { StyleProp, TextStyle } from 'react-native';
 
-import { colors, fonts, typography } from '@/theme';
+import { colors, typography } from '@/theme';
 import { formatMoney } from '@/utils/money';
 
 export type MoneyTextSize = 'sm' | 'md' | 'lg';
@@ -28,7 +28,7 @@ export function MoneyText({
   testID = 'money-text',
 }: MoneyTextProps) {
   return (
-    <Text testID={testID} style={[sizeStyles[size], { color, fontFamily: fonts.mono }, style]}>
+    <Text testID={testID} style={[sizeStyles[size], { color }, style]}>
       {formatMoney(cents)}
     </Text>
   );

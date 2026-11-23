@@ -8,7 +8,7 @@ import { Icon } from '@/components/icon';
 import { Screen } from '@/components/screen';
 import { useSession } from '@/providers/session-provider';
 import { ApiError, getErrorMessage } from '@/services/api';
-import { colors, fonts, radii, spacing, typography } from '@/theme';
+import { colors, radii, spacing, typography } from '@/theme';
 
 export default function Login() {
   const { signIn } = useSession();
@@ -65,7 +65,7 @@ export default function Login() {
           <Text
             style={[
               typography.display,
-              { color: colors.primaryDark, fontFamily: fonts.mono, marginTop: spacing.lg },
+              { color: colors.primaryDark, marginTop: spacing.lg },
             ]}
           >
             Comando
