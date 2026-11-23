@@ -1,7 +1,7 @@
 import { ActivityIndicator, Pressable, Text } from 'react-native';
 
 import { Icon, type IconName } from '@/components/icon';
-import { colors, radii, spacing, typography } from '@/theme';
+import { colors, layout, radii, spacing, typography } from '@/theme';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'ghost';
 export type ButtonSize = 'md' | 'lg';
@@ -56,6 +56,7 @@ const styles = {
     flexDirection: 'row',
   },
   fullWidth: {
+    maxWidth: layout.formMaxWidth,
     width: '100%',
   },
 } as const;

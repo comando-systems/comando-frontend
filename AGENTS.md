@@ -128,7 +128,8 @@ src/
 
 - Build with React Native primitives (`View`, `Text`, `Pressable`, `ScrollView`, `FlatList`, `TextInput`, `Image`), never web-only DOM in shared code.
 - Use safe-area-aware layouts, keyboard-friendly forms, loading and error states, and a consistent theme in one place.
-- Forms use the `Form` component from `src/components/form/`. It caps content at `theme.layout.formMaxWidth` (20rem = 320px), centers it, and owns the submit and optional cancel actions. The submit button is full width only when it is the only action; with cancel, both actions sit side by side. Pass loading, disabled, icon, and test ID through `submitButtonProps` / `cancelButtonProps`. `Field` uses the same width token so inputs outside a `Form` stay constrained too.
+- Use the `theme.layout.formMaxWidth` token (20rem = 320px) to cap `Field` and full-width `Button` components; it must not constrain whole screens. Tables, Counter, and the order builder keep their full-width containers.
+- Dedicated form screens use the `Form` component from `src/components/form/`. It centers the form, owns the submit and optional cancel actions, and limits its own width to the same token. The submit button is full width only when it is the only action; with cancel, both actions sit side by side. Pass loading, disabled, icon, and test ID through `submitButtonProps` / `cancelButtonProps`.
 - Keep state close to its screen; use providers only for session and shared read-only data. Refresh order data after mutations rather than duplicating server calculations locally.
 - Memoize expensive list rows and callbacks. Avoid storing volatile UI state in global stores.
 
