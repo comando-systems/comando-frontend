@@ -43,12 +43,18 @@ describe('<Management />', () => {
 
     expect(screen.getByText('Users')).toBeTruthy();
     expect(screen.getByText('Catalog')).toBeTruthy();
+    expect(screen.getByText('Settings')).toBeTruthy();
+    expect(screen.getByText('Reports')).toBeTruthy();
 
     await fireEvent.press(screen.getByTestId('management-users-link'));
     await fireEvent.press(screen.getByTestId('management-catalog-link'));
+    await fireEvent.press(screen.getByTestId('management-settings-link'));
+    await fireEvent.press(screen.getByTestId('management-reports-link'));
 
     expect(push).toHaveBeenCalledWith('/management/users');
     expect(push).toHaveBeenCalledWith('/management/catalog');
+    expect(push).toHaveBeenCalledWith('/management/settings');
+    expect(push).toHaveBeenCalledWith('/management/reports');
     expect(Redirect).not.toHaveBeenCalled();
   });
 
@@ -60,5 +66,7 @@ describe('<Management />', () => {
     expect(jest.mocked(Redirect).mock.calls.at(-1)?.[0]?.href).toBe('/');
     expect(screen.queryByTestId('management-users-link')).toBeNull();
     expect(screen.queryByTestId('management-catalog-link')).toBeNull();
+    expect(screen.queryByTestId('management-settings-link')).toBeNull();
+    expect(screen.queryByTestId('management-reports-link')).toBeNull();
   });
 });
