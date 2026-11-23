@@ -287,6 +287,36 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
   return parseJson<T>(response);
 }
 
+export interface HttpRequestInput {
+  readonly path: string;
+  readonly body?: unknown;
+  readonly query?: object;
+  readonly skipAuth?: boolean;
+  readonly skipRefresh?: boolean;
+  readonly accessTokenOverride?: string;
+}
+
+export type HttpMethod = 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE';
+
+function call<T>(method: HttpMethod, params: HttpRequestInput): Promise<T> {
+  return request<T>(params.path, {
+    method,
+    body: params.body,
+    query: params.query,
+    skipAuth: params.skipAuth,
+    skipRefresh: params.skipRefresh,
+    accessTokenOverride: params.accessTokenOverride,
+  });
+}
+
+export const http = {
+  get: <T>(params: HttpRequestInput): Promise<T> => call<T>('GET', params),
+  post: <T>(params: HttpRequestInput): Promise<T> => call<T>('POST', params),
+  patch: <T>(params: HttpRequestInput): Promise<T> => call<T>('PATCH', params),
+  put: <T>(params: HttpRequestInput): Promise<T> => call<T>('PUT', params),
+  delete: <T>(params: HttpRequestInput): Promise<T> => call<T>('DELETE', params),
+} as const;
+
 function encodeId(id: string): string {
   return encodeURIComponent(id);
 }
@@ -294,8 +324,8 @@ function encodeId(id: string): string {
 export const api = {
   auth: {
     async login(body: LoginRequest): Promise<SessionResponse> {
-      const session = await request<BackendSessionResponse>('/auth/login', {
-        method: 'POST',
+      const session = await http.post<BackendSessionResponse>({
+        path: '/auth/login',
         body,
         skipAuth: true,
         skipRefresh: true,
@@ -309,8 +339,8 @@ export const api = {
         return;
       }
 
-      await request<void>('/auth/logout', {
-        method: 'POST',
+      await http.post<void>({
+        path: '/auth/logout',
         body: { refreshToken: session.refreshToken } satisfies RefreshRequest,
         skipAuth: true,
         skipRefresh: true,
@@ -319,106 +349,104 @@ export const api = {
   },
   users: {
     async list(query: PaginationParams = {}): Promise<PageResponse<UserResponse>> {
-      const page = await request<PageResponse<BackendUserResponse>>('/users', { query });
+      const page = await http.get<PageResponse<BackendUserResponse>>({ path: '/users', query });
       return { ...page, data: page.data.map(toUserResponse) };
     },
     async get(id: string): Promise<UserResponse> {
-      const user = await request<BackendUserResponse>(`/users/${encodeId(id)}`);
+      const user = await http.get<BackendUserResponse>({ path: `/users/${encodeId(id)}` });
       return toUserResponse(user);
     },
     async create(body: CreateUserRequest): Promise<UserResponse> {
-      const user = await request<BackendUserResponse>('/users', { method: 'POST', body });
+      const user = await http.post<BackendUserResponse>({ path: '/users', body });
       return toUserResponse(user);
     },
     async update(id: string, body: UpdateUserRequest): Promise<UserResponse> {
-      const user = await request<BackendUserResponse>(`/users/${encodeId(id)}`, {
-        method: 'PATCH',
+      const user = await http.patch<BackendUserResponse>({
+        path: `/users/${encodeId(id)}`,
         body,
       });
       return toUserResponse(user);
     },
     async deactivate(id: string): Promise<UserResponse> {
-      const user = await request<BackendUserResponse>(`/users/${encodeId(id)}`, {
-        method: 'DELETE',
-      });
+      const user = await http.delete<BackendUserResponse>({ path: `/users/${encodeId(id)}` });
       return toUserResponse(user);
     },
   },
   items: {
     list(query: ItemListParams = {}): Promise<PageResponse<ItemResponse>> {
-      return request<PageResponse<ItemResponse>>('/items', { query });
+      return http.get<PageResponse<ItemResponse>>({ path: '/items', query });
     },
     get(id: string): Promise<ItemResponse> {
-      return request<ItemResponse>(`/items/${encodeId(id)}`);
+      return http.get<ItemResponse>({ path: `/items/${encodeId(id)}` });
     },
     create(body: CreateItemRequest): Promise<ItemResponse> {
-      return request<ItemResponse>('/items', { method: 'POST', body });
+      return http.post<ItemResponse>({ path: '/items', body });
     },
     update(id: string, body: UpdateItemRequest): Promise<ItemResponse> {
-      return request<ItemResponse>(`/items/${encodeId(id)}`, { method: 'PATCH', body });
+      return http.patch<ItemResponse>({ path: `/items/${encodeId(id)}`, body });
     },
     remove(id: string): Promise<ItemResponse> {
-      return request<ItemResponse>(`/items/${encodeId(id)}`, { method: 'DELETE' });
+      return http.delete<ItemResponse>({ path: `/items/${encodeId(id)}` });
     },
   },
   orders: {
     createCounter(body: CreateCounterOrderRequest): Promise<OrderResponse> {
-      return request<OrderResponse>('/orders/counter', { method: 'POST', body });
+      return http.post<OrderResponse>({ path: '/orders/counter', body });
     },
     openTable(body: OpenTableOrderRequest): Promise<OrderResponse> {
-      return request<OrderResponse>('/orders/table', { method: 'POST', body });
+      return http.post<OrderResponse>({ path: '/orders/table', body });
     },
     list(query: OrderListParams = {}): Promise<PageResponse<OrderResponse>> {
-      return request<PageResponse<OrderResponse>>('/orders', { query });
+      return http.get<PageResponse<OrderResponse>>({ path: '/orders', query });
     },
     get(id: string): Promise<OrderResponse> {
-      return request<OrderResponse>(`/orders/${encodeId(id)}`);
+      return http.get<OrderResponse>({ path: `/orders/${encodeId(id)}` });
     },
     addItems(id: string, body: AddOrderItemsRequest): Promise<OrderResponse> {
-      return request<OrderResponse>(`/orders/${encodeId(id)}/items`, { method: 'POST', body });
+      return http.post<OrderResponse>({ path: `/orders/${encodeId(id)}/items`, body });
     },
     changeQuantity(
       id: string,
       itemId: string,
       body: ChangeOrderItemQuantityRequest,
     ): Promise<OrderResponse> {
-      return request<OrderResponse>(`/orders/${encodeId(id)}/items/${encodeId(itemId)}`, {
-        method: 'PATCH',
+      return http.patch<OrderResponse>({
+        path: `/orders/${encodeId(id)}/items/${encodeId(itemId)}`,
         body,
       });
     },
     removeItem(id: string, itemId: string): Promise<OrderResponse> {
-      return request<OrderResponse>(`/orders/${encodeId(id)}/items/${encodeId(itemId)}`, {
-        method: 'DELETE',
+      return http.delete<OrderResponse>({
+        path: `/orders/${encodeId(id)}/items/${encodeId(itemId)}`,
       });
     },
     setPricing(id: string, body: SetOrderPricingRequest): Promise<OrderResponse> {
-      return request<OrderResponse>(`/orders/${encodeId(id)}/pricing`, { method: 'PATCH', body });
+      return http.patch<OrderResponse>({ path: `/orders/${encodeId(id)}/pricing`, body });
     },
     requestPayment(id: string): Promise<OrderResponse> {
-      return request<OrderResponse>(`/orders/${encodeId(id)}/request-payment`, { method: 'POST' });
+      return http.post<OrderResponse>({ path: `/orders/${encodeId(id)}/request-payment` });
     },
     reopen(id: string): Promise<OrderResponse> {
-      return request<OrderResponse>(`/orders/${encodeId(id)}/reopen`, { method: 'POST' });
+      return http.post<OrderResponse>({ path: `/orders/${encodeId(id)}/reopen` });
     },
     close(id: string, body: CloseOrderRequest): Promise<OrderResponse> {
-      return request<OrderResponse>(`/orders/${encodeId(id)}/close`, { method: 'POST', body });
+      return http.post<OrderResponse>({ path: `/orders/${encodeId(id)}/close`, body });
     },
     cancel(id: string): Promise<OrderResponse> {
-      return request<OrderResponse>(`/orders/${encodeId(id)}/cancel`, { method: 'POST' });
+      return http.post<OrderResponse>({ path: `/orders/${encodeId(id)}/cancel` });
     },
   },
   settings: {
     get(): Promise<SettingsResponse> {
-      return request<SettingsResponse>('/settings');
+      return http.get<SettingsResponse>({ path: '/settings' });
     },
     update(body: UpdateSettingsRequest): Promise<SettingsResponse> {
-      return request<SettingsResponse>('/settings', { method: 'PUT', body });
+      return http.put<SettingsResponse>({ path: '/settings', body });
     },
   },
   reports: {
     summary(query: DateRangeParams = {}): Promise<SalesSummaryResponse> {
-      return request<SalesSummaryResponse>('/reports/summary', { query });
+      return http.get<SalesSummaryResponse>({ path: '/reports/summary', query });
     },
   },
 };

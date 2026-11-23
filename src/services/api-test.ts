@@ -1,4 +1,4 @@
-import { ApiError, api } from '@/services/api';
+import { ApiError, api, http, type HttpRequestInput } from '@/services/api';
 import { sessionStorage } from '@/services/storage';
 import type { BackendSessionResponse, OrderResponse, SessionResponse } from '@/types';
 import { toRoleSet } from '@/utils/roles';
@@ -141,6 +141,35 @@ describe('API client', () => {
     const page = await api.users.list();
 
     expect(page.data[0]?.roles).toEqual({ CASHIER: 'CASHIER' });
+  });
+
+  it.each([
+    ['get', 'GET', (input: HttpRequestInput) => http.get(input)],
+    ['post', 'POST', (input: HttpRequestInput) => http.post(input)],
+    ['patch', 'PATCH', (input: HttpRequestInput) => http.patch(input)],
+    ['put', 'PUT', (input: HttpRequestInput) => http.put(input)],
+    ['delete', 'DELETE', (input: HttpRequestInput) => http.delete(input)],
+  ] as const)('http.%s forwards method and request options', async (_name, method, execute) => {
+    jest.mocked(sessionStorage.read).mockResolvedValue(null);
+    fetchMock.mockResolvedValue(jsonResponse({ ok: true }));
+
+    await execute({
+      path: '/probe',
+      body: { value: 1 },
+      query: { page: 2 },
+      skipAuth: true,
+      skipRefresh: true,
+      accessTokenOverride: 'override',
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      `${API_URL}/probe?page=2`,
+      expect.objectContaining({
+        method,
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer override' },
+        body: JSON.stringify({ value: 1 }),
+      }),
+    );
   });
 
   it('attaches the bearer token and serializes query parameters', async () => {

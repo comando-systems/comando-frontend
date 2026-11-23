@@ -81,7 +81,7 @@ src/
 ## Backend contract and API client
 
 - Source of truth: the backend README and `GET /openapi.json` at <https://github.com/comando-systems/comando-backend>. When the backend changes, update the client types and this document in the same PR.
-- `src/services/api.ts` is the single HTTP adapter. It reads `process.env.EXPO_PUBLIC_API_URL` (statically referenced as `process.env.EXPO_PUBLIC_API_URL`), sends `Content-Type: application/json`, attaches `Authorization: Bearer <accessToken>`, and normalizes errors to `{ code, message, details?, requestId? }`.
+- `src/services/api.ts` is the single HTTP adapter. It reads `process.env.EXPO_PUBLIC_API_URL` (statically referenced as `process.env.EXPO_PUBLIC_API_URL`), sends `Content-Type: application/json`, attaches `Authorization: Bearer <accessToken>`, and normalizes errors to `{ code, message, details?, requestId? }`. Endpoint definitions call the typed `http.get`, `http.post`, `http.patch`, `http.put`, and `http.delete` helpers instead of constructing raw method options.
 - IDs are decimal strings. All money values are integer cents. Timestamps are ISO 8601 UTC strings. Format for display only; never compute money with floats.
 - On `401`, refresh once through `POST /auth/refresh`, store the rotated pair, and retry the original request. Refresh tokens are single use; a reused token revokes the whole family. On refresh failure, clear the session and return to `login`.
 - Session persistence is an adapter in `src/services/storage.ts`: `expo-secure-store` on native, `localStorage` on web. Keep the token handling behind one interface; only that file checks `Platform.OS`.
