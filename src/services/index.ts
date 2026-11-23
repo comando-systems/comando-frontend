@@ -1,4 +1,12 @@
-export { ApiError, api, getErrorMessage, request } from './api';
+export {
+  ApiError,
+  api,
+  getErrorMessage,
+  http,
+  request,
+  type HttpMethod,
+  type HttpRequestInput,
+} from './api';
 export {
   createSessionStorage,
   sessionStorage,
