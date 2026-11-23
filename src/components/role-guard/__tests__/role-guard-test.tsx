@@ -73,6 +73,15 @@ describe('<RoleGuard />', () => {
     expect(redirectedHref()).toBe('/');
   });
 
+  it('redirects non-admins away from management subroutes', async () => {
+    jest.mocked(usePathname).mockReturnValue('/management/users');
+    mockUser(['SERVER']);
+
+    await renderGuard();
+
+    expect(redirectedHref()).toBe('/');
+  });
+
   it('redirects servers away from counter sales', async () => {
     jest.mocked(usePathname).mockReturnValue('/counter');
     mockUser(['SERVER']);
