@@ -1,7 +1,7 @@
 import type { RoleCode, UserResponse } from '@/types';
 
 export function hasRole(user: UserResponse | null, role: RoleCode): boolean {
-  return user?.roles.includes(role) ?? false;
+  return user?.roles[role] === role;
 }
 
 export function hasAnyRole(user: UserResponse | null, roles: readonly RoleCode[]): boolean {

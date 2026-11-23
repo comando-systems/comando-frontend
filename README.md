@@ -104,7 +104,7 @@ Login calls `POST /auth/login` and stores the returned access and refresh tokens
 | `CASHIER` | Counter sales, history, tables, close/cancel |
 | `SERVER` | Open and edit tables, request payment, cancel |
 
-A user can hold multiple roles; permissions are the union of them. Client-side guards only improve the experience — the backend enforces every rule.
+A user can hold multiple roles; permissions are the union of them. Internally, roles are a lookup record for O(1) permission checks; the API adapter converts the backend role arrays at the HTTP boundary. Client-side guards only improve the experience — the backend enforces every rule.
 
 ## API
 

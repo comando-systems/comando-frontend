@@ -64,7 +64,7 @@ src/
 - Expo Router file routes under `src/app/`. Use `Link`, `Stack`, `Tabs`, `Redirect`, `useRouter`, and `useLocalSearchParams` from `expo-router`. Prefer `useRouter()` in components; prefer complete hrefs for nested navigation.
 - Root layout holds providers and protected-route guards. Authenticated routes live in a `(app)` group; `login` stays public.
 - Client-side guards are UX only. The backend is authoritative for every permission.
-- Roles: `ADMIN`, `CASHIER`, `SERVER`; a user may hold several and permissions are the union of their roles.
+- Roles: `ADMIN`, `CASHIER`, `SERVER`; a user may hold several and permissions are the union of their roles. `RoleSet` is an internal partial record keyed by role, so permission checks are O(1); `src/services/api.ts` converts backend role arrays at the HTTP boundary and request bodies keep using arrays.
   - `ADMIN`: management area (users, catalog, settings, reports), counter sales, close/cancel table orders. Cannot open or edit tables.
   - `CASHIER`: counter sales, history, tables, close/cancel.
   - `SERVER`: tables and edits; cannot close orders.

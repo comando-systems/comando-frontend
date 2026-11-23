@@ -1,4 +1,5 @@
 export type RoleCode = 'ADMIN' | 'CASHIER' | 'SERVER';
+export type RoleSet = Readonly<Partial<Record<RoleCode, RoleCode>>>;
 export type OrderType = 'COUNTER' | 'TABLE';
 export type OrderStatus = 'OPEN' | 'AWAITING_PAYMENT' | 'CLOSED' | 'CANCELED';
 export type PaymentMethod = 'CASH' | 'DEBIT_CARD' | 'CREDIT_CARD' | 'PIX' | 'OTHER';
@@ -19,7 +20,7 @@ export const PAYMENT_METHODS: readonly PaymentMethod[] = [
   'OTHER',
 ];
 
-export interface UserResponse {
+export interface BackendUserResponse {
   readonly id: string;
   readonly name: string;
   readonly email: string;
@@ -28,6 +29,10 @@ export interface UserResponse {
   readonly createdAt: string;
   readonly updatedAt: string;
 }
+
+export type UserResponse = Omit<BackendUserResponse, 'roles'> & {
+  readonly roles: RoleSet;
+};
 
 export interface ItemResponse {
   readonly id: string;
@@ -112,6 +117,10 @@ export interface SessionResponse {
   readonly refreshExpiresAt: string;
   readonly user: UserResponse;
 }
+
+export type BackendSessionResponse = Omit<SessionResponse, 'user'> & {
+  readonly user: BackendUserResponse;
+};
 
 export interface PageResponse<T> {
   readonly data: readonly T[];

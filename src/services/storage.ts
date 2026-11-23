@@ -2,6 +2,7 @@ import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 
 import type { SessionResponse, UserResponse } from '@/types';
+import { isRoleSet } from '@/utils/roles';
 
 const SESSION_KEY = 'comando.session';
 
@@ -32,7 +33,7 @@ function isUserResponse(value: unknown): value is UserResponse {
     typeof user.name === 'string' &&
     typeof user.email === 'string' &&
     typeof user.isActive === 'boolean' &&
-    Array.isArray(user.roles)
+    isRoleSet(user.roles)
   );
 }
 

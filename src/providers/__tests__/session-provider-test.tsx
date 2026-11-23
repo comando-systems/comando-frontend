@@ -4,6 +4,7 @@ import { SessionProvider, useSession } from '@/providers/session-provider';
 import { api } from '@/services/api';
 import { sessionStorage, subscribeToSession } from '@/services/storage';
 import type { SessionResponse } from '@/types';
+import { toRoleSet } from '@/utils/roles';
 
 jest.mock('@/services/api', () => ({
   api: {
@@ -35,7 +36,7 @@ function createSession(overrides: Partial<SessionResponse> = {}): SessionRespons
       id: '1',
       name: 'Ada Lovelace',
       email: 'ada@example.com',
-      roles: ['ADMIN'],
+      roles: toRoleSet(['ADMIN']),
       isActive: true,
       createdAt: '2026-01-01T00:00:00.000Z',
       updatedAt: '2026-01-01T00:00:00.000Z',
@@ -67,7 +68,7 @@ describe('SessionProvider', () => {
         id: '2',
         name: 'Grace Hopper',
         email: 'grace@example.com',
-        roles: ['CASHIER', 'SERVER'],
+        roles: toRoleSet(['CASHIER', 'SERVER']),
         isActive: true,
         createdAt: '2026-01-01T00:00:00.000Z',
         updatedAt: '2026-01-01T00:00:00.000Z',

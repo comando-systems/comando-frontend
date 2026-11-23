@@ -1,6 +1,7 @@
 import { ApiError, api } from '@/services/api';
 import { sessionStorage } from '@/services/storage';
-import type { OrderResponse, SessionResponse } from '@/types';
+import type { BackendSessionResponse, OrderResponse, SessionResponse } from '@/types';
+import { toRoleSet } from '@/utils/roles';
 
 jest.mock('@/services/storage', () => ({
   sessionStorage: {
@@ -13,7 +14,7 @@ jest.mock('@/services/storage', () => ({
 
 const API_URL = 'https://api.example.test';
 
-const session: SessionResponse = {
+const backendSession: BackendSessionResponse = {
   accessToken: 'access-1',
   expiresAt: '2026-11-22T20:00:00.000Z',
   refreshToken: 'refresh-1',
@@ -29,10 +30,26 @@ const session: SessionResponse = {
   },
 };
 
-const rotatedSession: SessionResponse = {
-  ...session,
+const session: SessionResponse = {
+  ...backendSession,
+  user: {
+    ...backendSession.user,
+    roles: toRoleSet(backendSession.user.roles),
+  },
+};
+
+const backendRotatedSession: BackendSessionResponse = {
+  ...backendSession,
   accessToken: 'access-2',
   refreshToken: 'refresh-2',
+};
+
+const rotatedSession: SessionResponse = {
+  ...backendRotatedSession,
+  user: {
+    ...backendRotatedSession.user,
+    roles: toRoleSet(backendRotatedSession.user.roles),
+  },
 };
 
 const order: OrderResponse = {
@@ -96,7 +113,7 @@ describe('API client', () => {
 
   it('logs in without attaching a bearer token', async () => {
     jest.mocked(sessionStorage.read).mockResolvedValue(null);
-    fetchMock.mockResolvedValue(jsonResponse(session));
+    fetchMock.mockResolvedValue(jsonResponse(backendSession));
 
     await expect(api.auth.login({ email: 'ada@example.com', password: 'secret123' })).resolves.toEqual(
       session,
@@ -110,6 +127,20 @@ describe('API client', () => {
         body: JSON.stringify({ email: 'ada@example.com', password: 'secret123' }),
       }),
     );
+  });
+
+  it('maps backend user role arrays to lookup records', async () => {
+    jest.mocked(sessionStorage.read).mockResolvedValue(session);
+    fetchMock.mockResolvedValue(
+      jsonResponse({
+        data: [backendSession.user],
+        pagination: { page: 1, pageSize: 20, total: 1, totalPages: 1 },
+      }),
+    );
+
+    const page = await api.users.list();
+
+    expect(page.data[0]?.roles).toEqual({ CASHIER: 'CASHIER' });
   });
 
   it('attaches the bearer token and serializes query parameters', async () => {
@@ -133,7 +164,7 @@ describe('API client', () => {
     jest.mocked(sessionStorage.read).mockResolvedValue(session);
     fetchMock
       .mockResolvedValueOnce(errorResponse('UNAUTHORIZED', 401))
-      .mockResolvedValueOnce(jsonResponse(rotatedSession))
+      .mockResolvedValueOnce(jsonResponse(backendRotatedSession))
       .mockResolvedValueOnce(jsonResponse(order));
 
     await expect(api.orders.get('10')).resolves.toEqual(order);
@@ -153,7 +184,7 @@ describe('API client', () => {
     fetchMock.mockImplementation(async (url: string) => {
       if (url.includes('/auth/refresh')) {
         refreshCount += 1;
-        return jsonResponse(rotatedSession);
+        return jsonResponse(backendRotatedSession);
       }
 
       const count = orderRequests.get(url) ?? 0;

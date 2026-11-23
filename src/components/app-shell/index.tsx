@@ -7,7 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Icon, type IconName } from '@/components/icon';
 import { useSession } from '@/providers/session-provider';
 import { colors, radii, spacing, typography } from '@/theme';
-import type { RoleCode } from '@/types';
+import { ROLE_CODES, type RoleCode } from '@/types';
 import { permissions } from '@/utils/permissions';
 
 type NavHref = '/tables' | '/counter' | '/history' | '/management';
@@ -70,7 +70,11 @@ export function AppShell({ children }: AppShellProps) {
   );
 
   const roleText =
-    user?.roles.map((role) => roleLabels[role]).join(' · ') ?? 'Team member';
+    user === null
+      ? 'Team member'
+      : ROLE_CODES.filter((role) => user.roles[role] === role)
+          .map((role) => roleLabels[role])
+          .join(' · ');
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
