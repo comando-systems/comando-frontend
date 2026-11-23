@@ -45,7 +45,7 @@ pnpm install
 cp .env.example .env
 ```
 
-Set the API URL in `.env`:
+`.env.example` already contains the local backend URL. Copy it to `.env` and change the value when the backend runs elsewhere:
 
 ```dotenv
 EXPO_PUBLIC_API_URL=http://localhost:3000
