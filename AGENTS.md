@@ -89,7 +89,7 @@ src/
 - Primary endpoints used by the app:
   - `POST /auth/login`, `POST /auth/refresh`, `POST /auth/logout` (public).
   - `GET/POST/PATCH/DELETE /users`, `GET/PUT /settings`, `GET /reports/summary` (admin).
-  - `GET/POST/PATCH/DELETE /items`; `GET /items` is the sellable catalog, `includeRemoved=true` is admin-only.
+  - `GET/POST/PATCH/DELETE /items`; `GET /items` is the sellable catalog, `includeRemoved=true` is admin-only. The list query accepts only `page`, `pageSize`, and `includeRemoved`, so catalog search and category filtering apply to the loaded page.
   - `POST /orders/counter` creates a **closed and paid** order in one call.
   - `POST /orders/table` opens an order; `POST /orders/:id/items`, `PATCH /orders/:id/items/:itemId`, `DELETE /orders/:id/items/:itemId` edit lines while `OPEN`.
   - `PATCH /orders/:id/pricing`, `POST /orders/:id/request-payment`, `POST /orders/:id/reopen`, `POST /orders/:id/close`, `POST /orders/:id/cancel`.
@@ -120,9 +120,9 @@ src/
 ### Management (admin only)
 
 - Users: create, edit, reactivate, and deactivate. No public sign-up and no physical deletion. An admin cannot deactivate or demote themselves, and the last active admin cannot be removed.
-- Catalog: create, edit, enable/disable category and image, and remove items from the active catalog without destroying historical orders.
-- Settings: service fee switch and rate in basis points (1000 = 10%).
-- Reports: sales summary for a date range, including revenue, ticket average, canceled and open orders, and totals by payment method.
+- Catalog: create, edit, enable/disable category and image, and remove items from the active catalog without destroying historical orders. Search and category filters are local to the loaded page; pagination and `includeRemoved` come from the backend.
+- Settings: service fee switch and rate in basis points (1000 = 10%). Only whole values from 0 to 10000 are accepted.
+- Reports: sales summary for a date range, including revenue, ticket average, canceled and open orders, and totals by payment method. The range defaults to today in UTC and accepts explicit ISO 8601 instants; all totals come from the backend.
 
 ## UI, state, and performance
 

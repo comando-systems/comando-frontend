@@ -164,7 +164,7 @@ function ItemForm({ initialItem, busy, error, onSubmit, onCancel }: ItemFormProp
             value={values.price}
             onChangeText={(price) => update('price', price)}
             placeholder="12.50"
-            helper="Amount in reais with up to two decimal places."
+            helper="Amount in Brazilian currency with up to two decimal places."
             keyboardType="decimal-pad"
             autoCorrect={false}
             editable={!busy}
