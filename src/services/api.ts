@@ -1,6 +1,8 @@
 import { sessionStorage } from '@/services/storage';
 import type {
   AddOrderItemsRequest,
+  BackendSessionResponse,
+  BackendUserResponse,
   ChangeOrderItemQuantityRequest,
   CloseOrderRequest,
   CreateCounterOrderRequest,
@@ -26,6 +28,7 @@ import type {
   UpdateUserRequest,
   UserResponse,
 } from '@/types';
+import { toRoleSet } from '@/utils/roles';
 
 const configuredApiUrl = process.env.EXPO_PUBLIC_API_URL;
 
@@ -53,6 +56,14 @@ const errorMessages: Record<string, string> = {
 
 export function getErrorMessage(code: string): string {
   return errorMessages[code] ?? 'The request could not be completed.';
+}
+
+function toUserResponse(user: BackendUserResponse): UserResponse {
+  return { ...user, roles: toRoleSet(user.roles) };
+}
+
+function toSessionResponse(session: BackendSessionResponse): SessionResponse {
+  return { ...session, user: toUserResponse(session.user) };
 }
 
 export class ApiError extends Error {
@@ -199,7 +210,8 @@ async function performRefresh(refreshToken: string): Promise<SessionResponse | n
       return null;
     }
 
-    const session = await parseJson<SessionResponse>(response);
+    const backendSession = await parseJson<BackendSessionResponse>(response);
+    const session = toSessionResponse(backendSession);
     await sessionStorage.save(session);
     return session;
   } catch {
@@ -281,13 +293,14 @@ function encodeId(id: string): string {
 
 export const api = {
   auth: {
-    login(body: LoginRequest): Promise<SessionResponse> {
-      return request<SessionResponse>('/auth/login', {
+    async login(body: LoginRequest): Promise<SessionResponse> {
+      const session = await request<BackendSessionResponse>('/auth/login', {
         method: 'POST',
         body,
         skipAuth: true,
         skipRefresh: true,
       });
+      return toSessionResponse(session);
     },
     async logout(): Promise<void> {
       const session = await sessionStorage.read();
@@ -305,20 +318,30 @@ export const api = {
     },
   },
   users: {
-    list(query: PaginationParams = {}): Promise<PageResponse<UserResponse>> {
-      return request<PageResponse<UserResponse>>('/users', { query });
+    async list(query: PaginationParams = {}): Promise<PageResponse<UserResponse>> {
+      const page = await request<PageResponse<BackendUserResponse>>('/users', { query });
+      return { ...page, data: page.data.map(toUserResponse) };
     },
-    get(id: string): Promise<UserResponse> {
-      return request<UserResponse>(`/users/${encodeId(id)}`);
+    async get(id: string): Promise<UserResponse> {
+      const user = await request<BackendUserResponse>(`/users/${encodeId(id)}`);
+      return toUserResponse(user);
     },
-    create(body: CreateUserRequest): Promise<UserResponse> {
-      return request<UserResponse>('/users', { method: 'POST', body });
+    async create(body: CreateUserRequest): Promise<UserResponse> {
+      const user = await request<BackendUserResponse>('/users', { method: 'POST', body });
+      return toUserResponse(user);
     },
-    update(id: string, body: UpdateUserRequest): Promise<UserResponse> {
-      return request<UserResponse>(`/users/${encodeId(id)}`, { method: 'PATCH', body });
+    async update(id: string, body: UpdateUserRequest): Promise<UserResponse> {
+      const user = await request<BackendUserResponse>(`/users/${encodeId(id)}`, {
+        method: 'PATCH',
+        body,
+      });
+      return toUserResponse(user);
     },
-    deactivate(id: string): Promise<UserResponse> {
-      return request<UserResponse>(`/users/${encodeId(id)}`, { method: 'DELETE' });
+    async deactivate(id: string): Promise<UserResponse> {
+      const user = await request<BackendUserResponse>(`/users/${encodeId(id)}`, {
+        method: 'DELETE',
+      });
+      return toUserResponse(user);
     },
   },
   items: {

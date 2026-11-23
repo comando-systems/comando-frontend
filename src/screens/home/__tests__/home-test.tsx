@@ -4,6 +4,7 @@ import { Redirect } from 'expo-router';
 import { useSession } from '@/providers/session-provider';
 import Home from '@/screens/home';
 import type { RoleCode, UserResponse } from '@/types';
+import { toRoleSet } from '@/utils/roles';
 
 jest.mock('expo-router', () => ({
   Redirect: jest.fn(() => null),
@@ -18,7 +19,7 @@ function createUser(roles: readonly RoleCode[]): UserResponse {
     id: '1',
     name: 'Ada Lovelace',
     email: 'ada@example.com',
-    roles,
+    roles: toRoleSet(roles),
     isActive: true,
     createdAt: '2026-01-01T00:00:00.000Z',
     updatedAt: '2026-01-01T00:00:00.000Z',

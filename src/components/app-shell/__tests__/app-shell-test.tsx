@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppShell } from '@/components/app-shell';
 import { useSession } from '@/providers/session-provider';
 import type { RoleCode, UserResponse } from '@/types';
+import { toRoleSet } from '@/utils/roles';
 
 jest.mock('expo-router', () => ({
   usePathname: jest.fn(),
@@ -25,7 +26,7 @@ function createUser(roles: readonly RoleCode[]): UserResponse {
     id: '1',
     name: 'Ada Lovelace',
     email: 'ada@example.com',
-    roles,
+    roles: toRoleSet(roles),
     isActive: true,
     createdAt: '2026-01-01T00:00:00.000Z',
     updatedAt: '2026-01-01T00:00:00.000Z',

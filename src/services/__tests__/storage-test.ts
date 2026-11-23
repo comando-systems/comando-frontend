@@ -2,6 +2,7 @@ import * as SecureStore from 'expo-secure-store';
 
 import { createSessionStorage, subscribeToSession } from '@/services/storage';
 import type { SessionResponse } from '@/types';
+import { toRoleSet } from '@/utils/roles';
 
 jest.mock('expo-secure-store', () => ({
   getItemAsync: jest.fn(),
@@ -18,7 +19,7 @@ const session: SessionResponse = {
     id: '1',
     name: 'Ada Lovelace',
     email: 'ada@example.com',
-    roles: ['ADMIN'],
+    roles: toRoleSet(['ADMIN']),
     isActive: true,
     createdAt: '2026-01-01T00:00:00.000Z',
     updatedAt: '2026-01-01T00:00:00.000Z',

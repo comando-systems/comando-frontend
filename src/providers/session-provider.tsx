@@ -89,7 +89,7 @@ export function SessionProvider({ children }: SessionProviderProps) {
   }, []);
 
   const hasRole = useCallback(
-    (role: RoleCode) => session?.user.roles.includes(role) ?? false,
+    (role: RoleCode) => session?.user.roles[role] === role,
     [session],
   );
 

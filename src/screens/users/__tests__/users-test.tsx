@@ -12,6 +12,7 @@ import type {
   UpdateUserRequest,
   UserResponse,
 } from '@/types';
+import { toRoleSet } from '@/utils/roles';
 
 jest.mock('expo-router', () => ({
   Redirect: jest.fn(() => null),
@@ -35,7 +36,7 @@ function makeUser(
     id,
     name,
     email,
-    roles,
+    roles: toRoleSet(roles),
     isActive,
     createdAt,
     updatedAt: createdAt,

@@ -17,12 +17,14 @@ import type {
   CreateUserRequest,
   PageResponse,
   RoleCode,
+  RoleSet,
   UpdateUserRequest,
   UserResponse,
 } from '@/types';
 import { ROLE_CODES } from '@/types';
 import { toErrorMessage } from '@/utils/errors';
 import { permissions } from '@/utils/permissions';
+import { roleSetToArray, toRoleSet } from '@/utils/roles';
 
 const PAGE_SIZE = 20;
 const EMAIL_PATTERN = /^\S+@\S+\.\S+$/;
@@ -37,7 +39,7 @@ interface UserFormValues {
   readonly name: string;
   readonly email: string;
   readonly password: string;
-  readonly roles: readonly RoleCode[];
+  readonly roles: RoleSet;
 }
 
 type UsersMode =
@@ -54,8 +56,10 @@ interface UserFormProps {
   readonly onCancel: () => void;
 }
 
-function roleSummary(roles: readonly RoleCode[]): string {
-  return roles.map((role) => roleLabels[role]).join(', ');
+function roleSummary(roles: RoleSet): string {
+  return ROLE_CODES.filter((role) => roles[role] === role)
+    .map((role) => roleLabels[role])
+    .join(', ');
 }
 
 function validateUserForm(values: UserFormValues, isEdit: boolean, isSelf: boolean): string | null {
@@ -67,11 +71,11 @@ function validateUserForm(values: UserFormValues, isEdit: boolean, isSelf: boole
     return 'Enter a valid email address.';
   }
 
-  if (values.roles.length === 0) {
+  if (ROLE_CODES.every((role) => values.roles[role] !== role)) {
     return 'Select at least one role.';
   }
 
-  if (isSelf && !values.roles.includes('ADMIN')) {
+  if (isSelf && values.roles.ADMIN !== 'ADMIN') {
     return 'You cannot remove your own administrator role.';
   }
 
@@ -100,7 +104,7 @@ function UserForm({
     name: initialUser?.name ?? '',
     email: initialUser?.email ?? '',
     password: '',
-    roles: initialUser?.roles ?? [],
+    roles: initialUser?.roles ?? toRoleSet([]),
   });
   const [validationError, setValidationError] = useState<string | null>(null);
 
@@ -108,9 +112,10 @@ function UserForm({
     setValidationError(null);
     setValues((current) => ({
       ...current,
-      roles: current.roles.includes(role)
-        ? current.roles.filter((entry) => entry !== role)
-        : [...current.roles, role],
+      roles:
+        current.roles[role] === role
+          ? toRoleSet(roleSetToArray(current.roles).filter((entry) => entry !== role))
+          : { ...current.roles, [role]: role },
     }));
   };
 
@@ -184,7 +189,7 @@ function UserForm({
         <Text style={[typography.label, { color: colors.text, marginTop: spacing.lg }]}>Roles</Text>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: spacing.sm }}>
           {ROLE_CODES.map((role) => {
-            const selected = values.roles.includes(role);
+            const selected = values.roles[role] === role;
             const disabled = busy || (isSelf && role === 'ADMIN');
 
             return (
@@ -393,14 +398,14 @@ export default function Users() {
             name: values.name,
             email: values.email,
             password: values.password,
-            roles: values.roles,
+            roles: roleSetToArray(values.roles),
           };
           await api.users.create(body);
         } else if (mode.kind === 'edit') {
           const body: UpdateUserRequest = {
             name: values.name,
             email: values.email,
-            roles: values.roles,
+            roles: roleSetToArray(values.roles),
             ...(values.password.length === 0 ? {} : { password: values.password }),
           };
           await api.users.update(mode.user.id, body);

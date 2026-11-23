@@ -6,6 +6,7 @@ import { useSession } from '@/providers/session-provider';
 import { api, ApiError } from '@/services/api';
 import Tables from '@/screens/tables';
 import type { OrderResponse, PageResponse, RoleCode } from '@/types';
+import { toRoleSet } from '@/utils/roles';
 
 jest.mock('expo-router', () => ({
   useRouter: jest.fn(),
@@ -77,7 +78,7 @@ function mockRoles(roles: readonly RoleCode[]) {
       id: 'user-1',
       name: 'Ada Lovelace',
       email: 'ada@example.com',
-      roles,
+      roles: toRoleSet(roles),
       isActive: true,
       createdAt,
       updatedAt: createdAt,

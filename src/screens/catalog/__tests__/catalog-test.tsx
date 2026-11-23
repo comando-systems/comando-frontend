@@ -6,6 +6,7 @@ import { useSession } from '@/providers/session-provider';
 import { api, ApiError } from '@/services/api';
 import Catalog from '@/screens/catalog';
 import type { CreateItemRequest, ItemResponse, PageResponse } from '@/types';
+import { toRoleSet } from '@/utils/roles';
 
 jest.mock('expo-router', () => ({
   Redirect: jest.fn(() => null),
@@ -58,7 +59,7 @@ function mockRoles(roles: readonly ('ADMIN' | 'CASHIER' | 'SERVER')[]) {
       id: 'user-1',
       name: 'Ada Lovelace',
       email: 'ada@example.com',
-      roles,
+      roles: toRoleSet(roles),
       isActive: true,
       createdAt,
       updatedAt: createdAt,
