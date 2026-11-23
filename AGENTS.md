@@ -134,6 +134,7 @@ src/
 ## Testing and definition of done
 
 - Jest uses the `jest-expo` preset. Tests live beside each component or screen implementation and use `@testing-library/react-native`.
+- Git hooks in `.github/githooks/` enforce Conventional Commits and run lint, type checking, the full test suite, and tests scoped to staged source changes; `pnpm install` configures `core.hooksPath` on a fresh checkout and `pnpm run prepare` refreshes it.
 - Cover success, invalid input, unauthorized access, and important edge cases for the unit under test. Mock external boundaries (API, storage, navigation), not the unit itself.
 - Before declaring a change complete, run and pass:
   - `npx expo lint`

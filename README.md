@@ -116,6 +116,8 @@ Money is always integer cents, IDs are decimal strings, and timestamps are ISO 8
 
 `main` is protected by a GitHub ruleset: no direct commits, no force pushes, squash merge only. Create a branch, open a pull request that references its issue, and let CI checks pass before merging. Issues live on GitHub; this repository contains no issue-tracking files.
 
+`pnpm install` points Git at the hooks in `.github/githooks/` on a fresh checkout; run `pnpm run prepare` to refresh the setting. The `pre-commit` hook runs lint, type checking, the full Jest suite, and tests scoped to staged source files. The `commit-msg` hook requires Conventional Commits such as `feat: add payment split` or `fix(catalog): keep filters local`.
+
 Before marking work done, run:
 
 ```bash
