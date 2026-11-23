@@ -28,6 +28,18 @@ const links: readonly ManagementLink[] = [
     href: '/management/catalog',
     icon: 'food',
   },
+  {
+    label: 'Settings',
+    description: 'Configure the service fee applied to new orders.',
+    href: '/management/settings',
+    icon: 'settings',
+  },
+  {
+    label: 'Reports',
+    description: 'Review sales summaries for a date range.',
+    href: '/management/reports',
+    icon: 'reports',
+  },
 ];
 
 export default function Management() {
