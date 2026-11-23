@@ -110,7 +110,7 @@ A user can hold multiple roles; permissions are the union of them. Client-side g
 
 The backend contract is published at `GET /openapi.json`, with interactive documentation at `/docs`. The frontend talks to it only through `src/services/api.ts`.
 
-Money is always integer cents, IDs are decimal strings, and timestamps are ISO 8601 UTC. Order totals, pricing, and payment validation are calculated by the backend; the client never submits trusted totals.
+Money is always integer cents, IDs are decimal strings, and timestamps are ISO 8601 UTC. Order totals, pricing, and payment validation are calculated by the backend; the client never submits trusted totals. Catalog pagination and `includeRemoved` are server-owned, while search and category filters apply to the loaded page because the backend item list exposes no search parameters. Sales reports default to today in UTC, accept explicit ISO 8601 instants, and display backend-owned totals without local recalculation.
 
 ## Development workflow
 
@@ -122,6 +122,8 @@ Before marking work done, run:
 npx expo lint
 npx tsc --noEmit
 pnpm test
+npx expo-doctor
+npx expo export --platform web
 ```
 
 ## License
