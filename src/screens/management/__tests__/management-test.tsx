@@ -38,14 +38,17 @@ describe('<Management />', () => {
     mockRoles(['ADMIN']);
   });
 
-  it('links administrators to user management', async () => {
+  it('links administrators to management sections', async () => {
     await render(<Management />);
 
     expect(screen.getByText('Users')).toBeTruthy();
+    expect(screen.getByText('Catalog')).toBeTruthy();
 
     await fireEvent.press(screen.getByTestId('management-users-link'));
+    await fireEvent.press(screen.getByTestId('management-catalog-link'));
 
     expect(push).toHaveBeenCalledWith('/management/users');
+    expect(push).toHaveBeenCalledWith('/management/catalog');
     expect(Redirect).not.toHaveBeenCalled();
   });
 
@@ -56,5 +59,6 @@ describe('<Management />', () => {
 
     expect(jest.mocked(Redirect).mock.calls.at(-1)?.[0]?.href).toBe('/');
     expect(screen.queryByTestId('management-users-link')).toBeNull();
+    expect(screen.queryByTestId('management-catalog-link')).toBeNull();
   });
 });
