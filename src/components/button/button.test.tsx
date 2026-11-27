@@ -2,7 +2,7 @@ import { fireEvent, render, screen } from '@testing-library/react-native';
 import { StyleSheet } from 'react-native';
 
 import { Button } from '@/components/button';
-import { layout } from '@/theme';
+import { colors, layout } from '@/theme';
 
 describe('<Button />', () => {
   it('renders its label and icon', async () => {
@@ -45,6 +45,23 @@ describe('<Button />', () => {
 
     expect(StyleSheet.flatten(screen.getByTestId('button').props.style)).toEqual(
       expect.objectContaining({ maxWidth: layout.formMaxWidth, width: '100%' }),
+    );
+  });
+
+  it('renders secondary and tertiary variants without a filled background', async () => {
+    const { unmount } = await render(
+      <Button label="Secondary" onPress={jest.fn()} variant="secondary" />,
+    );
+
+    expect(StyleSheet.flatten(screen.getByTestId('button').props.style)).toEqual(
+      expect.objectContaining({ backgroundColor: 'transparent', borderColor: colors.primary }),
+    );
+
+    unmount();
+    await render(<Button label="Tertiary" onPress={jest.fn()} variant="tertiary" />);
+
+    expect(StyleSheet.flatten(screen.getByTestId('button').props.style)).toEqual(
+      expect.objectContaining({ backgroundColor: 'transparent', borderColor: 'transparent' }),
     );
   });
 });

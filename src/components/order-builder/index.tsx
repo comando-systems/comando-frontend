@@ -15,7 +15,6 @@ import { Card } from '@/components/card';
 import { EmptyState } from '@/components/empty-state';
 import { ErrorBanner } from '@/components/error-banner';
 import { Field } from '@/components/field';
-import { Form } from '@/components/form';
 import { Icon } from '@/components/icon';
 import { LoadingState } from '@/components/loading-state';
 import { MoneyText } from '@/components/money-text';
@@ -176,6 +175,9 @@ const styles = StyleSheet.create({
     borderTopColor: colors.border,
     marginTop: spacing.sm,
     paddingTop: spacing.md,
+  },
+  pricingActions: {
+    marginTop: spacing.md,
   },
   field: {
     marginBottom: spacing.md,
@@ -650,18 +652,7 @@ export function OrderBuilder(props: OrderBuilderProps) {
         </View>
       )}
 
-      <Form
-        style={styles.card}
-        testID="pricing-card"
-        submit="Apply pricing"
-        onSubmit={handleApplyPricing}
-        submitButtonProps={{
-          variant: 'secondary',
-          size: 'md',
-          disabled: !isEditable || busy,
-          testID: 'apply-pricing-button',
-        }}
-      >
+      <Card style={styles.card} testID="pricing-card">
         <Text style={[typography.label, styles.sectionTitle]}>Pricing</Text>
         <Field
           label="Surcharge (cents)"
@@ -696,7 +687,17 @@ export function OrderBuilder(props: OrderBuilderProps) {
         <Text style={styles.caption}>
           {`Maximum discount: ${preview.maxDiscountCents} cents`}
         </Text>
-      </Form>
+        <View style={styles.pricingActions}>
+          <Button
+            label="Apply pricing"
+            onPress={handleApplyPricing}
+            disabled={!isEditable || busy}
+            variant="secondary"
+            fullWidth
+            testID="apply-pricing-button"
+          />
+        </View>
+      </Card>
 
       <Card style={styles.card} testID="pricing-preview">
         <SummaryRow label="Subtotal" cents={preview.subtotalCents} testID="preview-subtotal" />

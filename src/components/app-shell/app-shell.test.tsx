@@ -75,6 +75,7 @@ describe('<AppShell />', () => {
     const { getByText, getByTestId, queryByTestId } = await renderShell();
 
     expect(getByText('Screen content')).toBeTruthy();
+    expect(getByTestId('app-logo')).toBeTruthy();
     expect(getByTestId('nav-counter')).toBeTruthy();
     expect(getByTestId('nav-history')).toBeTruthy();
     expect(getByTestId('nav-management')).toBeTruthy();
@@ -115,5 +116,15 @@ describe('<AppShell />', () => {
     await fireEvent.press(screen.getByTestId('sign-out-button'));
 
     expect(signOut).toHaveBeenCalled();
+  });
+
+  it('highlights the active navigation item', async () => {
+    jest.mocked(usePathname).mockReturnValue('/counter');
+    mockRoles(['CASHIER']);
+
+    await renderShell();
+
+    expect(screen.getByTestId('nav-counter').props.accessibilityState.selected).toBe(true);
+    expect(screen.getByTestId('nav-tables').props.accessibilityState.selected).toBe(false);
   });
 });

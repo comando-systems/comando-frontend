@@ -1,12 +1,12 @@
 import { useFocusEffect, useRouter } from 'expo-router';
-import { memo, useCallback, useState } from 'react';
-import { FlatList, RefreshControl, Text, View } from 'react-native';
+import { memo, useCallback, useMemo, useState } from 'react';
+import { FlatList, RefreshControl, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 
+import { Button } from '@/components/button';
 import { Card } from '@/components/card';
 import { EmptyState } from '@/components/empty-state';
 import { ErrorBanner } from '@/components/error-banner';
 import { Field } from '@/components/field';
-import { Form } from '@/components/form';
 import { Icon } from '@/components/icon';
 import { LoadingState } from '@/components/loading-state';
 import { MoneyText } from '@/components/money-text';
@@ -14,7 +14,7 @@ import { OrderStatusBadge } from '@/components/order-status-badge';
 import { Screen } from '@/components/screen';
 import { useSession } from '@/providers/session-provider';
 import { api } from '@/services/api';
-import { colors, spacing, typography } from '@/theme';
+import { colors, radii, spacing, typography } from '@/theme';
 import type { OrderResponse } from '@/types';
 import { occupiedOrderId, toErrorMessage } from '@/utils/errors';
 import { orderItemCountLabel } from '@/utils/order-display';
@@ -25,31 +25,127 @@ interface OrderRowProps {
   readonly onPress: (orderId: string) => void;
 }
 
+const styles = StyleSheet.create({
+  summaryPill: {
+    alignItems: 'center',
+    backgroundColor: colors.primarySoft,
+    borderRadius: radii.pill,
+    flexDirection: 'row',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+  },
+  summaryText: {
+    color: colors.primaryDark,
+    ...typography.label,
+  },
+  toolbar: {
+    alignItems: 'flex-end',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.md,
+    marginBottom: spacing.lg,
+  },
+  search: {
+    maxWidth: 380,
+  },
+  legend: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexGrow: 1,
+    gap: spacing.lg,
+    justifyContent: 'flex-end',
+  },
+  legendItem: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: spacing.xs,
+  },
+  legendDot: {
+    borderRadius: radii.pill,
+    height: 8,
+    width: 8,
+  },
+  legendText: {
+    color: colors.textMuted,
+    ...typography.caption,
+  },
+  tableCard: {
+    flex: 1,
+    marginBottom: spacing.md,
+  },
+  tableCardOpen: {
+    backgroundColor: colors.primarySoft,
+    borderColor: colors.primary,
+  },
+  tableCardTop: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  tableIcon: {
+    alignItems: 'center',
+    backgroundColor: colors.surfaceMuted,
+    borderRadius: radii.md,
+    height: 40,
+    justifyContent: 'center',
+    width: 40,
+  },
+  tableIconOpen: {
+    backgroundColor: colors.surface,
+  },
+  tableName: {
+    color: colors.text,
+    fontSize: 17,
+    fontWeight: '800',
+    marginTop: spacing.md,
+  },
+  tableAmount: {
+    color: colors.primaryDark,
+    fontSize: 15,
+    fontWeight: '800',
+    marginTop: spacing.xs,
+  },
+  tableHint: {
+    color: colors.textMuted,
+    marginTop: spacing.sm,
+    ...typography.caption,
+  },
+  tableHintAction: {
+    color: colors.primaryDark,
+    marginTop: spacing.xs,
+  },
+  sectionLabel: {
+    color: colors.text,
+    marginBottom: spacing.md,
+    ...typography.label,
+  },
+});
+
 const OrderRow = memo(function OrderRow({ order, onPress }: OrderRowProps) {
+  const isOpen = order.status === 'OPEN';
+
   return (
     <Card
       testID={`table-order-${order.id}`}
       onPress={() => onPress(order.id)}
-      style={{ marginBottom: spacing.md }}
+      style={[styles.tableCard, isOpen ? styles.tableCardOpen : null]}
     >
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-        <OrderStatusBadge
-          status={order.status}
-          testID={`table-order-status-${order.id}`}
-        />
-        <MoneyText cents={order.totalCents} size="md" testID={`table-order-total-${order.id}`} />
-      </View>
-      <View style={{ marginTop: spacing.md, flexDirection: 'row', alignItems: 'center' }}>
-        <Icon name="table" size="sm" color={colors.primaryDark} />
-        <View style={{ marginLeft: spacing.sm, flex: 1 }}>
-          <Text style={[typography.subtitle, { color: colors.text }]}>
-            {order.tableCode ?? `Order ${order.id}`}
-          </Text>
-          <Text style={[typography.caption, { color: colors.textMuted, marginTop: spacing.xs }]}>
-            {orderItemCountLabel(order)}
-          </Text>
+      <View style={styles.tableCardTop}>
+        <View style={[styles.tableIcon, isOpen ? styles.tableIconOpen : null]}>
+          <Icon name="table" size="sm" color={isOpen ? colors.primaryDark : colors.textMuted} />
         </View>
+        <OrderStatusBadge status={order.status} testID={`table-order-status-${order.id}`} />
       </View>
+      <Text style={styles.tableName}>{order.tableCode ?? `Order ${order.id}`}</Text>
+      <MoneyText
+        cents={order.totalCents}
+        size="md"
+        color={colors.primaryDark}
+        testID={`table-order-total-${order.id}`}
+      />
+      <Text style={styles.tableHint}>{orderItemCountLabel(order)}</Text>
+      <Text style={[styles.tableHint, styles.tableHintAction]}>Tap to open order</Text>
     </Card>
   );
 });
@@ -57,7 +153,9 @@ const OrderRow = memo(function OrderRow({ order, onPress }: OrderRowProps) {
 export default function Tables() {
   const { user } = useSession();
   const router = useRouter();
+  const { width } = useWindowDimensions();
   const [orders, setOrders] = useState<readonly OrderResponse[]>([]);
+  const [query, setQuery] = useState('');
   const [tableCode, setTableCode] = useState('');
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -133,28 +231,67 @@ export default function Tables() {
     }
   }
 
+  const normalizedQuery = query.trim().toLowerCase();
+  const visibleOrders = useMemo(
+    () =>
+      normalizedQuery.length === 0
+        ? orders
+        : orders.filter((order) =>
+            (order.tableCode ?? `Order ${order.id}`).toLowerCase().includes(normalizedQuery),
+          ),
+    [normalizedQuery, orders],
+  );
+  const columns = width >= 900 ? 4 : width >= 600 ? 3 : 2;
+
   const listHeader = (
     <View>
-      {canOpenTable ? (
-        <Form
-          testID="open-table-form"
-          submit="Open table"
-          onSubmit={() => {
-            void handleOpenTable();
-          }}
-          submitButtonProps={{ icon: 'table', loading: opening, testID: 'open-table-button' }}
-          style={{ marginBottom: spacing.xl }}
-        >
-          <Field
-            label="Table code"
-            testID="table-code-input"
-            value={tableCode}
-            onChangeText={setTableCode}
-            placeholder="Enter the table code"
-            autoCapitalize="characters"
-            editable={!opening}
+      <View style={styles.toolbar}>
+        <Field
+          label="Search tables"
+          testID="table-search"
+          value={query}
+          onChangeText={setQuery}
+          placeholder="Search by table code"
+          icon="search"
+          autoCorrect={false}
+          editable={!opening}
+          containerStyle={styles.search}
+        />
+        <View style={styles.legend}>
+          <View style={styles.legendItem}>
+            <View style={[styles.legendDot, { backgroundColor: colors.success }]} />
+            <Text style={styles.legendText}>Open</Text>
+          </View>
+          <View style={styles.legendItem}>
+            <View style={[styles.legendDot, { backgroundColor: colors.primary }]} />
+            <Text style={styles.legendText}>Payment requested</Text>
+          </View>
+        </View>
+        {canOpenTable ? (
+          <Button
+            label="Open table"
+            onPress={() => {
+              void handleOpenTable();
+            }}
+            icon="table"
+            loading={opening}
+            variant="secondary"
+            testID="open-table-button"
           />
-        </Form>
+        ) : null}
+      </View>
+
+      {canOpenTable ? (
+        <Field
+          label="Table code"
+          testID="table-code-input"
+          value={tableCode}
+          onChangeText={setTableCode}
+          placeholder="Enter the table code"
+          autoCapitalize="characters"
+          editable={!opening}
+          containerStyle={{ marginBottom: spacing.xl }}
+        />
       ) : null}
 
       {error === null ? null : (
@@ -170,32 +307,47 @@ export default function Tables() {
       )}
 
       {orders.length === 0 ? null : (
-        <View style={{ marginBottom: spacing.md }}>
-          <Text style={[typography.label, { color: colors.text }]}>Open tables</Text>
-        </View>
+        <Text style={styles.sectionLabel}>Open tables</Text>
       )}
     </View>
   );
 
   if (loading) {
     return (
-      <Screen title="Tables" subtitle="Live table orders">
+      <Screen title="Tables" subtitle="Track open operations and start new orders.">
         <LoadingState message="Loading tables..." testID="tables-loading" />
       </Screen>
     );
   }
 
   return (
-    <Screen title="Tables" subtitle="Live table orders">
+    <Screen
+      title="Tables"
+      subtitle="Track open operations and start new orders."
+      action={
+        <View style={styles.summaryPill}>
+          <Icon name="table" size="sm" color={colors.primaryDark} />
+          <Text style={styles.summaryText}>
+            {`${orders.length} ${orders.length === 1 ? 'table' : 'tables'} in service`}
+          </Text>
+        </View>
+      }
+    >
       <FlatList
         testID="tables-list"
-        data={orders}
+        data={visibleOrders}
         keyExtractor={(order) => order.id}
+        numColumns={columns}
+        columnWrapperStyle={{ gap: spacing.md }}
         ListHeaderComponent={listHeader}
         ListEmptyComponent={
           <EmptyState
-            title="No open tables"
-            description="Table orders will appear here."
+            title={normalizedQuery.length === 0 ? 'No open tables' : 'No tables found'}
+            description={
+              normalizedQuery.length === 0
+                ? 'Table orders will appear here.'
+                : 'No open table matches your search.'
+            }
             icon="table"
           />
         }

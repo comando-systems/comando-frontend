@@ -20,6 +20,13 @@ describe('<Field />', () => {
     expect(screen.queryByText('Use the printed code.')).toBeNull();
   });
 
+  it('renders an optional leading icon', async () => {
+    await render(<Field label="Search tables" testID="table-search" icon="search" />);
+
+    expect(screen.getByTestId('field-icon')).toBeTruthy();
+    expect(screen.getByTestId('table-search')).toBeTruthy();
+  });
+
   it('forwards text changes', async () => {
     const onChangeText = jest.fn();
     await render(<Field label="Table code" testID="table-input" onChangeText={onChangeText} />);

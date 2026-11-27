@@ -3,7 +3,7 @@ import { ActivityIndicator, Pressable, Text } from 'react-native';
 import { Icon, type IconName } from '@/components/icon';
 import { colors, layout, radii, spacing, typography } from '@/theme';
 
-export type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'ghost';
+export type ButtonVariant = 'primary' | 'secondary' | 'tertiary' | 'danger' | 'ghost';
 export type ButtonSize = 'md' | 'lg';
 
 export interface ButtonProps {
@@ -26,9 +26,14 @@ const palettes: Record<ButtonVariant, { background: string; text: string; border
     border: colors.primary,
   },
   secondary: {
-    background: colors.surface,
+    background: 'transparent',
     text: colors.primaryDark,
-    border: colors.border,
+    border: colors.primary,
+  },
+  tertiary: {
+    background: 'transparent',
+    text: colors.primaryDark,
+    border: 'transparent',
   },
   danger: {
     background: colors.danger,

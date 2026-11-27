@@ -62,7 +62,12 @@ export default function Login() {
           >
             <Icon name="food" size="lg" color={colors.white} />
           </View>
-          <Text style={[typography.display, { color: colors.primary, marginTop: spacing.lg }]}>
+          <Text
+            style={[
+              typography.display,
+              { color: colors.primaryDark, marginTop: spacing.lg },
+            ]}
+          >
             Comando
           </Text>
           <Text
