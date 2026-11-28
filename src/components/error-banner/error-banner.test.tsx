@@ -4,15 +4,17 @@ import { ErrorBanner } from '@/components/error-banner';
 
 describe('<ErrorBanner />', () => {
   it('renders the error message', async () => {
-    await render(<ErrorBanner message="The order could not be loaded." />);
+    await render(<ErrorBanner message="Não foi possível carregar o pedido." />);
 
-    expect(screen.getByText('The order could not be loaded.')).toBeTruthy();
+    expect(screen.getByText('Não foi possível carregar o pedido.')).toBeTruthy();
     expect(screen.queryByTestId('error-banner-retry')).toBeNull();
   });
 
   it('offers a retry action when requested', async () => {
     const onRetry = jest.fn();
-    await render(<ErrorBanner message="The order could not be loaded." onRetry={onRetry} />);
+    await render(
+      <ErrorBanner message="Não foi possível carregar o pedido." onRetry={onRetry} />,
+    );
 
     await fireEvent.press(screen.getByTestId('error-banner-retry'));
 
@@ -24,12 +26,12 @@ describe('<ErrorBanner />', () => {
       <ErrorBanner
         message="The order could not be loaded."
         onRetry={jest.fn()}
-        retryLabel="Try again"
+        retryLabel="Tente novamente"
         testID="banner"
       />,
     );
 
-    expect(screen.getByText('Try again')).toBeTruthy();
+    expect(screen.getByText('Tente novamente')).toBeTruthy();
     await fireEvent(screen.getByTestId('banner-retry'), 'pressIn');
   });
 });

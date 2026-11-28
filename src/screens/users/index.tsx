@@ -10,6 +10,7 @@ import { ErrorBanner } from '@/components/error-banner';
 import { Field } from '@/components/field';
 import { Form } from '@/components/form';
 import { LoadingState } from '@/components/loading-state';
+import { Pagination } from '@/components/pagination';
 import { Screen } from '@/components/screen';
 import { useSession } from '@/providers/session-provider';
 import { api } from '@/services/api';
@@ -31,9 +32,9 @@ const PAGE_SIZE = 20;
 const EMAIL_PATTERN = /^\S+@\S+\.\S+$/;
 
 const roleLabels: Record<RoleCode, string> = {
-  ADMIN: 'Administrator',
-  CASHIER: 'Cashier',
-  SERVER: 'Server',
+  ADMIN: 'Administrador',
+  CASHIER: 'Caixa',
+  SERVER: 'Garçom',
 };
 
 interface UserFormValues {
@@ -65,27 +66,27 @@ function roleSummary(roles: RoleSet): string {
 
 function validateUserForm(values: UserFormValues, isEdit: boolean, isSelf: boolean): string | null {
   if (values.name.trim().length === 0) {
-    return 'Enter a name.';
+    return 'Informe um nome.';
   }
 
   if (!EMAIL_PATTERN.test(values.email.trim())) {
-    return 'Enter a valid email address.';
+    return 'Informe um e-mail válido.';
   }
 
   if (ROLE_CODES.every((role) => values.roles[role] !== role)) {
-    return 'Select at least one role.';
+    return 'Selecione ao menos um perfil.';
   }
 
   if (isSelf && values.roles.ADMIN !== 'ADMIN') {
-    return 'You cannot remove your own administrator role.';
+    return 'Você não pode remover seu próprio perfil de administrador.';
   }
 
   if (!isEdit && (values.password.length < 8 || values.password.length > 128)) {
-    return 'Password must be 8 to 128 characters.';
+    return 'A senha deve ter de 8 a 128 caracteres.';
   }
 
   if (isEdit && values.password.length > 0 && (values.password.length < 8 || values.password.length > 128)) {
-    return 'Password must be 8 to 128 characters.';
+    return 'A senha deve ter de 8 a 128 caracteres.';
   }
 
   return null;
@@ -139,37 +140,37 @@ function UserForm({
   const displayedError = validationError ?? error;
 
   return (
-    <Screen scroll title={isEdit ? 'Edit user' : 'Create user'} subtitle="Administrator access">
+    <Screen scroll title={isEdit ? 'Editar usuário' : 'Criar usuário'} subtitle="Acesso de administrador">
       <Form
         testID="user-form"
-        submit={isEdit ? 'Save user' : 'Create user'}
+        submit={isEdit ? 'Salvar usuário' : 'Criar usuário'}
         onSubmit={handleSubmit}
-        cancel="Cancel"
+        cancel="Cancelar"
         onCancel={onCancel}
         submitButtonProps={{ loading: busy, icon: 'check', size: 'lg', testID: 'user-submit' }}
         cancelButtonProps={{ disabled: busy, testID: 'user-cancel' }}
       >
         <Field
-          label="Name"
+          label="Nome"
           value={values.name}
           onChangeText={(name) => {
             setValidationError(null);
             setValues((current) => ({ ...current, name }));
           }}
-          placeholder="Full name"
+          placeholder="Nome completo"
           autoCapitalize="words"
           editable={!busy}
           testID="user-name"
         />
         <View style={{ marginTop: spacing.md }}>
           <Field
-            label="Email"
+            label="E-mail"
             value={values.email}
             onChangeText={(email) => {
               setValidationError(null);
               setValues((current) => ({ ...current, email }));
             }}
-            placeholder="user@example.com"
+            placeholder="usuario@exemplo.com"
             autoCapitalize="none"
             autoCorrect={false}
             keyboardType="email-address"
@@ -179,13 +180,13 @@ function UserForm({
         </View>
         <View style={{ marginTop: spacing.md }}>
           <Field
-            label={isEdit ? 'New password (optional)' : 'Password'}
+            label={isEdit ? 'Nova senha (opcional)' : 'Senha'}
             value={values.password}
             onChangeText={(password) => {
               setValidationError(null);
               setValues((current) => ({ ...current, password }));
             }}
-            placeholder="8 to 128 characters"
+            placeholder="De 8 a 128 caracteres"
             secureTextEntry
             autoCapitalize="none"
             autoCorrect={false}
@@ -195,7 +196,7 @@ function UserForm({
           />
         </View>
 
-        <Text style={[typography.label, { color: colors.text, marginTop: spacing.lg }]}>Roles</Text>
+        <Text style={[typography.label, { color: colors.text, marginTop: spacing.lg }]}>Perfis</Text>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: spacing.sm }}>
           {ROLE_CODES.map((role) => {
             const selected = values.roles[role] === role;
@@ -230,7 +231,7 @@ function UserForm({
             style={[typography.caption, { color: colors.textMuted, marginTop: spacing.xs }]}
             testID="user-self-role-note"
           >
-            You cannot remove your own administrator role.
+            Você não pode remover seu próprio perfil de administrador.
           </Text>
         ) : null}
 
@@ -269,7 +270,7 @@ const UserRow = memo(function UserRow({
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
         <Text style={[typography.subtitle, { color: colors.text, flex: 1 }]}>{user.name}</Text>
         <Badge
-          label={user.isActive ? 'Active' : 'Inactive'}
+          label={user.isActive ? 'Ativo' : 'Inativo'}
           tone={user.isActive ? 'success' : 'neutral'}
           testID={`user-active-${user.id}`}
         />
@@ -283,7 +284,7 @@ const UserRow = memo(function UserRow({
       <View style={{ flexDirection: 'row', marginTop: spacing.md }}>
         <View style={{ flex: 1, marginRight: spacing.sm }}>
           <Button
-            label="Edit"
+            label="Editar"
             onPress={() => onEdit(user)}
             variant="secondary"
             disabled={busy}
@@ -293,7 +294,7 @@ const UserRow = memo(function UserRow({
         <View style={{ flex: 1 }}>
           {user.isActive ? (
             <Button
-              label="Deactivate"
+              label="Desativar"
               onPress={() => onDeactivate(user)}
               variant="danger"
               disabled={busy || isSelf}
@@ -301,7 +302,7 @@ const UserRow = memo(function UserRow({
             />
           ) : (
             <Button
-              label="Reactivate"
+              label="Reativar"
               onPress={() => onReactivate(user)}
               disabled={busy}
               testID={`user-reactivate-${user.id}`}
@@ -314,7 +315,7 @@ const UserRow = memo(function UserRow({
           style={[typography.caption, { color: colors.textMuted, marginTop: spacing.sm }]}
           testID={`user-self-note-${user.id}`}
         >
-          You cannot deactivate your own account.
+          Você não pode desativar sua própria conta.
         </Text>
       ) : null}
     </Card>
@@ -465,8 +466,8 @@ export default function Users() {
 
   if (loading && users.length === 0) {
     return (
-      <Screen title="Users" subtitle="Staff accounts and roles">
-        <LoadingState message="Loading users..." testID="users-loading" />
+      <Screen title="Usuários" subtitle="Contas da equipe e perfis">
+        <LoadingState message="Carregando usuários..." testID="users-loading" />
       </Screen>
     );
   }
@@ -475,7 +476,7 @@ export default function Users() {
   const listHeader = (
     <View>
       <Button
-        label="Add user"
+        label="Adicionar usuário"
         onPress={openCreate}
         icon="add"
         fullWidth
@@ -494,7 +495,7 @@ export default function Users() {
       )}
       {users.length === 0 ? null : (
         <View style={{ marginTop: spacing.lg }}>
-          <Text style={[typography.label, { color: colors.text }]}>Users</Text>
+          <Text style={[typography.label, { color: colors.text }]}>Usuários</Text>
         </View>
       )}
     </View>
@@ -503,33 +504,21 @@ export default function Users() {
   const listFooter = (
     <Card testID="users-pagination" style={{ marginTop: spacing.md }}>
       <Text style={[typography.label, { color: colors.text }]} testID="users-page-label">
-        {`Page ${page} of ${totalPages}`}
+        {`Página ${page} de ${totalPages}`}
       </Text>
-      <View style={{ flexDirection: 'row', marginTop: spacing.md }}>
-        <View style={{ flex: 1, marginRight: spacing.sm }}>
-          <Button
-            label="Previous"
-            onPress={() => setPage((current) => Math.max(1, current - 1))}
-            variant="secondary"
-            disabled={page <= 1}
-            testID="users-previous"
-          />
-        </View>
-        <View style={{ flex: 1 }}>
-          <Button
-            label="Next"
-            onPress={() => setPage((current) => current + 1)}
-            variant="secondary"
-            disabled={page >= totalPages}
-            testID="users-next"
-          />
-        </View>
+      <View style={{ marginTop: spacing.md }}>
+        <Pagination
+          page={page}
+          totalPages={totalPages}
+          onPageChange={setPage}
+          testID="users-pages"
+        />
       </View>
     </Card>
   );
 
   return (
-    <Screen title="Users" subtitle="Staff accounts and roles">
+    <Screen title="Usuários" subtitle="Contas da equipe e perfis">
       <FlatList
         testID="users-list"
         data={users}
@@ -538,8 +527,8 @@ export default function Users() {
         ListFooterComponent={listFooter}
         ListEmptyComponent={
           <EmptyState
-            title="No users found"
-            description="Staff accounts will appear here."
+            title="Nenhum usuário encontrado"
+            description="As contas da equipe aparecerão aqui."
             icon="users"
           />
         }

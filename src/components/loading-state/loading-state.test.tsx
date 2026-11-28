@@ -10,8 +10,8 @@ describe('<LoadingState />', () => {
   });
 
   it('renders a message when provided', async () => {
-    await render(<LoadingState message="Loading orders..." />);
+    await render(<LoadingState message="Carregando pedidos..." />);
 
-    expect(screen.getByText('Loading orders...')).toBeTruthy();
+    expect(screen.getByText('Carregando pedidos...')).toBeTruthy();
   });
 });

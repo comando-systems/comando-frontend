@@ -235,7 +235,7 @@ describe('API client', () => {
 
     await expect(api.orders.get('10')).rejects.toMatchObject({
       code: 'SESSION_EXPIRED',
-      message: 'Your session has expired. Please sign in again.',
+      message: 'Sua sessão expirou. Entre novamente.',
     });
     expect(sessionStorage.clear).toHaveBeenCalled();
   });
@@ -251,7 +251,7 @@ describe('API client', () => {
       const apiError = error as ApiError;
       expect(apiError).toBeInstanceOf(ApiError);
       expect(apiError.code).toBe('TABLE_OCCUPIED');
-      expect(apiError.message).toBe('This table is already occupied.');
+      expect(apiError.message).toBe('Esta mesa já está ocupada.');
       expect(apiError.details).toEqual({ orderId: '77' });
       expect(apiError.requestId).toBe('request-1');
       expect(apiError.message).not.toContain('Backend detail');
@@ -264,7 +264,7 @@ describe('API client', () => {
 
     await expect(api.settings.get()).rejects.toMatchObject({
       code: 'NEW_BACKEND_CODE',
-      message: 'The request could not be completed.',
+      message: 'A solicitação não pôde ser concluída.',
     });
   });
 
@@ -274,7 +274,7 @@ describe('API client', () => {
 
     await expect(api.auth.login({ email: 'a@b.co', password: 'secret123' })).rejects.toMatchObject({
       code: 'NETWORK_ERROR',
-      message: 'The server could not be reached. Check your connection.',
+      message: 'Não foi possível contatar o servidor. Verifique sua conexão.',
     });
   });
 });

@@ -85,7 +85,7 @@ interface PendingPricing {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    paddingBottom: spacing.xl,
   },
   header: {
     paddingBottom: spacing.lg,
@@ -263,14 +263,14 @@ const CatalogRow = memo(function CatalogRow({
           </Text>
           <MoneyText cents={item.priceCents} size="sm" color={colors.primaryDark} />
         </View>
-        {!isSellable(item) ? <Badge label="Cannot order" tone="danger" /> : null}
+        {!isSellable(item) ? <Badge label="Não é possível pedir" tone="danger" /> : null}
       </View>
       <View style={styles.lineActions}>
         {disabled || !isSellable(item) ? (
-          <Badge label={quantity > 0 ? 'In order' : 'Unavailable'} tone="neutral" />
+          <Badge label={quantity > 0 ? 'No pedido' : 'Indisponível'} tone="neutral" />
         ) : quantity === 0 ? (
           <Button
-            label="Add"
+            label="Adicionar"
             onPress={() => onAdd(item.id)}
             fullWidth
             testID={`add-item-${item.id}`}
@@ -330,7 +330,7 @@ const BuilderLine = memo(function BuilderLine({
         )}
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={`Remove ${line.itemName}`}
+          accessibilityLabel={`Remover ${line.itemName}`}
           disabled={!canRemove}
           testID={`remove-${line.itemId}`}
           onPress={() => onRemove(line.itemId)}
@@ -423,7 +423,7 @@ export function OrderBuilder(props: OrderBuilderProps) {
 
         return {
           itemId: line.itemId,
-          itemName: orderLine?.itemName ?? catalogItem?.name ?? 'Unavailable item',
+          itemName: orderLine?.itemName ?? catalogItem?.name ?? 'Item indisponível',
           unitPriceCents: orderLine?.unitPriceCents ?? catalogItem?.priceCents ?? 0,
           imageUrl: catalogItem?.imageUrl ?? null,
           quantity: line.quantity,
@@ -610,8 +610,8 @@ export function OrderBuilder(props: OrderBuilderProps) {
   const listHeader = (
     <View style={styles.header}>
       <View style={styles.titleRow}>
-        <Text style={[typography.subtitle, { color: colors.text }]}>Order builder</Text>
-        {isEditable ? null : <Badge label="Locked" tone="warning" icon="lock" />}
+        <Text style={[typography.subtitle, { color: colors.text }]}>Montagem do pedido</Text>
+        {isEditable ? null : <Badge label="Bloqueado" tone="warning" icon="lock" />}
         {busy ? (
           <ActivityIndicator color={colors.primary} testID="order-builder-busy" style={styles.busy} />
         ) : null}
@@ -628,11 +628,11 @@ export function OrderBuilder(props: OrderBuilderProps) {
       )}
 
       <Field
-        label="Search catalog"
+        label="Buscar no catálogo"
         testID="catalog-search"
         value={query}
         onChangeText={setQuery}
-        placeholder="Search by name or category"
+        placeholder="Buscar por nome ou categoria"
         editable={isEditable}
         containerStyle={{ marginTop: spacing.lg }}
       />
@@ -640,7 +640,7 @@ export function OrderBuilder(props: OrderBuilderProps) {
       {preview.lines.length === 0 ? null : (
         <View>
           <Text style={[typography.label, styles.sectionTitle, { marginTop: spacing.lg }]}>
-            Items
+            Itens
           </Text>
           {preview.lines.map((line) => (
             <BuilderLine
@@ -656,9 +656,9 @@ export function OrderBuilder(props: OrderBuilderProps) {
       )}
 
       <Card style={styles.card} testID="pricing-card">
-        <Text style={[typography.label, styles.sectionTitle]}>Pricing</Text>
+        <Text style={[typography.label, styles.sectionTitle]}>Preços</Text>
         <Field
-          label="Surcharge (cents)"
+          label="Acréscimo (centavos)"
           testID="surcharge-input"
           value={fields.surcharge}
           onChangeText={(value) => updateFields({ surcharge: value })}
@@ -667,7 +667,7 @@ export function OrderBuilder(props: OrderBuilderProps) {
           containerStyle={styles.field}
         />
         <Field
-          label="Discount (cents)"
+          label="Desconto (centavos)"
           testID="discount-input"
           value={fields.discount}
           onChangeText={(value) => updateFields({ discount: value })}
@@ -677,22 +677,22 @@ export function OrderBuilder(props: OrderBuilderProps) {
         />
         {showFeeToggle ? (
           <Segment
-            label="Service fee"
+            label="Taxa de serviço"
             testID="service-fee-segment"
             value={fields.fee}
             onChange={(fee) => updateFields({ fee })}
             options={[
-              { label: 'Include fee', value: 'on', disabled: !isEditable },
-              { label: 'No fee', value: 'off', disabled: !isEditable },
+              { label: 'Incluir taxa', value: 'on', disabled: !isEditable },
+              { label: 'Sem taxa', value: 'off', disabled: !isEditable },
             ]}
           />
         ) : null}
         <Text style={styles.caption}>
-          {`Maximum discount: ${preview.maxDiscountCents} cents`}
+          {`Desconto máximo: ${preview.maxDiscountCents} centavos`}
         </Text>
         <View style={styles.pricingActions}>
           <Button
-            label="Apply pricing"
+            label="Aplicar preços"
             onPress={handleApplyPricing}
             disabled={!isEditable || busy}
             variant="secondary"
@@ -704,18 +704,18 @@ export function OrderBuilder(props: OrderBuilderProps) {
 
       <Card style={styles.card} testID="pricing-preview">
         <SummaryRow label="Subtotal" cents={preview.subtotalCents} testID="preview-subtotal" />
-        <SummaryRow label="Surcharge" cents={preview.surchargeCents} testID="preview-surcharge" />
-        <SummaryRow label="Discount" cents={-preview.discountCents} testID="preview-discount" />
-        <SummaryRow label="Service fee" cents={preview.serviceFeeCents} testID="preview-fee" />
+        <SummaryRow label="Acréscimo" cents={preview.surchargeCents} testID="preview-surcharge" />
+        <SummaryRow label="Desconto" cents={-preview.discountCents} testID="preview-discount" />
+        <SummaryRow label="Taxa de serviço" cents={preview.serviceFeeCents} testID="preview-fee" />
         <SummaryRow label="Total" cents={preview.totalCents} testID="preview-total" total />
       </Card>
 
-      <Text style={[typography.label, styles.sectionTitle]}>Catalog</Text>
+      <Text style={[typography.label, styles.sectionTitle]}>Catálogo</Text>
     </View>
   );
 
   if (loading) {
-    return <LoadingState message="Loading catalog..." testID="order-builder-loading" />;
+    return <LoadingState message="Carregando catálogo..." testID="order-builder-loading" />;
   }
 
   return (
@@ -726,8 +726,8 @@ export function OrderBuilder(props: OrderBuilderProps) {
       ListHeaderComponent={listHeader}
       ListEmptyComponent={
         <EmptyState
-          title="No items found"
-          description="Try a different search term or add items in the catalog."
+          title="Nenhum item encontrado"
+          description="Tente outro termo de busca ou adicione itens no catálogo."
           icon="search"
         />
       }

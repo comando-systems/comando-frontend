@@ -85,11 +85,11 @@ describe('<Settings />', () => {
 
     await fireEvent.changeText(screen.getByTestId('settings-basis-points'), '10001');
     await fireEvent.press(screen.getByTestId('settings-save'));
-    expect(screen.getByText('Enter a whole number from 0 to 10000.')).toBeTruthy();
+    expect(screen.getByText('Informe um número inteiro de 0 a 10000.')).toBeTruthy();
 
     await fireEvent.changeText(screen.getByTestId('settings-basis-points'), '12.5');
     await fireEvent.press(screen.getByTestId('settings-save'));
-    expect(screen.getByText('Enter a whole number from 0 to 10000.')).toBeTruthy();
+    expect(screen.getByText('Informe um número inteiro de 0 a 10000.')).toBeTruthy();
     expect(api.settings.update).not.toHaveBeenCalled();
   });
 
@@ -100,18 +100,18 @@ describe('<Settings />', () => {
     await fireEvent.changeText(screen.getByTestId('settings-basis-points'), '99999999999999999999');
     await fireEvent.press(screen.getByTestId('settings-save'));
 
-    expect(screen.getByText('Enter a whole number from 0 to 10000.')).toBeTruthy();
+    expect(screen.getByText('Informe um número inteiro de 0 a 10000.')).toBeTruthy();
     expect(api.settings.update).not.toHaveBeenCalled();
   });
 
-  it('shows a fixed English error with retry support', async () => {
+  it('shows a fixed Portuguese error with retry support', async () => {
     jest
       .spyOn(api.settings, 'get')
       .mockRejectedValue(new ApiError({ status: 403, code: 'FORBIDDEN' }));
 
     await render(<Settings />);
 
-    expect(await screen.findByText('You are not allowed to perform this action.')).toBeTruthy();
+    expect(await screen.findByText('Você não tem permissão para realizar esta ação.')).toBeTruthy();
 
     jest.spyOn(api.settings, 'get').mockResolvedValue(makeSettings(true, 500));
     await fireEvent.press(screen.getByTestId('settings-error-retry'));

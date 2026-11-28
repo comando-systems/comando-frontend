@@ -4,13 +4,13 @@ import { occupiedOrderId, toErrorMessage } from '@/utils/errors';
 describe('error helpers', () => {
   it('uses the fixed English message for API errors', () => {
     expect(toErrorMessage(new ApiError({ status: 403, code: 'FORBIDDEN' }))).toBe(
-      'You are not allowed to perform this action.',
+      'Você não tem permissão para realizar esta ação.',
     );
   });
 
   it('falls back to a fixed English message for unexpected errors', () => {
     expect(toErrorMessage(new Error('raw backend detail'))).toBe(
-      'Something went wrong. Please try again.',
+      'Algo deu errado. Tente novamente.',
     );
   });
 

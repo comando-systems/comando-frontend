@@ -2,7 +2,6 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { memo, useCallback, useState } from 'react';
 import { FlatList, RefreshControl, Text, View } from 'react-native';
 
-import { Button } from '@/components/button';
 import { Card } from '@/components/card';
 import { EmptyState } from '@/components/empty-state';
 import { ErrorBanner } from '@/components/error-banner';
@@ -11,6 +10,7 @@ import { Form } from '@/components/form';
 import { LoadingState } from '@/components/loading-state';
 import { MoneyText } from '@/components/money-text';
 import { OrderStatusBadge } from '@/components/order-status-badge';
+import { Pagination } from '@/components/pagination';
 import { Screen } from '@/components/screen';
 import { Segment, type SegmentOption } from '@/components/segment';
 import { useSession } from '@/providers/session-provider';
@@ -26,23 +26,23 @@ import {
   historyListQuery,
   validateHistoryFilters,
 } from '@/utils/history-filters';
-import { orderItemCountLabel } from '@/utils/order-display';
+import { orderItemCountLabel, orderStatusLabels } from '@/utils/order-display';
 import { permissions } from '@/utils/permissions';
 
 const PAGE_SIZE = 20;
 
 const statusOptions: readonly SegmentOption<HistoryStatusFilter>[] = [
-  { value: 'ALL', label: 'All' },
-  { value: 'OPEN', label: 'Open' },
-  { value: 'AWAITING_PAYMENT', label: 'Awaiting' },
-  { value: 'CLOSED', label: 'Closed' },
-  { value: 'CANCELED', label: 'Canceled' },
+  { value: 'ALL', label: 'Todos' },
+  { value: 'OPEN', label: orderStatusLabels.OPEN },
+  { value: 'AWAITING_PAYMENT', label: orderStatusLabels.AWAITING_PAYMENT },
+  { value: 'CLOSED', label: orderStatusLabels.CLOSED },
+  { value: 'CANCELED', label: orderStatusLabels.CANCELED },
 ];
 
 const typeOptions: readonly SegmentOption<HistoryTypeFilter>[] = [
-  { value: 'ALL', label: 'All' },
-  { value: 'COUNTER', label: 'Counter' },
-  { value: 'TABLE', label: 'Table' },
+  { value: 'ALL', label: 'Todos' },
+  { value: 'COUNTER', label: 'Balcão' },
+  { value: 'TABLE', label: 'Mesas' },
 ];
 
 interface OrderRowProps {
@@ -51,8 +51,8 @@ interface OrderRowProps {
 }
 
 const OrderRow = memo(function OrderRow({ order, onPress }: OrderRowProps) {
-  const title = order.tableCode ?? order.label ?? `Order ${order.id}`;
-  const channel = order.type === 'TABLE' ? 'Table' : 'Counter';
+  const title = order.tableCode ?? order.label ?? `Pedido ${order.id}`;
+  const channel = order.type === 'TABLE' ? 'Mesas' : 'Balcão';
 
   return (
     <Card
@@ -78,7 +78,7 @@ const OrderRow = memo(function OrderRow({ order, onPress }: OrderRowProps) {
         {`${channel} · ${orderItemCountLabel(order)}`}
       </Text>
       <Text style={[typography.caption, { color: colors.textMuted, marginTop: spacing.xs }]}>
-        {`Created ${order.createdAt.slice(0, 10)} UTC`}
+        {`Criado em ${order.createdAt.slice(0, 10)} UTC`}
       </Text>
     </Card>
   );
@@ -182,10 +182,10 @@ export default function History() {
 
   if (!canViewHistory) {
     return (
-      <Screen title="History">
+      <Screen title="Histórico">
         <EmptyState
-          title="Not available"
-          description="Order history is not available for your role."
+          title="Indisponível"
+          description="O histórico de pedidos não está disponível para seu perfil."
           icon="lock"
         />
       </Screen>
@@ -194,8 +194,8 @@ export default function History() {
 
   if (loading) {
     return (
-      <Screen title="History" subtitle="Closed, canceled, and live orders">
-        <LoadingState message="Loading order history..." testID="history-loading" />
+      <Screen title="Histórico" subtitle="Pedidos fechados, cancelados e em andamento">
+        <LoadingState message="Carregando histórico de pedidos..." testID="history-loading" />
       </Screen>
     );
   }
@@ -204,17 +204,17 @@ export default function History() {
     <View>
       <Form
         testID="history-filters"
-        submit="Apply filters"
+        submit="Aplicar filtros"
         onSubmit={applyFilters}
-        cancel="Clear filters"
+        cancel="Limpar filtros"
         onCancel={clearFilters}
         submitButtonProps={{ icon: 'search', testID: 'history-apply' }}
         cancelButtonProps={{ testID: 'history-clear' }}
       >
-        <Text style={[typography.subtitle, { color: colors.text }]}>Filters</Text>
+        <Text style={[typography.subtitle, { color: colors.text }]}>Filtros</Text>
         <View style={{ marginTop: spacing.md }}>
           <Segment
-            label="Status filter"
+            label="Filtro de status"
             value={filters.status}
             onChange={(status) => setFilters((current) => ({ ...current, status }))}
             options={statusOptions}
@@ -223,7 +223,7 @@ export default function History() {
         </View>
         <View style={{ marginTop: spacing.md }}>
           <Segment
-            label="Type filter"
+            label="Filtro de tipo"
             value={filters.type}
             onChange={(type) => setFilters((current) => ({ ...current, type }))}
             options={typeOptions}
@@ -232,10 +232,10 @@ export default function History() {
         </View>
         <View style={{ marginTop: spacing.md }}>
           <Field
-            label="Table code"
+            label="Código da mesa"
             value={filters.tableCode}
             onChangeText={(tableCode) => setFilters((current) => ({ ...current, tableCode }))}
-            placeholder="Any table"
+            placeholder="Qualquer mesa"
             maxLength={64}
             autoCapitalize="characters"
             editable={!refreshing}
@@ -245,10 +245,10 @@ export default function History() {
         <View style={{ flexDirection: 'row', marginTop: spacing.md }}>
           <View style={{ flex: 1, marginRight: spacing.sm }}>
             <Field
-              label="From date (UTC)"
+              label="Data inicial (UTC)"
               value={filters.fromDate}
               onChangeText={(fromDate) => setFilters((current) => ({ ...current, fromDate }))}
-              placeholder="YYYY-MM-DD"
+              placeholder="AAAA-MM-DD"
               maxLength={10}
               keyboardType="numbers-and-punctuation"
               autoCorrect={false}
@@ -258,10 +258,10 @@ export default function History() {
           </View>
           <View style={{ flex: 1 }}>
             <Field
-              label="To date (UTC)"
+              label="Data final (UTC)"
               value={filters.toDate}
               onChangeText={(toDate) => setFilters((current) => ({ ...current, toDate }))}
-              placeholder="YYYY-MM-DD"
+              placeholder="AAAA-MM-DD"
               maxLength={10}
               keyboardType="numbers-and-punctuation"
               autoCorrect={false}
@@ -277,7 +277,7 @@ export default function History() {
           style={[typography.label, { color: colors.text }]}
           testID="history-result-count"
         >
-          {`Showing ${pagination.total} ${pagination.total === 1 ? 'order' : 'orders'}`}
+          {`Exibindo ${pagination.total} ${pagination.total === 1 ? 'pedido' : 'pedidos'}`}
         </Text>
         <View
           style={{
@@ -287,7 +287,7 @@ export default function History() {
           }}
         >
           <Text style={[typography.caption, { color: colors.textMuted }]}>
-            Closed on this page
+            Fechados nesta página
           </Text>
           <Text style={[typography.label, { color: colors.text }]} testID="history-closed-count">
             {closedOnPage.length}
@@ -302,7 +302,7 @@ export default function History() {
           }}
         >
           <Text style={[typography.caption, { color: colors.textMuted }]}>
-            Revenue on this page
+            Faturamento nesta página
           </Text>
           <MoneyText
             cents={revenueOnPageCents}
@@ -326,7 +326,7 @@ export default function History() {
 
       {orders.length === 0 ? null : (
         <View style={{ marginTop: spacing.lg }}>
-          <Text style={[typography.label, { color: colors.text }]}>Orders</Text>
+          <Text style={[typography.label, { color: colors.text }]}>Pedidos</Text>
         </View>
       )}
     </View>
@@ -335,33 +335,21 @@ export default function History() {
   const listFooter = (
     <Card testID="history-pagination" style={{ marginTop: spacing.md }}>
       <Text style={[typography.label, { color: colors.text }]} testID="history-page-label">
-        {`Page ${page} of ${totalPages}`}
+        {`Página ${page} de ${totalPages}`}
       </Text>
-      <View style={{ flexDirection: 'row', marginTop: spacing.md }}>
-        <View style={{ flex: 1, marginRight: spacing.sm }}>
-          <Button
-            label="Previous"
-            onPress={() => setPage((current) => Math.max(1, current - 1))}
-            variant="secondary"
-            disabled={page <= 1}
-            testID="history-previous"
-          />
-        </View>
-        <View style={{ flex: 1 }}>
-          <Button
-            label="Next"
-            onPress={() => setPage((current) => current + 1)}
-            variant="secondary"
-            disabled={page >= totalPages}
-            testID="history-next"
-          />
-        </View>
+      <View style={{ marginTop: spacing.md }}>
+        <Pagination
+          page={page}
+          totalPages={totalPages}
+          onPageChange={setPage}
+          testID="history-pages"
+        />
       </View>
     </Card>
   );
 
   return (
-    <Screen title="History" subtitle="Closed, canceled, and live orders">
+    <Screen title="Histórico" subtitle="Pedidos fechados, cancelados e em andamento">
       <FlatList
         testID="history-list"
         data={orders}
@@ -370,8 +358,8 @@ export default function History() {
         ListFooterComponent={listFooter}
         ListEmptyComponent={
           <EmptyState
-            title="No orders found"
-            description="Try changing the filters or date range."
+            title="Nenhum pedido encontrado"
+            description="Tente alterar os filtros ou o período."
             icon="history"
           />
         }

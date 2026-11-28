@@ -19,19 +19,19 @@ describe('category helpers', () => {
   });
 
   it('rejects empty, oversized, duplicate, and excess categories', () => {
-    expect(validateCategory('   ', [])).toBe('Enter a category name.');
+    expect(validateCategory('   ', [])).toBe('Informe o nome da categoria.');
     expect(validateCategory('x'.repeat(CATEGORY_NAME_MAX_LENGTH + 1), [])).toBe(
-      `A category cannot exceed ${CATEGORY_NAME_MAX_LENGTH} characters.`,
+      `Uma categoria não pode ultrapassar ${CATEGORY_NAME_MAX_LENGTH} caracteres.`,
     );
-    expect(validateCategory('drinks', ['Drinks'])).toBe('This category is already listed.');
+    expect(validateCategory('drinks', ['Drinks'])).toBe('Esta categoria já está na lista.');
     expect(
       validateCategory('Vegan', Array.from({ length: MAX_ITEM_CATEGORIES }, (_, index) => `C${index}`)),
-    ).toBe(`An item cannot have more than ${MAX_ITEM_CATEGORIES} categories.`);
+    ).toBe(`Um item não pode ter mais de ${MAX_ITEM_CATEGORIES} categorias.`);
   });
 
   it('formats all categories with a fallback for uncategorized items', () => {
     expect(formatCategories(['Drinks', 'Vegan'])).toBe('Drinks, Vegan');
-    expect(formatCategories([])).toBe('Uncategorized');
+    expect(formatCategories([])).toBe('Sem categoria');
     expect(formatCategories([], 'Drinks')).toBe('Drinks');
   });
 });

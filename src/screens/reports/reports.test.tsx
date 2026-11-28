@@ -62,7 +62,7 @@ describe('<Reports />', () => {
     jest.spyOn(api.reports, 'summary').mockResolvedValue(makeSummary());
   });
 
-  it('loads today in UTC by default and displays English summary labels', async () => {
+  it('loads today in UTC by default with date-only fields and Portuguese summary labels', async () => {
     await render(<Reports />);
 
     expect(await screen.findByTestId('reports-summary')).toBeTruthy();
@@ -71,44 +71,56 @@ describe('<Reports />', () => {
     expect(query?.from).toMatch(/^\d{4}-\d{2}-\d{2}T00:00:00\.000Z$/);
     expect(query?.to).toMatch(/^\d{4}-\d{2}-\d{2}T00:00:00\.000Z$/);
     expect(Date.parse(query?.to ?? '') - Date.parse(query?.from ?? '')).toBe(86_400_000);
+    expect(screen.getByTestId('reports-from').props.value).toBe(query?.from?.slice(0, 10));
+    expect(screen.getByTestId('reports-to').props.value).toBe(query?.to?.slice(0, 10));
 
     expect(screen.getByTestId('reports-revenue-value').props.children).toBe('R$1,234.56');
     expect(screen.getByTestId('reports-average-value').props.children).toBe('R$61.73');
-    expect(screen.getByText('Closed orders')).toBeTruthy();
-    expect(screen.getByText('Canceled orders')).toBeTruthy();
-    expect(screen.getByText('Open orders')).toBeTruthy();
-    expect(screen.getByText('Cash')).toBeTruthy();
-    expect(screen.getByText('PIX')).toBeTruthy();
+    expect(screen.getByText('Pedidos fechados')).toBeTruthy();
+    expect(screen.getByText('Pedidos cancelados')).toBeTruthy();
+    expect(screen.getByText('Pedidos abertos')).toBeTruthy();
+    expect(screen.getByText('Dinheiro')).toBeTruthy();
+    expect(screen.getByText('Pix')).toBeTruthy();
   });
 
-  it('applies explicit ISO instants normalized to UTC', async () => {
+  it('masks typed dates and sends an exclusive UTC midnight range', async () => {
     await render(<Reports />);
     await screen.findByTestId('reports-summary');
 
-    await fireEvent.changeText(screen.getByTestId('reports-from'), '2026-11-01T00:00:00-03:00');
-    await fireEvent.changeText(screen.getByTestId('reports-to'), '2026-11-08T00:00:00-03:00');
+    await fireEvent.changeText(screen.getByTestId('reports-from'), '2026/11/0x1');
+    await fireEvent.changeText(screen.getByTestId('reports-to'), '20261108');
+
+    expect(screen.getByTestId('reports-from').props.value).toBe('2026-11-01');
+    expect(screen.getByTestId('reports-to').props.value).toBe('2026-11-08');
+
     await fireEvent.press(screen.getByTestId('reports-apply'));
 
     await waitFor(() =>
       expect(api.reports.summary).toHaveBeenLastCalledWith({
-        from: '2026-11-01T03:00:00.000Z',
-        to: '2026-11-08T03:00:00.000Z',
+        from: '2026-11-01T00:00:00.000Z',
+        to: '2026-11-08T00:00:00.000Z',
       }),
     );
   });
 
-  it('blocks invalid ranges before requesting a new summary', async () => {
+  it('blocks partial, inverted, and excessive ranges before requesting a new summary', async () => {
     await render(<Reports />);
     await screen.findByTestId('reports-summary');
     const initialCalls = jest.mocked(api.reports.summary).mock.calls.length;
 
-    await fireEvent.changeText(screen.getByTestId('reports-from'), 'not-a-date');
+    await fireEvent.changeText(screen.getByTestId('reports-from'), '2026-1');
     await fireEvent.press(screen.getByTestId('reports-apply'));
-    expect(screen.getByText('Enter valid ISO 8601 instants.')).toBeTruthy();
+    expect(screen.getByText('Data inicial: Use o formato AAAA-MM-DD para as datas.')).toBeTruthy();
 
-    await fireEvent.changeText(screen.getByTestId('reports-from'), '2026-12-01T00:00:00.000Z');
+    await fireEvent.changeText(screen.getByTestId('reports-from'), '2030-01-01');
     await fireEvent.press(screen.getByTestId('reports-apply'));
-    expect(screen.getByText('The start must be before the end.')).toBeTruthy();
+    expect(screen.getByText('A data final deve ser posterior à data inicial.')).toBeTruthy();
+
+    await fireEvent.changeText(screen.getByTestId('reports-from'), '2020-01-01');
+    await fireEvent.changeText(screen.getByTestId('reports-to'), '2021-01-03');
+    await fireEvent.press(screen.getByTestId('reports-apply'));
+    expect(screen.getByText('O período não pode ultrapassar 366 dias.')).toBeTruthy();
+
     expect(api.reports.summary).toHaveBeenCalledTimes(initialCalls);
   });
 
@@ -116,23 +128,24 @@ describe('<Reports />', () => {
     await render(<Reports />);
     await screen.findByTestId('reports-summary');
 
-    await fireEvent.changeText(screen.getByTestId('reports-from'), '2020-01-01T00:00:00.000Z');
+    await fireEvent.changeText(screen.getByTestId('reports-from'), '2020-01-01');
     await fireEvent.press(screen.getByTestId('reports-today'));
 
     const query = jest.mocked(api.reports.summary).mock.calls.at(-1)?.[0];
     expect(query?.from).toMatch(/^\d{4}-\d{2}-\d{2}T00:00:00\.000Z$/);
     expect(query?.to).toMatch(/^\d{4}-\d{2}-\d{2}T00:00:00\.000Z$/);
-    expect(screen.getByTestId('reports-from').props.value).toBe(query?.from);
+    expect(screen.getByTestId('reports-from').props.value).toBe(query?.from?.slice(0, 10));
+    expect(screen.getByTestId('reports-to').props.value).toBe(query?.to?.slice(0, 10));
   });
 
-  it('shows a fixed English error with retry support', async () => {
+  it('shows a fixed Portuguese error with retry support', async () => {
     jest
       .spyOn(api.reports, 'summary')
       .mockRejectedValue(new ApiError({ status: 403, code: 'FORBIDDEN' }));
 
     await render(<Reports />);
 
-    expect(await screen.findByText('You are not allowed to perform this action.')).toBeTruthy();
+    expect(await screen.findByText('Você não tem permissão para realizar esta ação.')).toBeTruthy();
 
     jest.spyOn(api.reports, 'summary').mockResolvedValue(makeSummary([]));
     await fireEvent.press(screen.getByTestId('reports-error-retry'));

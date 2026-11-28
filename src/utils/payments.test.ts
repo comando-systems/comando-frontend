@@ -1,38 +1,52 @@
 import {
   createPaymentRow,
-  parseWholeCents,
+  parseDraftCents,
   paymentDraftTotalCents,
   paymentInputsFromRows,
   validatePaymentRows,
 } from '@/utils/payments';
 
 describe('payment helpers', () => {
-  it('parses only whole non-negative cent amounts', () => {
-    expect(parseWholeCents('1500')).toBe(1500);
-    expect(parseWholeCents(' 15 ')).toBe(15);
-    expect(parseWholeCents('15.5')).toBeNull();
-    expect(parseWholeCents('-1')).toBeNull();
-    expect(parseWholeCents('')).toBeNull();
-    expect(parseWholeCents('99999999999999999999')).toBeNull();
+  it('parses decimal reais into integer cents with at most two decimals', () => {
+    expect(parseDraftCents('15.00')).toBe(1500);
+    expect(parseDraftCents(' 15,5 ')).toBe(1550);
+    expect(parseDraftCents('0.07')).toBe(7);
+    expect(parseDraftCents('15.555')).toBeNull();
+    expect(parseDraftCents('-1')).toBeNull();
+    expect(parseDraftCents('')).toBeNull();
+    expect(parseDraftCents('99999999999999999999')).toBeNull();
+  });
+
+  it('accepts integer-cents strings as well as decimal reais text', () => {
+    expect(parseDraftCents('1250')).toBe(1250);
+    expect(paymentDraftTotalCents([createPaymentRow({ amountCents: '1250' })])).toBe(1250);
+    expect(paymentInputsFromRows([createPaymentRow({ amountCents: '12.50' })])).toEqual([
+      { method: 'CASH', amountCents: 1250 },
+    ]);
   });
 
   it('skips invalid rows and omits invalid cash received amounts', () => {
     const rows = [
       createPaymentRow({ amountCents: 'oops' }),
-      createPaymentRow({ amountCents: '0' }),
-      createPaymentRow({ method: 'CASH', amountCents: '700', receivedCents: 'abc' }),
+      createPaymentRow({ amountCents: '0.00' }),
+      createPaymentRow({ method: 'CASH', amountCents: '7.00', receivedCents: 'abc' }),
     ];
 
     expect(paymentInputsFromRows(rows)).toEqual([{ method: 'CASH', amountCents: 700 }]);
     expect(validatePaymentRows([rows[2]!], 700)).toBe(
-      'Cash received must be a positive amount in cents.',
+      'O valor recebido em dinheiro deve ser positivo em centavos.',
     );
   });
 
-  it('builds split payment inputs and omits received cents for non-cash methods', () => {
+  it('builds split payment inputs with integer cents and omits received for non-cash', () => {
     const rows = [
-      createPaymentRow({ id: 'cash', method: 'CASH', amountCents: '600', receivedCents: '1000' }),
-      createPaymentRow({ id: 'card', method: 'DEBIT_CARD', amountCents: '900', receivedCents: '900' }),
+      createPaymentRow({ id: 'cash', method: 'CASH', amountCents: '6.00', receivedCents: '10.00' }),
+      createPaymentRow({
+        id: 'card',
+        method: 'DEBIT_CARD',
+        amountCents: '9.00',
+        receivedCents: '9.00',
+      }),
     ];
 
     expect(paymentDraftTotalCents(rows)).toBe(1500);
@@ -41,7 +55,7 @@ describe('payment helpers', () => {
       { method: 'DEBIT_CARD', amountCents: 900 },
     ]);
     expect(validatePaymentRows(rows, 1500)).toBe(
-      'Only cash payments can record an amount received.',
+      'Somente pagamentos em dinheiro podem registrar o valor recebido.',
     );
   });
 
@@ -52,26 +66,26 @@ describe('payment helpers', () => {
 
   it('accepts an exact split total', () => {
     const rows = [
-      createPaymentRow({ id: 'cash', method: 'CASH', amountCents: '600' }),
-      createPaymentRow({ id: 'pix', method: 'PIX', amountCents: '900' }),
+      createPaymentRow({ id: 'cash', method: 'CASH', amountCents: '6.00' }),
+      createPaymentRow({ id: 'pix', method: 'PIX', amountCents: '9.00' }),
     ];
 
     expect(validatePaymentRows(rows, 1500)).toBeNull();
   });
 
   it('rejects an empty, invalid, or mismatched payment set', () => {
-    expect(validatePaymentRows([], 1500)).toBe('Add at least one payment.');
+    expect(validatePaymentRows([], 1500)).toBe('Adicione pelo menos um pagamento.');
     expect(
-      validatePaymentRows([createPaymentRow({ amountCents: '0' })], 1500),
-    ).toBe('Every payment needs a positive amount in cents.');
+      validatePaymentRows([createPaymentRow({ amountCents: '0.00' })], 1500),
+    ).toBe('Cada pagamento precisa de um valor positivo em centavos.');
     expect(
-      validatePaymentRows([createPaymentRow({ amountCents: '1000' })], 1500),
-    ).toBe('Payment amounts must equal the order total.');
+      validatePaymentRows([createPaymentRow({ amountCents: '10.00' })], 1500),
+    ).toBe('Os valores dos pagamentos devem somar o total do pedido.');
     expect(
       validatePaymentRows(
-        [createPaymentRow({ method: 'CASH', amountCents: '1000', receivedCents: '500' })],
+        [createPaymentRow({ method: 'CASH', amountCents: '10.00', receivedCents: '5.00' })],
         1000,
       ),
-    ).toBe('Amount received cannot be less than the payment amount.');
+    ).toBe('O valor recebido não pode ser menor que o pagamento.');
   });
 });

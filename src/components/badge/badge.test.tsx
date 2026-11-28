@@ -4,15 +4,15 @@ import { Badge } from '@/components/badge';
 
 describe('<Badge />', () => {
   it('renders a label with the default tone', async () => {
-    await render(<Badge label="Open" />);
+    await render(<Badge label="Aberto" />);
 
-    expect(screen.getByText('Open')).toBeTruthy();
+    expect(screen.getByText('Aberto')).toBeTruthy();
   });
 
   it('renders a semantic icon', async () => {
-    await render(<Badge label="Paid" tone="success" icon="check" />);
+    await render(<Badge label="Pago" tone="success" icon="check" />);
 
-    expect(screen.getByText('Paid')).toBeTruthy();
+    expect(screen.getByText('Pago')).toBeTruthy();
     expect(screen.getByTestId('badge-icon')).toBeTruthy();
   });
 });

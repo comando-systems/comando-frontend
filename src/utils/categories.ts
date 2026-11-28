@@ -17,19 +17,19 @@ export function validateCategory(
   const name = normalizeCategory(value);
 
   if (name.length === 0) {
-    return 'Enter a category name.';
+    return 'Informe o nome da categoria.';
   }
 
   if (name.length > CATEGORY_NAME_MAX_LENGTH) {
-    return `A category cannot exceed ${CATEGORY_NAME_MAX_LENGTH} characters.`;
+    return `Uma categoria não pode ultrapassar ${CATEGORY_NAME_MAX_LENGTH} caracteres.`;
   }
 
   if (existing.some((category) => categoryKey(category) === categoryKey(name))) {
-    return 'This category is already listed.';
+    return 'Esta categoria já está na lista.';
   }
 
   if (existing.length >= MAX_ITEM_CATEGORIES) {
-    return `An item cannot have more than ${MAX_ITEM_CATEGORIES} categories.`;
+    return `Um item não pode ter mais de ${MAX_ITEM_CATEGORIES} categorias.`;
   }
 
   return null;
@@ -38,7 +38,7 @@ export function validateCategory(
 /** Comma-separated display form used in catalog rows and search summaries. */
 export function formatCategories(
   categories: readonly string[],
-  fallback = 'Uncategorized',
+  fallback = 'Sem categoria',
 ): string {
   return categories.length === 0 ? fallback : categories.join(', ');
 }

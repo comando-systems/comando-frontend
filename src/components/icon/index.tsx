@@ -87,6 +87,36 @@ const sizeValues: Record<IconSize, number> = {
   lg: 32,
 };
 
+const iconLabels: Record<IconName, string> = {
+  table: 'mesa',
+  counter: 'balcão',
+  payment: 'pagamento',
+  add: 'adicionar',
+  remove: 'remover',
+  settings: 'configurações',
+  users: 'usuários',
+  logout: 'sair',
+  back: 'voltar',
+  check: 'confirmar',
+  list: 'lista',
+  receipt: 'recibo',
+  history: 'histórico',
+  close: 'fechar',
+  edit: 'editar',
+  search: 'buscar',
+  card: 'cartão',
+  wallet: 'carteira',
+  info: 'informações',
+  warning: 'aviso',
+  refresh: 'atualizar',
+  trash: 'remover',
+  food: 'item',
+  reports: 'relatórios',
+  save: 'salvar',
+  lock: 'bloqueado',
+  send: 'enviar',
+};
+
 interface IconViewProps {
   readonly descriptor: IconDescriptor;
   readonly size: number;
@@ -132,7 +162,7 @@ export function Icon({
       size={sizeValues[size]}
       color={color}
       testID={testID}
-      accessibilityLabel={accessibilityLabel ?? name}
+      accessibilityLabel={accessibilityLabel ?? iconLabels[name]}
     />
   );
 }

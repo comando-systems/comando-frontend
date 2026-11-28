@@ -34,7 +34,7 @@ describe('<Login />', () => {
     expect(screen.getByText('Comando')).toBeTruthy();
     expect(screen.getByTestId('email-input')).toBeTruthy();
     expect(screen.getByTestId('password-input')).toBeTruthy();
-    expect(screen.queryByText(/sign up/i)).toBeNull();
+    expect(screen.queryByText(/criar conta/i)).toBeNull();
   });
 
   it('rejects an invalid email without signing in', async () => {
@@ -45,7 +45,7 @@ describe('<Login />', () => {
 
     await waitFor(() => {
       expect(screen.getByTestId('login-error')).toBeTruthy();
-      expect(screen.getByText('Enter a valid email address.')).toBeTruthy();
+      expect(screen.getByText('Informe um e-mail válido.')).toBeTruthy();
     });
     expect(signIn).not.toHaveBeenCalled();
   });
@@ -58,7 +58,7 @@ describe('<Login />', () => {
 
     await waitFor(() => {
       expect(screen.getByTestId('login-error')).toBeTruthy();
-      expect(screen.getByText('Enter your password.')).toBeTruthy();
+      expect(screen.getByText('Informe sua senha.')).toBeTruthy();
     });
     expect(signIn).not.toHaveBeenCalled();
   });
@@ -74,7 +74,7 @@ describe('<Login />', () => {
     });
   });
 
-  it('shows a stable English message for invalid credentials', async () => {
+  it('shows a stable Portuguese message for invalid credentials', async () => {
     signIn.mockRejectedValue(new ApiError({ status: 401, code: 'UNAUTHORIZED' }));
     await render(<Login />);
     await fillForm('ada@example.com', 'wrong-password');
@@ -83,11 +83,11 @@ describe('<Login />', () => {
 
     await waitFor(() => {
       expect(screen.getByTestId('login-error')).toBeTruthy();
-      expect(screen.getByText('Authentication is required.')).toBeTruthy();
+      expect(screen.getByText('É necessário entrar com sua conta.')).toBeTruthy();
     });
   });
 
-  it('falls back to a fixed English message for unexpected sign-in errors', async () => {
+  it('falls back to a fixed Portuguese message for unexpected sign-in errors', async () => {
     signIn.mockRejectedValue(new Error('raw backend detail'));
     await render(<Login />);
     await fillForm('ada@example.com', 'secret123');
@@ -95,7 +95,7 @@ describe('<Login />', () => {
     await fireEvent.press(screen.getByTestId('sign-in-button'));
 
     await waitFor(() => {
-      expect(screen.getByText('Something went wrong. Please try again.')).toBeTruthy();
+      expect(screen.getByText('Algo deu errado. Tente novamente.')).toBeTruthy();
     });
   });
 });

@@ -129,8 +129,8 @@ describe('<Order />', () => {
 
     expect(await screen.findByTestId('order-summary')).toBeTruthy();
     expect(screen.getByTestId('order-total').props.children).toBe('R$15.00');
-    expect(screen.getByTestId('order-item-count').props.children).toBe('3 items');
-    expect(screen.getByText('Open')).toBeTruthy();
+    expect(screen.getByTestId('order-item-count').props.children).toBe('3 itens');
+    expect(screen.getByText('Aberto')).toBeTruthy();
     expect(screen.getByTestId('request-payment-button')).toBeTruthy();
     expect(screen.queryByTestId('order-payment-button')).toBeNull();
     expect(screen.getByTestId('cancel-order-button')).toBeTruthy();
@@ -144,8 +144,10 @@ describe('<Order />', () => {
     await render(<Order />);
 
     expect(await screen.findByTestId('order-summary')).toBeTruthy();
-    expect(screen.getByText('Awaiting payment')).toBeTruthy();
-    expect(screen.getByText('Lines are locked while payment is requested.')).toBeTruthy();
+    expect(screen.getByText('Aguardando pagamento')).toBeTruthy();
+    expect(
+      screen.getByText('Os itens estão bloqueados enquanto o pagamento é solicitado.'),
+    ).toBeTruthy();
     expect(screen.queryByTestId('line-stepper-1-increase')).toBeNull();
     expect(screen.getByTestId('line-quantity-1')).toBeTruthy();
     expect(screen.queryByTestId('request-payment-button')).toBeNull();
@@ -200,7 +202,7 @@ describe('<Order />', () => {
       expect(api.orders.changeQuantity).toHaveBeenCalledWith('10', '1', { quantity: 4 }),
     );
     await waitFor(() => expect(screen.getByTestId('order-total').props.children).toBe('R$20.00'));
-    expect(screen.getByTestId('order-item-count').props.children).toBe('4 items');
+    expect(screen.getByTestId('order-item-count').props.children).toBe('4 itens');
   });
 
   it('refreshes the order after request payment and cancel actions', async () => {
@@ -209,12 +211,12 @@ describe('<Order />', () => {
     await fireEvent.press(await screen.findByTestId('request-payment-button'));
 
     await waitFor(() => expect(api.orders.requestPayment).toHaveBeenCalledWith('10'));
-    await waitFor(() => expect(screen.getByText('Awaiting payment')).toBeTruthy());
+    await waitFor(() => expect(screen.getByText('Aguardando pagamento')).toBeTruthy());
 
     await fireEvent.press(screen.getByTestId('cancel-order-button'));
 
     await waitFor(() => expect(api.orders.cancel).toHaveBeenCalledWith('10'));
-    await waitFor(() => expect(screen.getByText('Canceled')).toBeTruthy());
+    await waitFor(() => expect(screen.getByText('Cancelado')).toBeTruthy());
   });
 
   it('accepts an array route parameter', async () => {
@@ -228,7 +230,7 @@ describe('<Order />', () => {
     expect(api.orders.get).toHaveBeenCalledWith('10');
   });
 
-  it('shows a load error and retries with a fixed English message', async () => {
+  it('shows a load error and retries with a fixed message', async () => {
     jest
       .spyOn(api.orders, 'get')
       .mockRejectedValueOnce(new Error('offline'))
@@ -236,7 +238,7 @@ describe('<Order />', () => {
 
     await render(<Order />);
 
-    expect(await screen.findByText('Something went wrong. Please try again.')).toBeTruthy();
+    expect(await screen.findByText('Algo deu errado. Tente novamente.')).toBeTruthy();
     await fireEvent.press(screen.getByTestId('order-error-retry'));
 
     await waitFor(() => expect(screen.queryByTestId('order-error')).toBeNull());
@@ -249,7 +251,7 @@ describe('<Order />', () => {
     await render(<Order />);
     await fireEvent.press(await screen.findByTestId('request-payment-button'));
 
-    expect(await screen.findByText('Something went wrong. Please try again.')).toBeTruthy();
+    expect(await screen.findByText('Algo deu errado. Tente novamente.')).toBeTruthy();
     expect(screen.getByTestId('order-summary')).toBeTruthy();
   });
 
@@ -260,8 +262,8 @@ describe('<Order />', () => {
 
     await render(<Order />);
 
-    expect(await screen.findByText('Order not found')).toBeTruthy();
-    await fireEvent.press(screen.getByText('Back to tables'));
+    expect(await screen.findByText('Pedido não encontrado')).toBeTruthy();
+    await fireEvent.press(screen.getByText('Voltar às mesas'));
 
     expect(push).toHaveBeenCalledWith('/tables');
     expect(api.orders.get).toHaveBeenCalledWith('');

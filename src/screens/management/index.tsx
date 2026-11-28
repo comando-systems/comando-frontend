@@ -9,6 +9,7 @@ import { colors, spacing, typography } from '@/theme';
 import { permissions } from '@/utils/permissions';
 
 interface ManagementLink {
+  readonly id: string;
   readonly label: string;
   readonly description: string;
   readonly href: Href;
@@ -17,26 +18,30 @@ interface ManagementLink {
 
 const links: readonly ManagementLink[] = [
   {
-    label: 'Users',
-    description: 'Create staff accounts and assign roles.',
+    id: 'users',
+    label: 'Usuários',
+    description: 'Crie contas da equipe e atribua perfis de acesso.',
     href: '/management/users',
     icon: 'users',
   },
   {
-    label: 'Catalog',
-    description: 'Manage sellable items, prices, and availability.',
+    id: 'catalog',
+    label: 'Catálogo',
+    description: 'Gerencie itens à venda, preços e disponibilidade.',
     href: '/management/catalog',
     icon: 'food',
   },
   {
-    label: 'Settings',
-    description: 'Configure the service fee applied to new orders.',
+    id: 'settings',
+    label: 'Configurações',
+    description: 'Configure a taxa de serviço aplicada a novos pedidos.',
     href: '/management/settings',
     icon: 'settings',
   },
   {
-    label: 'Reports',
-    description: 'Review sales summaries for a date range.',
+    id: 'reports',
+    label: 'Relatórios',
+    description: 'Consulte resumos de vendas por período.',
     href: '/management/reports',
     icon: 'reports',
   },
@@ -51,11 +56,11 @@ export default function Management() {
   }
 
   return (
-    <Screen scroll title="Management" subtitle="Administration tools">
+    <Screen scroll title="Gerenciamento" subtitle="Ferramentas de administração">
       {links.map((link) => (
         <Card
-          key={link.label}
-          testID={`management-${link.label.toLowerCase()}-link`}
+          key={link.id}
+          testID={`management-${link.id}-link`}
           onPress={() => router.push(link.href)}
           style={{ marginBottom: spacing.md }}
         >

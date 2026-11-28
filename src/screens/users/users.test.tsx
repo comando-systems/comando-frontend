@@ -107,16 +107,16 @@ describe('<Users />', () => {
 
     expect(await screen.findByTestId('user-row-user-1')).toBeTruthy();
     expect(screen.getByTestId('user-row-2')).toBeTruthy();
-    expect(screen.getAllByText('Active')).toHaveLength(2);
-    expect(screen.getByTestId('users-next').props.accessibilityState.disabled).toBe(false);
+    expect(screen.getAllByText('Ativo')).toHaveLength(2);
+    expect(screen.getByTestId('users-pages-page-2').props.accessibilityState.selected).toBe(false);
 
-    await fireEvent.press(screen.getByTestId('users-next'));
+    await fireEvent.press(screen.getByTestId('users-pages-page-2'));
 
     await waitFor(() =>
       expect(api.users.list).toHaveBeenLastCalledWith({ page: 2, pageSize: 20 }),
     );
     expect(await screen.findByTestId('user-row-3')).toBeTruthy();
-    expect(screen.getByTestId('users-page-label').props.children).toBe('Page 2 of 2');
+    expect(screen.getByTestId('users-page-label').props.children).toBe('Página 2 de 2');
   });
 
   it('creates a user with selected roles and trims text fields', async () => {
@@ -145,21 +145,21 @@ describe('<Users />', () => {
     await openCreateForm();
 
     await fireEvent.press(screen.getByTestId('user-submit'));
-    expect(screen.getByText('Enter a name.')).toBeTruthy();
+    expect(screen.getByText('Informe um nome.')).toBeTruthy();
 
     await fireEvent.changeText(screen.getByTestId('user-name'), 'Linus Torvalds');
     await fireEvent.changeText(screen.getByTestId('user-email'), 'not-an-email');
     await fireEvent.press(screen.getByTestId('user-submit'));
-    expect(screen.getByText('Enter a valid email address.')).toBeTruthy();
+    expect(screen.getByText('Informe um e-mail válido.')).toBeTruthy();
 
     await fireEvent.changeText(screen.getByTestId('user-email'), 'linus@example.com');
     await fireEvent.press(screen.getByTestId('user-submit'));
-    expect(screen.getByText('Select at least one role.')).toBeTruthy();
+    expect(screen.getByText('Selecione ao menos um perfil.')).toBeTruthy();
 
     await fireEvent.press(screen.getByTestId('user-role-CASHIER'));
     await fireEvent.changeText(screen.getByTestId('user-password'), 'short');
     await fireEvent.press(screen.getByTestId('user-submit'));
-    expect(screen.getByText('Password must be 8 to 128 characters.')).toBeTruthy();
+    expect(screen.getByText('A senha deve ter de 8 a 128 caracteres.')).toBeTruthy();
     expect(api.users.create).not.toHaveBeenCalled();
   });
 
@@ -191,7 +191,7 @@ describe('<Users />', () => {
     await fireEvent.changeText(screen.getByTestId('user-password'), 'short');
     await fireEvent.press(screen.getByTestId('user-submit'));
 
-    expect(screen.getByText('Password must be 8 to 128 characters.')).toBeTruthy();
+    expect(screen.getByText('A senha deve ter de 8 a 128 caracteres.')).toBeTruthy();
     expect(api.users.update).not.toHaveBeenCalled();
   });
 
@@ -229,7 +229,7 @@ describe('<Users />', () => {
     );
   });
 
-  it('shows fixed English messages for admin safeguard conflicts', async () => {
+  it('shows fixed Portuguese messages for admin safeguard conflicts', async () => {
     jest
       .spyOn(api.users, 'deactivate')
       .mockRejectedValue(new ApiError({ status: 409, code: 'LAST_ADMIN' }));
@@ -237,7 +237,7 @@ describe('<Users />', () => {
     await render(<Users />);
     await fireEvent.press(await screen.findByTestId('user-deactivate-2'));
 
-    expect(await screen.findByText('The last active administrator cannot be removed.')).toBeTruthy();
+    expect(await screen.findByText('O último administrador ativo não pode ser removido.')).toBeTruthy();
     expect(screen.queryByText('LAST_ADMIN')).toBeNull();
   });
 

@@ -1,8 +1,7 @@
 import { Redirect, useFocusEffect } from 'expo-router';
 import { memo, useCallback, useMemo, useState } from 'react';
-import { FlatList, RefreshControl, Switch, Text, View } from 'react-native';
+import { FlatList, Image, RefreshControl, Switch, Text, View } from 'react-native';
 
-import { Badge, type BadgeTone } from '@/components/badge';
 import { Button } from '@/components/button';
 import { Card } from '@/components/card';
 import { CategoryEditor } from '@/components/category-editor';
@@ -10,13 +9,15 @@ import { EmptyState } from '@/components/empty-state';
 import { ErrorBanner } from '@/components/error-banner';
 import { Field } from '@/components/field';
 import { Form } from '@/components/form';
+import { Icon } from '@/components/icon';
 import { LoadingState } from '@/components/loading-state';
 import { MoneyText } from '@/components/money-text';
+import { Pagination } from '@/components/pagination';
 import { Screen } from '@/components/screen';
 import { Segment, type SegmentOption } from '@/components/segment';
 import { useSession } from '@/providers/session-provider';
 import { api } from '@/services/api';
-import { colors, spacing, typography } from '@/theme';
+import { colors, radii, spacing, typography } from '@/theme';
 import type {
   CreateItemRequest,
   ItemResponse,
@@ -28,7 +29,6 @@ import {
   type CatalogFilters,
   filterCatalogItems,
 } from '@/utils/catalog-filters';
-import { formatCategories } from '@/utils/categories';
 import { toErrorMessage } from '@/utils/errors';
 import { formatPriceInput, parsePriceToCents } from '@/utils/money';
 import { permissions } from '@/utils/permissions';
@@ -37,8 +37,8 @@ const PAGE_SIZE = 20;
 const IMAGE_URL_PATTERN = /^https?:\/\/\S+$/i;
 
 const visibilityOptions: readonly SegmentOption<'active' | 'all'>[] = [
-  { value: 'active', label: 'Active catalog' },
-  { value: 'all', label: 'Include removed' },
+  { value: 'active', label: 'Catálogo ativo' },
+  { value: 'all', label: 'Incluir removidos' },
 ];
 
 interface ItemFormValues {
@@ -68,32 +68,34 @@ interface ItemFormProps {
   readonly error: string | null;
   readonly onSubmit: (values: ItemFormValues) => void;
   readonly onCancel: () => void;
+  readonly onAction: (kind: CatalogActionKind, item: ItemResponse) => void;
 }
 
 function validateItemForm(values: ItemFormValues): string | null {
   if (values.name.trim().length === 0) {
-    return 'Enter an item name.';
+    return 'Informe o nome do produto.';
   }
 
   if (values.categories.length === 0) {
-    return 'Add at least one category.';
+    return 'Adicione pelo menos uma categoria.';
   }
 
   if (parsePriceToCents(values.price) === null) {
-    return 'Enter a price with up to two decimal places.';
+    return 'Informe um preço com até duas casas decimais.';
   }
 
   const imageUrl = values.imageUrl.trim();
 
   if (imageUrl.length > 0 && !IMAGE_URL_PATTERN.test(imageUrl)) {
-    return 'Enter a valid image URL starting with http:// or https://.';
+    return 'Informe uma URL de imagem válida começando com http:// ou https://.';
   }
 
   return null;
 }
 
-function ItemForm({ initialItem, busy, error, onSubmit, onCancel }: ItemFormProps) {
+function ItemForm({ initialItem, busy, error, onSubmit, onCancel, onAction }: ItemFormProps) {
   const isEdit = initialItem !== null;
+  const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
   const [values, setValues] = useState<ItemFormValues>({
     name: initialItem?.name ?? '',
     description: initialItem?.description ?? '',
@@ -127,30 +129,30 @@ function ItemForm({ initialItem, busy, error, onSubmit, onCancel }: ItemFormProp
   };
 
   return (
-    <Screen scroll title={isEdit ? 'Edit item' : 'Add item'} subtitle="Catalog management">
+    <Screen scroll title={isEdit ? 'Editar produto' : 'Adicionar item'} subtitle="Gerenciamento do catálogo">
       <Form
         testID="catalog-item-form"
-        submit={isEdit ? 'Save item' : 'Add item'}
+        submit={isEdit ? 'Salvar produto' : 'Adicionar item'}
         onSubmit={handleSubmit}
-        cancel="Cancel"
+        cancel="Cancelar"
         onCancel={onCancel}
         submitButtonProps={{ loading: busy, icon: 'check', size: 'lg', testID: 'catalog-item-submit' }}
         cancelButtonProps={{ disabled: busy, testID: 'catalog-item-cancel' }}
       >
         <Field
-          label="Name"
+          label="Nome"
           value={values.name}
           onChangeText={(name) => update('name', name)}
-          placeholder="Item name"
+          placeholder="Nome do produto"
           editable={!busy}
           testID="catalog-item-name"
         />
         <View style={{ marginTop: spacing.md }}>
           <Field
-            label="Description (optional)"
+            label="Descrição (opcional)"
             value={values.description}
             onChangeText={(description) => update('description', description)}
-            placeholder="Short description"
+            placeholder="Descrição curta"
             multiline
             numberOfLines={3}
             editable={!busy}
@@ -167,11 +169,11 @@ function ItemForm({ initialItem, busy, error, onSubmit, onCancel }: ItemFormProp
         </View>
         <View style={{ marginTop: spacing.md }}>
           <Field
-            label="Price"
+            label="Preço"
             value={values.price}
             onChangeText={(price) => update('price', price)}
             placeholder="12.50"
-            helper="Amount in Brazilian currency with up to two decimal places."
+            helper="Valor em reais com até duas casas decimais."
             keyboardType="decimal-pad"
             autoCorrect={false}
             editable={!busy}
@@ -180,7 +182,7 @@ function ItemForm({ initialItem, busy, error, onSubmit, onCancel }: ItemFormProp
         </View>
         <View style={{ marginTop: spacing.md }}>
           <Field
-            label="Image URL (optional)"
+            label="URL da imagem (opcional)"
             value={values.imageUrl}
             onChangeText={(imageUrl) => update('imageUrl', imageUrl)}
             placeholder="https://example.com/item.jpg"
@@ -200,21 +202,87 @@ function ItemForm({ initialItem, busy, error, onSubmit, onCancel }: ItemFormProp
           }}
         >
           <View style={{ flex: 1, marginRight: spacing.md }}>
-            <Text style={[typography.label, { color: colors.text }]}>Enabled</Text>
+            <Text style={[typography.label, { color: colors.text }]}>Ativado</Text>
             <Text style={[typography.caption, { color: colors.textMuted, marginTop: spacing.xs }]}>
-              Disabled items cannot be sold but remain editable.
+              Produtos desativados não podem ser vendidos, mas continuam editáveis.
             </Text>
           </View>
           <Switch
             value={values.enabled}
             onValueChange={(enabled) => update('enabled', enabled)}
             disabled={busy}
-            accessibilityLabel="Enabled"
+            accessibilityLabel="Ativado"
             testID="catalog-item-enabled"
             trackColor={{ false: colors.border, true: colors.primary }}
             thumbColor={colors.white}
           />
         </View>
+
+        {isEdit && initialItem.isActive ? (
+          <View style={{ marginTop: spacing.lg }}>
+            <Text style={[typography.label, { color: colors.text }]}>Ações do produto</Text>
+            <View style={{ flexDirection: 'row', marginTop: spacing.sm }}>
+              <View style={{ flex: 1, marginRight: spacing.sm }}>
+                <Button
+                  label={initialItem.enabled ? 'Desativar' : 'Ativar'}
+                  onPress={() =>
+                    setPendingAction({
+                      kind: initialItem.enabled ? 'disable' : 'enable',
+                      item: initialItem,
+                    })
+                  }
+                  variant="secondary"
+                  disabled={busy}
+                  testID={`catalog-${initialItem.enabled ? 'disable' : 'enable'}-${initialItem.id}`}
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Button
+                  label="Remover item"
+                  onPress={() => setPendingAction({ kind: 'remove', item: initialItem })}
+                  variant="danger"
+                  disabled={busy}
+                  testID={`catalog-remove-${initialItem.id}`}
+                />
+              </View>
+            </View>
+          </View>
+        ) : null}
+
+        {pendingAction === null ? null : (
+          <View
+            style={{
+              backgroundColor: colors.warningSoft,
+              borderRadius: radii.md,
+              marginTop: spacing.md,
+              padding: spacing.md,
+            }}
+          >
+            <Text style={[typography.body, { color: colors.text }]} testID="catalog-confirm-copy">
+              {actionCopy(pendingAction)}
+            </Text>
+            <View style={{ flexDirection: 'row', marginTop: spacing.md }}>
+              <View style={{ flex: 1, marginRight: spacing.sm }}>
+                <Button
+                  label="Cancelar"
+                  onPress={() => setPendingAction(null)}
+                  variant="secondary"
+                  disabled={busy}
+                  testID="catalog-action-cancel"
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Button
+                  label={actionButtonLabel(pendingAction.kind)}
+                  onPress={() => onAction(pendingAction.kind, pendingAction.item)}
+                  loading={busy}
+                  variant={pendingAction.kind === 'remove' ? 'danger' : 'primary'}
+                  testID="catalog-action-confirm"
+                />
+              </View>
+            </View>
+          </View>
+        )}
 
         {validationError === null && error === null ? null : (
           <View style={{ marginTop: spacing.md }}>
@@ -230,109 +298,62 @@ function ItemForm({ initialItem, busy, error, onSubmit, onCancel }: ItemFormProp
   );
 }
 
-function itemStatus(item: ItemResponse): { label: string; tone: BadgeTone } {
-  if (!item.isActive) {
-    return { label: 'Removed', tone: 'danger' };
-  }
-
-  if (!item.enabled) {
-    return { label: 'Disabled', tone: 'warning' };
-  }
-
-  return { label: 'Active', tone: 'success' };
-}
-
 function actionCopy(action: PendingAction): string {
   if (action.kind === 'remove') {
-    return `Remove ${action.item.name} from the catalog? Removed items stay in order history and cannot be sold.`;
+    return `Remover ${action.item.name} do catálogo? Produtos removidos permanecem no histórico de pedidos e não podem ser vendidos.`;
   }
 
   if (action.kind === 'disable') {
-    return `Disable ${action.item.name}? Disabled items cannot be sold but remain editable.`;
+    return `Desativar ${action.item.name}? Produtos desativados não podem ser vendidos, mas continuam editáveis.`;
   }
 
-  return `Enable ${action.item.name}? It will be available for sale again.`;
+  return `Ativar ${action.item.name}? Ele estará disponível para venda novamente.`;
 }
 
 function actionButtonLabel(kind: CatalogActionKind): string {
-  if (kind === 'remove') return 'Remove item';
-  if (kind === 'disable') return 'Disable item';
-  return 'Enable item';
+  if (kind === 'remove') return 'Remover item';
+  if (kind === 'disable') return 'Desativar';
+  return 'Ativar';
 }
 
 interface ItemRowProps {
   readonly item: ItemResponse;
-  readonly busy: boolean;
   readonly onEdit: (item: ItemResponse) => void;
-  readonly onAction: (kind: CatalogActionKind, item: ItemResponse) => void;
 }
 
-const ItemRow = memo(function ItemRow({ item, busy, onEdit, onAction }: ItemRowProps) {
-  const status = itemStatus(item);
-
+const ItemRow = memo(function ItemRow({ item, onEdit }: ItemRowProps) {
   return (
-    <Card testID={`catalog-item-${item.id}`} style={{ marginBottom: spacing.md }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Text style={[typography.subtitle, { color: colors.text, flex: 1, marginRight: spacing.sm }]}>
+    <Card
+      testID={`catalog-item-${item.id}`}
+      onPress={() => onEdit(item)}
+      style={{ alignItems: 'center', flexDirection: 'row', marginBottom: spacing.md }}
+    >
+      <View style={{ marginRight: spacing.md }}>
+        {item.imageUrl === null ? (
+          <Icon
+            name="food"
+            size="md"
+            color={colors.primaryDark}
+            testID={`catalog-item-icon-${item.id}`}
+          />
+        ) : (
+          <Image
+            source={{ uri: item.imageUrl }}
+            style={{ borderRadius: radii.sm, height: 32, width: 32 }}
+            testID={`catalog-item-image-${item.id}`}
+          />
+        )}
+      </View>
+      <View style={{ flex: 1 }}>
+        <Text
+          style={[typography.label, { color: colors.text }]}
+          numberOfLines={1}
+          testID={`catalog-item-name-${item.id}`}
+        >
           {item.name}
         </Text>
-        <Badge
-          label={status.label}
-          tone={status.tone}
-          testID={`catalog-status-${item.id}`}
-        />
+        <MoneyText cents={item.priceCents} size="sm" testID={`catalog-price-${item.id}`} />
       </View>
-      <Text
-        style={[typography.caption, { color: colors.textMuted, marginTop: spacing.xs }]}
-        testID={`catalog-categories-${item.id}`}
-      >
-        {formatCategories(item.categories, item.category)}
-      </Text>
-      <Text style={[typography.body, { color: colors.textMuted, marginTop: spacing.sm }]}>
-        {item.description === null || item.description.length === 0
-          ? 'No description'
-          : item.description}
-      </Text>
-      <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: spacing.md }}>
-        <MoneyText cents={item.priceCents} size="md" testID={`catalog-price-${item.id}`} />
-      </View>
-      <Text style={[typography.caption, { color: colors.textMuted, marginTop: spacing.xs }]}>
-        {`Updated ${item.updatedAt.slice(0, 10)} UTC`}
-      </Text>
-      <View style={{ flexDirection: 'row', marginTop: spacing.md }}>
-        <View style={{ flex: 1, marginRight: spacing.sm }}>
-          <Button
-            label="Edit"
-            onPress={() => onEdit(item)}
-            variant="secondary"
-            disabled={busy}
-            testID={`catalog-edit-${item.id}`}
-          />
-        </View>
-        {item.isActive ? (
-          <View style={{ flex: 1 }}>
-            <Button
-              label={item.enabled ? 'Disable' : 'Enable'}
-              onPress={() => onAction(item.enabled ? 'disable' : 'enable', item)}
-              variant="secondary"
-              disabled={busy}
-              testID={`catalog-${item.enabled ? 'disable' : 'enable'}-${item.id}`}
-            />
-          </View>
-        ) : null}
-      </View>
-      {item.isActive ? (
-        <View style={{ marginTop: spacing.sm }}>
-          <Button
-            label="Remove"
-            onPress={() => onAction('remove', item)}
-            variant="danger"
-            disabled={busy}
-            fullWidth
-            testID={`catalog-remove-${item.id}`}
-          />
-        </View>
-      ) : null}
     </Card>
   );
 });
@@ -350,7 +371,6 @@ export default function Catalog() {
   const [includeRemoved, setIncludeRemoved] = useState(false);
   const [filters, setFilters] = useState<CatalogFilters>(EMPTY_CATALOG_FILTERS);
   const [mode, setMode] = useState<CatalogMode>({ kind: 'list' });
-  const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -419,7 +439,7 @@ export default function Catalog() {
       const priceCents = parsePriceToCents(values.price);
 
       if (priceCents === null) {
-        setError('Enter a price with up to two decimal places.');
+        setError('Informe um preço com até duas casas decimais.');
         return;
       }
 
@@ -464,40 +484,35 @@ export default function Catalog() {
     [applyReturnedItem, includeRemoved, loadItems, mode],
   );
 
-  const confirmAction = useCallback(async () => {
-    if (pendingAction === null) {
-      return;
-    }
+  const runItemAction = useCallback(
+    async (kind: CatalogActionKind, item: ItemResponse) => {
+      setBusy(true);
+      setError(null);
 
-    setBusy(true);
-    setError(null);
+      try {
+        const updated =
+          kind === 'remove'
+            ? await api.items.remove(item.id)
+            : await api.items.update(item.id, { enabled: kind === 'enable' });
 
-    try {
-      const updated =
-        pendingAction.kind === 'remove'
-          ? await api.items.remove(pendingAction.item.id)
-          : await api.items.update(pendingAction.item.id, {
-              enabled: pendingAction.kind === 'enable',
-            });
-
-      applyReturnedItem(updated);
-      setPendingAction(null);
-    } catch (actionError) {
-      setError(toErrorMessage(actionError));
-    } finally {
-      setBusy(false);
-    }
-  }, [applyReturnedItem, pendingAction]);
+        applyReturnedItem(updated);
+        setMode({ kind: 'list' });
+      } catch (actionError) {
+        setError(toErrorMessage(actionError));
+      } finally {
+        setBusy(false);
+      }
+    },
+    [applyReturnedItem],
+  );
 
   const openCreate = useCallback(() => {
     setError(null);
-    setPendingAction(null);
     setMode({ kind: 'create' });
   }, []);
 
   const openEdit = useCallback((item: ItemResponse) => {
     setError(null);
-    setPendingAction(null);
     setMode({ kind: 'edit', item });
   }, []);
 
@@ -519,14 +534,15 @@ export default function Catalog() {
           setError(null);
           setMode({ kind: 'list' });
         }}
+        onAction={(kind, item) => void runItemAction(kind, item)}
       />
     );
   }
 
   if (loading && items.length === 0) {
     return (
-      <Screen title="Catalog" subtitle="Sellable items and prices">
-        <LoadingState message="Loading catalog..." testID="catalog-loading" />
+      <Screen title="Catálogo" subtitle="Produtos disponíveis para venda e preços">
+        <LoadingState message="Carregando catálogo..." testID="catalog-loading" />
       </Screen>
     );
   }
@@ -537,10 +553,10 @@ export default function Catalog() {
   const listHeader = (
     <View>
       <Card testID="catalog-filters">
-        <Text style={[typography.subtitle, { color: colors.text }]}>Catalog</Text>
+        <Text style={[typography.subtitle, { color: colors.text }]}>Catálogo</Text>
         <View style={{ marginTop: spacing.md }}>
           <Segment
-            label="Catalog visibility"
+            label="Visibilidade do catálogo"
             value={includeRemoved ? 'all' : 'active'}
             onChange={(value) => {
               setIncludeRemoved(value === 'all');
@@ -552,10 +568,10 @@ export default function Catalog() {
         </View>
         <View style={{ marginTop: spacing.md }}>
           <Field
-            label="Search"
+            label="Buscar"
             value={filters.search}
             onChangeText={(search) => setFilters((current) => ({ ...current, search }))}
-            placeholder="Name, category, or description"
+            placeholder="Nome, categoria ou descrição"
             autoCorrect={false}
             editable={!refreshing}
             testID="catalog-search"
@@ -563,10 +579,10 @@ export default function Catalog() {
         </View>
         <View style={{ marginTop: spacing.md }}>
           <Field
-            label="Category"
+            label="Categorias"
             value={filters.category}
             onChangeText={(category) => setFilters((current) => ({ ...current, category }))}
-            placeholder="Any category"
+            placeholder="Qualquer categoria"
             autoCorrect={false}
             editable={!refreshing}
             testID="catalog-category-filter"
@@ -575,7 +591,7 @@ export default function Catalog() {
         {hasFilters ? (
           <View style={{ marginTop: spacing.md }}>
             <Button
-              label="Clear filters"
+              label="Limpar filtros"
               onPress={() => setFilters(EMPTY_CATALOG_FILTERS)}
               variant="tertiary"
               testID="catalog-clear-filters"
@@ -584,7 +600,7 @@ export default function Catalog() {
         ) : null}
         <View style={{ marginTop: spacing.md }}>
           <Button
-            label="Add item"
+            label="Adicionar item"
             onPress={openCreate}
             icon="add"
             fullWidth
@@ -602,40 +618,6 @@ export default function Catalog() {
             />
           </View>
         )}
-        {pendingAction === null ? null : (
-          <View
-            style={{
-              backgroundColor: colors.warningSoft,
-              borderRadius: 10,
-              marginTop: spacing.md,
-              padding: spacing.md,
-            }}
-          >
-            <Text style={[typography.body, { color: colors.text }]} testID="catalog-confirm-copy">
-              {actionCopy(pendingAction)}
-            </Text>
-            <View style={{ flexDirection: 'row', marginTop: spacing.md }}>
-              <View style={{ flex: 1, marginRight: spacing.sm }}>
-                <Button
-                  label="Cancel"
-                  onPress={() => setPendingAction(null)}
-                  variant="secondary"
-                  disabled={busy}
-                  testID="catalog-action-cancel"
-                />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Button
-                  label={actionButtonLabel(pendingAction.kind)}
-                  onPress={() => void confirmAction()}
-                  loading={busy}
-                  variant={pendingAction.kind === 'remove' ? 'danger' : 'primary'}
-                  testID="catalog-action-confirm"
-                />
-              </View>
-            </View>
-          </View>
-        )}
       </Card>
     </View>
   );
@@ -643,33 +625,21 @@ export default function Catalog() {
   const listFooter = (
     <Card testID="catalog-pagination" style={{ marginTop: spacing.md }}>
       <Text style={[typography.label, { color: colors.text }]} testID="catalog-page-label">
-        {`Page ${page} of ${totalPages}`}
+        {`Página ${page} de ${totalPages}`}
       </Text>
-      <View style={{ flexDirection: 'row', marginTop: spacing.md }}>
-        <View style={{ flex: 1, marginRight: spacing.sm }}>
-          <Button
-            label="Previous"
-            onPress={() => setPage((current) => Math.max(1, current - 1))}
-            variant="secondary"
-            disabled={page <= 1}
-            testID="catalog-previous"
-          />
-        </View>
-        <View style={{ flex: 1 }}>
-          <Button
-            label="Next"
-            onPress={() => setPage((current) => current + 1)}
-            variant="secondary"
-            disabled={page >= totalPages}
-            testID="catalog-next"
-          />
-        </View>
+      <View style={{ marginTop: spacing.md }}>
+        <Pagination
+          page={page}
+          totalPages={totalPages}
+          onPageChange={setPage}
+          testID="catalog-pages"
+        />
       </View>
     </Card>
   );
 
   return (
-    <Screen title="Catalog" subtitle="Sellable items and prices">
+    <Screen title="Catálogo" subtitle="Produtos disponíveis para venda e preços">
       <FlatList
         testID="catalog-list"
         data={visibleItems}
@@ -678,8 +648,8 @@ export default function Catalog() {
         ListFooterComponent={listFooter}
         ListEmptyComponent={
           <EmptyState
-            title="No items found"
-            description="No catalog items match the current view."
+            title="Nenhum produto encontrado"
+            description="Nenhum produto do catálogo corresponde à visualização atual."
             icon="food"
           />
         }
@@ -687,17 +657,7 @@ export default function Catalog() {
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={() => void loadItems(page, includeRemoved, true)} />
         }
-        renderItem={({ item }) => (
-          <ItemRow
-            item={item}
-            busy={busy}
-            onEdit={openEdit}
-            onAction={(kind, target) => {
-              setError(null);
-              setPendingAction({ kind, item: target });
-            }}
-          />
-        )}
+        renderItem={({ item }) => <ItemRow item={item} onEdit={openEdit} />}
       />
     </Screen>
   );

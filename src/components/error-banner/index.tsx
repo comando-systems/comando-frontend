@@ -38,7 +38,7 @@ const styles = {
 export function ErrorBanner({
   message,
   onRetry,
-  retryLabel = 'Retry',
+  retryLabel = 'Tentar novamente',
   testID = 'error-banner',
 }: ErrorBannerProps) {
   return (

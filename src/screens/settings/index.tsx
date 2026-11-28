@@ -36,7 +36,7 @@ function validateSettingsForm(values: SettingsFormValues): string | null {
   const basisPoints = parseBasisPoints(values.basisPoints);
 
   if (basisPoints === null || basisPoints > MAX_BASIS_POINTS) {
-    return 'Enter a whole number from 0 to 10000.';
+    return 'Informe um número inteiro de 0 a 10000.';
   }
 
   return null;
@@ -134,8 +134,8 @@ export default function Settings() {
 
   if (loading && settings === null) {
     return (
-      <Screen title="Settings" subtitle="Service fee configuration">
-        <LoadingState message="Loading settings..." testID="settings-loading" />
+      <Screen title="Configurações" subtitle="Configuração da taxa de serviço">
+        <LoadingState message="Carregando configurações..." testID="settings-loading" />
       </Screen>
     );
   }
@@ -143,18 +143,18 @@ export default function Settings() {
   const displayedError = validationError ?? error;
 
   return (
-    <Screen scroll title="Settings" subtitle="Service fee configuration">
+    <Screen scroll title="Configurações" subtitle="Configuração da taxa de serviço">
       <Form
         testID="settings-form"
-        submit="Save settings"
+        submit="Salvar configurações"
         onSubmit={() => void saveSettings()}
         submitButtonProps={{ loading: saving, icon: 'check', size: 'lg', testID: 'settings-save' }}
       >
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
           <View style={{ flex: 1, marginRight: spacing.md }}>
-            <Text style={[typography.subtitle, { color: colors.text }]}>Service fee</Text>
+            <Text style={[typography.subtitle, { color: colors.text }]}>Taxa de serviço</Text>
             <Text style={[typography.caption, { color: colors.textMuted, marginTop: spacing.xs }]}>
-              Add the configured fee to new orders. Existing orders keep their own snapshot.
+              Adicione a taxa configurada aos novos pedidos. Pedidos existentes mantêm seu próprio valor.
             </Text>
           </View>
           <Switch
@@ -164,7 +164,7 @@ export default function Settings() {
               setSaved(false);
             }}
             disabled={saving}
-            accessibilityLabel="Service fee enabled"
+            accessibilityLabel="Taxa de serviço ativada"
             testID="settings-enabled"
             trackColor={{ false: colors.border, true: colors.primary }}
             thumbColor={colors.white}
@@ -172,14 +172,14 @@ export default function Settings() {
         </View>
         <View style={{ marginTop: spacing.lg }}>
           <Field
-            label="Service fee rate (basis points)"
+            label="Taxa de serviço (pontos-base)"
             value={form.basisPoints}
             onChangeText={(basisPoints) => {
               setForm((current) => ({ ...current, basisPoints }));
               setValidationError(null);
               setSaved(false);
             }}
-            helper="1000 = 10%. Allowed range: 0 to 10000."
+            helper="1000 = 10%. Intervalo permitido: 0 a 10000."
             keyboardType="number-pad"
             autoCorrect={false}
             editable={!saving}
@@ -198,7 +198,7 @@ export default function Settings() {
         {saved ? (
           <View style={{ marginTop: spacing.md }}>
             <Text style={[typography.label, { color: colors.success }]} testID="settings-saved">
-              Settings saved.
+              Configurações salvas.
             </Text>
           </View>
         ) : null}

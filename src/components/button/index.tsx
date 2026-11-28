@@ -1,6 +1,7 @@
 import { ActivityIndicator, Pressable, Text } from 'react-native';
 
 import { Icon, type IconName } from '@/components/icon';
+import { useIsWideScreen } from '@/hooks/use-wide-screen';
 import { colors, layout, radii, spacing, typography } from '@/theme';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'tertiary' | 'danger' | 'ghost';
@@ -61,8 +62,10 @@ const styles = {
     flexDirection: 'row',
   },
   fullWidth: {
-    maxWidth: layout.formMaxWidth,
     width: '100%',
+  },
+  fullWidthWide: {
+    maxWidth: layout.formMaxWidth,
   },
 } as const;
 
@@ -78,6 +81,7 @@ export function Button({
   iconPosition = 'left',
   testID = 'button',
 }: ButtonProps) {
+  const wide = useIsWideScreen();
   const isDisabled = disabled || loading;
   const palette = palettes[variant];
   const iconColor = isDisabled ? colors.textMuted : palette.text;
@@ -101,7 +105,7 @@ export function Button({
       style={({ pressed }) => [
         styles.base,
         sizeStyles[size],
-        fullWidth ? styles.fullWidth : null,
+        fullWidth ? [styles.fullWidth, wide ? styles.fullWidthWide : null] : null,
         {
           backgroundColor: isDisabled ? colors.surfaceMuted : palette.background,
           borderColor: isDisabled ? colors.border : palette.border,

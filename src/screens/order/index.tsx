@@ -74,20 +74,20 @@ export default function Order() {
 
   if (loading) {
     return (
-      <Screen title="Order">
-        <LoadingState message="Loading order..." testID="order-loading" />
+      <Screen title="Pedido">
+        <LoadingState message="Carregando pedido..." testID="order-loading" />
       </Screen>
     );
   }
 
   if (order === null || orderId.length === 0) {
     return (
-      <Screen title="Order">
+      <Screen title="Pedido">
         <EmptyState
-          title="Order not found"
-          description="This order is no longer available."
+          title="Pedido não encontrado"
+          description="Este pedido não está mais disponível."
           icon="receipt"
-          actionLabel="Back to tables"
+          actionLabel="Voltar às mesas"
           onAction={() => router.push('/tables')}
         />
         {error === null ? null : (
@@ -109,7 +109,7 @@ export default function Order() {
     (order.status === 'OPEN' || order.status === 'AWAITING_PAYMENT');
 
   return (
-    <Screen title={order.tableCode ?? `Order ${order.id}`} subtitle={order.label ?? undefined}>
+    <Screen title={order.tableCode ?? `Pedido ${order.id}`} subtitle={order.label ?? undefined}>
       <View style={{ flex: 1, paddingBottom: spacing.lg }}>
         {error === null ? null : (
           <View style={{ marginBottom: spacing.lg }}>
@@ -134,7 +134,7 @@ export default function Order() {
           {order.status === 'AWAITING_PAYMENT' ? (
             <View style={{ marginTop: spacing.md }}>
               <Text style={[typography.caption, { color: colors.warning }]}>
-                Lines are locked while payment is requested.
+                Os itens estão bloqueados enquanto o pagamento é solicitado.
               </Text>
             </View>
           ) : null}
@@ -143,7 +143,7 @@ export default function Order() {
         <View style={{ marginTop: spacing.md, flexDirection: 'row' }}>
           <View style={{ flex: 1, marginRight: canRequestPayment ? spacing.sm : 0 }}>
             <Button
-              label="Back"
+              label="Voltar"
               onPress={() => router.back()}
               variant="secondary"
               icon="back"
@@ -154,7 +154,7 @@ export default function Order() {
           {canRequestPayment ? (
             <View style={{ flex: 1, marginLeft: spacing.sm }}>
               <Button
-                label="Request payment"
+                label="Salvar para depois"
                 onPress={() => {
                   void runAction(() => api.orders.requestPayment(order.id));
                 }}
@@ -170,7 +170,7 @@ export default function Order() {
         {canOpenPayment ? (
           <View style={{ marginTop: spacing.md }}>
             <Button
-              label="Payment"
+              label="Finalizar"
               onPress={() => router.push(`/orders/${order.id}/payment`)}
               variant="secondary"
               icon="payment"
@@ -183,7 +183,7 @@ export default function Order() {
         {canCancel ? (
           <View style={{ marginTop: spacing.md }}>
             <Button
-              label="Cancel order"
+              label="Cancelar pedido"
               onPress={() => {
                 void runAction(() => api.orders.cancel(order.id));
               }}

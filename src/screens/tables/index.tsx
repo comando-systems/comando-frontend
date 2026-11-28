@@ -17,8 +17,9 @@ import { api } from '@/services/api';
 import { colors, radii, spacing, typography } from '@/theme';
 import type { OrderResponse } from '@/types';
 import { occupiedOrderId, toErrorMessage } from '@/utils/errors';
-import { orderItemCountLabel } from '@/utils/order-display';
+import { orderItemCountLabel, orderStatusLabels } from '@/utils/order-display';
 import { permissions } from '@/utils/permissions';
+import { nextTableCode, resolveTableCode } from '@/utils/table-codes';
 
 interface OrderRowProps {
   readonly order: OrderResponse;
@@ -137,7 +138,7 @@ const OrderRow = memo(function OrderRow({ order, onPress }: OrderRowProps) {
         </View>
         <OrderStatusBadge status={order.status} testID={`table-order-status-${order.id}`} />
       </View>
-      <Text style={styles.tableName}>{order.tableCode ?? `Order ${order.id}`}</Text>
+      <Text style={styles.tableName}>{order.tableCode ?? `Pedido ${order.id}`}</Text>
       <MoneyText
         cents={order.totalCents}
         size="md"
@@ -145,7 +146,7 @@ const OrderRow = memo(function OrderRow({ order, onPress }: OrderRowProps) {
         testID={`table-order-total-${order.id}`}
       />
       <Text style={styles.tableHint}>{orderItemCountLabel(order)}</Text>
-      <Text style={[styles.tableHint, styles.tableHintAction]}>Tap to open order</Text>
+      <Text style={[styles.tableHint, styles.tableHintAction]}>Toque para abrir o pedido</Text>
     </Card>
   );
 });
@@ -156,7 +157,8 @@ export default function Tables() {
   const { width } = useWindowDimensions();
   const [orders, setOrders] = useState<readonly OrderResponse[]>([]);
   const [query, setQuery] = useState('');
-  const [tableCode, setTableCode] = useState('');
+  const [customTableCode, setCustomTableCode] = useState('');
+  const [renamingTable, setRenamingTable] = useState(false);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [opening, setOpening] = useState(false);
@@ -201,26 +203,28 @@ export default function Tables() {
     [router],
   );
 
-  async function handleOpenTable() {
-    const normalizedCode = tableCode.trim();
+  const suggestedCode = useMemo(
+    () => nextTableCode(orders.map((order) => order.tableCode)),
+    [orders],
+  );
 
-    if (normalizedCode.length === 0) {
-      setError('Enter a table code.');
-      return;
-    }
+  async function handleOpenTable() {
+    const tableCode = resolveTableCode(suggestedCode, customTableCode);
 
     setOpening(true);
     setError(null);
 
     try {
-      const order = await api.orders.openTable({ tableCode: normalizedCode });
-      setTableCode('');
+      const order = await api.orders.openTable({ tableCode });
+      setCustomTableCode('');
+      setRenamingTable(false);
       router.push(`/orders/${order.id}`);
     } catch (openError) {
       const existingOrderId = occupiedOrderId(openError);
 
       if (existingOrderId !== null) {
-        setTableCode('');
+        setCustomTableCode('');
+        setRenamingTable(false);
         router.push(`/orders/${existingOrderId}`);
         return;
       }
@@ -237,7 +241,7 @@ export default function Tables() {
       normalizedQuery.length === 0
         ? orders
         : orders.filter((order) =>
-            (order.tableCode ?? `Order ${order.id}`).toLowerCase().includes(normalizedQuery),
+            (order.tableCode ?? `Pedido ${order.id}`).toLowerCase().includes(normalizedQuery),
           ),
     [normalizedQuery, orders],
   );
@@ -247,11 +251,11 @@ export default function Tables() {
     <View>
       <View style={styles.toolbar}>
         <Field
-          label="Search tables"
+          label="Buscar mesas"
           testID="table-search"
           value={query}
           onChangeText={setQuery}
-          placeholder="Search by table code"
+          placeholder="Buscar pelo código da mesa"
           icon="search"
           autoCorrect={false}
           editable={!opening}
@@ -260,16 +264,16 @@ export default function Tables() {
         <View style={styles.legend}>
           <View style={styles.legendItem}>
             <View style={[styles.legendDot, { backgroundColor: colors.success }]} />
-            <Text style={styles.legendText}>Open</Text>
+            <Text style={styles.legendText}>{orderStatusLabels.OPEN}</Text>
           </View>
           <View style={styles.legendItem}>
             <View style={[styles.legendDot, { backgroundColor: colors.primary }]} />
-            <Text style={styles.legendText}>Payment requested</Text>
+            <Text style={styles.legendText}>{orderStatusLabels.AWAITING_PAYMENT}</Text>
           </View>
         </View>
         {canOpenTable ? (
           <Button
-            label="Open table"
+            label="Abrir mesa"
             onPress={() => {
               void handleOpenTable();
             }}
@@ -282,16 +286,31 @@ export default function Tables() {
       </View>
 
       {canOpenTable ? (
-        <Field
-          label="Table code"
-          testID="table-code-input"
-          value={tableCode}
-          onChangeText={setTableCode}
-          placeholder="Enter the table code"
-          autoCapitalize="characters"
-          editable={!opening}
-          containerStyle={{ marginBottom: spacing.xl }}
-        />
+        <View style={{ marginBottom: spacing.xl }}>
+          <Button
+            label={renamingTable ? 'Usar nome sugerido' : 'Renomear mesa'}
+            onPress={() => {
+              setCustomTableCode('');
+              setRenamingTable((current) => !current);
+            }}
+            variant="tertiary"
+            disabled={opening}
+            testID="table-rename-toggle"
+          />
+          {renamingTable ? (
+            <Field
+              label="Nome da mesa"
+              testID="table-code-input"
+              value={customTableCode}
+              onChangeText={setCustomTableCode}
+              placeholder={suggestedCode}
+              maxLength={64}
+              autoCorrect={false}
+              editable={!opening}
+              helper={`Sugerido: ${suggestedCode}. Deixe em branco para usar.`}
+            />
+          ) : null}
+        </View>
       ) : null}
 
       {error === null ? null : (
@@ -307,28 +326,28 @@ export default function Tables() {
       )}
 
       {orders.length === 0 ? null : (
-        <Text style={styles.sectionLabel}>Open tables</Text>
+        <Text style={styles.sectionLabel}>Mesas abertas</Text>
       )}
     </View>
   );
 
   if (loading) {
     return (
-      <Screen title="Tables" subtitle="Track open operations and start new orders.">
-        <LoadingState message="Loading tables..." testID="tables-loading" />
+      <Screen title="Mesas" subtitle="Acompanhe as operações abertas e inicie novos pedidos.">
+        <LoadingState message="Carregando mesas..." testID="tables-loading" />
       </Screen>
     );
   }
 
   return (
     <Screen
-      title="Tables"
-      subtitle="Track open operations and start new orders."
+      title="Mesas"
+      subtitle="Acompanhe as operações abertas e inicie novos pedidos."
       action={
         <View style={styles.summaryPill}>
           <Icon name="table" size="sm" color={colors.primaryDark} />
           <Text style={styles.summaryText}>
-            {`${orders.length} ${orders.length === 1 ? 'table' : 'tables'} in service`}
+            {`${orders.length} ${orders.length === 1 ? 'mesa' : 'mesas'} em atendimento`}
           </Text>
         </View>
       }
@@ -342,11 +361,11 @@ export default function Tables() {
         ListHeaderComponent={listHeader}
         ListEmptyComponent={
           <EmptyState
-            title={normalizedQuery.length === 0 ? 'No open tables' : 'No tables found'}
+            title={normalizedQuery.length === 0 ? 'Nenhuma mesa aberta' : 'Nenhuma mesa encontrada'}
             description={
               normalizedQuery.length === 0
-                ? 'Table orders will appear here.'
-                : 'No open table matches your search.'
+                ? 'Os pedidos das mesas aparecerão aqui.'
+                : 'Nenhuma mesa aberta corresponde à sua busca.'
             }
             icon="table"
           />

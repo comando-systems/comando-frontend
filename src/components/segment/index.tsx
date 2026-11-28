@@ -44,7 +44,7 @@ export function Segment<T extends string>({
   options,
   value,
   onChange,
-  label = 'Option',
+  label = 'Opção',
   testID = 'segment',
 }: SegmentProps<T>) {
   return (

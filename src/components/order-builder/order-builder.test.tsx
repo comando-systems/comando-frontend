@@ -15,7 +15,7 @@ jest.mock('@/services/api', () => ({
     },
   },
   ApiError: class ApiError extends Error {},
-  getErrorMessage: jest.fn(() => 'The request could not be completed.'),
+  getErrorMessage: jest.fn(() => 'Não foi possível concluir a solicitação.'),
 }));
 
 const addItemsMock = api.orders.addItems as jest.MockedFunction<typeof api.orders.addItems>;
@@ -392,7 +392,7 @@ describe('<OrderBuilder />', () => {
       />,
     );
 
-    expect(screen.getByText('Locked')).toBeTruthy();
+    expect(screen.getByText('Bloqueado')).toBeTruthy();
     expect(screen.queryByTestId('add-item-1')).toBeNull();
     expect(screen.queryByTestId('line-stepper-1-increase')).toBeNull();
     expect(screen.getByTestId('remove-1').props.accessibilityState.disabled).toBe(true);

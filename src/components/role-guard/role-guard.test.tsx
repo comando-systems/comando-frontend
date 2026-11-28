@@ -43,7 +43,7 @@ function redirectedHref(): unknown {
 async function renderGuard() {
   return render(
     <RoleGuard>
-      <Text>Allowed content</Text>
+      <Text>Conteúdo permitido</Text>
     </RoleGuard>,
   );
 }
@@ -61,7 +61,7 @@ describe('<RoleGuard />', () => {
 
     const { getByText } = await renderGuard();
 
-    expect(getByText('Allowed content')).toBeTruthy();
+    expect(getByText('Conteúdo permitido')).toBeTruthy();
     expect(Redirect).not.toHaveBeenCalled();
   });
 
@@ -98,7 +98,7 @@ describe('<RoleGuard />', () => {
 
     const { getByText } = await renderGuard();
 
-    expect(getByText('Allowed content')).toBeTruthy();
+    expect(getByText('Conteúdo permitido')).toBeTruthy();
     expect(Redirect).not.toHaveBeenCalled();
   });
 
@@ -116,7 +116,7 @@ describe('<RoleGuard />', () => {
 
     const { getByText } = await renderGuard();
 
-    expect(getByText('Allowed content')).toBeTruthy();
+    expect(getByText('Conteúdo permitido')).toBeTruthy();
     expect(Redirect).not.toHaveBeenCalled();
   });
 });

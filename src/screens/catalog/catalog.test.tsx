@@ -74,6 +74,11 @@ async function openCreateForm() {
   expect(await screen.findByTestId('catalog-item-form')).toBeTruthy();
 }
 
+async function openEditForm(itemId: string) {
+  await fireEvent.press(await screen.findByTestId(`catalog-item-${itemId}`));
+  expect(await screen.findByTestId('catalog-item-form')).toBeTruthy();
+}
+
 describe('<Catalog />', () => {
   const active = {
     ...makeItem('1', 'Espresso', 'Drinks', 1250, true, true, ['Drinks', 'Bebidas quentes']),
@@ -100,14 +105,15 @@ describe('<Catalog />', () => {
     jest.spyOn(api.items, 'remove').mockResolvedValue({ ...disabled, isActive: false });
   });
 
-  it('lists items with status, price, and supported pagination parameters', async () => {
+  it('lists compact item rows with a leading icon, name, and price', async () => {
     await render(<Catalog />);
 
     expect(await screen.findByTestId('catalog-item-1')).toBeTruthy();
     expect(screen.getByTestId('catalog-item-2')).toBeTruthy();
-    expect(screen.getByText('Active')).toBeTruthy();
-    expect(screen.getByText('Disabled')).toBeTruthy();
+    expect(screen.getByTestId('catalog-item-name-1').props.children).toBe('Espresso');
+    expect(screen.getByTestId('catalog-item-icon-1')).toBeTruthy();
     expect(screen.getByTestId('catalog-price-1').props.children).toBe('R$12.50');
+    expect(screen.queryByTestId('catalog-edit-1')).toBeNull();
     expect(api.items.list).toHaveBeenCalledWith({
       page: 1,
       pageSize: 20,
@@ -115,7 +121,23 @@ describe('<Catalog />', () => {
     });
   });
 
-  it('navigates pages and shows removed items when includeRemoved is enabled', async () => {
+  it('shows the item image when one is available and opens the edit form from the row', async () => {
+    jest
+      .spyOn(api.items, 'list')
+      .mockResolvedValue(makePage([{ ...active, imageUrl: 'https://example.com/espresso.jpg' }], 1, 1, 1));
+
+    await render(<Catalog />);
+
+    expect(await screen.findByTestId('catalog-item-image-1')).toBeTruthy();
+    expect(screen.queryByTestId('catalog-item-icon-1')).toBeNull();
+
+    await fireEvent.press(screen.getByTestId('catalog-item-1'));
+
+    expect(await screen.findByTestId('catalog-item-form')).toBeTruthy();
+    expect(screen.getByTestId('catalog-item-price').props.value).toBe('12.50');
+  });
+
+  it('navigates pages with numbered buttons and shows removed items when includeRemoved is enabled', async () => {
     jest.spyOn(api.items, 'list').mockImplementation(async (query) => {
       if (query?.includeRemoved === true) {
         return makePage([active, disabled, removed], query.page ?? 1, 2, 25);
@@ -137,10 +159,9 @@ describe('<Catalog />', () => {
       }),
     );
     expect(await screen.findByTestId('catalog-item-3')).toBeTruthy();
-    expect(screen.getByText('Removed')).toBeTruthy();
-    expect(screen.getByTestId('catalog-next').props.accessibilityState.disabled).toBe(false);
+    expect(screen.getByTestId('catalog-page-label').props.children).toBe('Página 1 de 2');
 
-    await fireEvent.press(screen.getByTestId('catalog-next'));
+    await fireEvent.press(screen.getByTestId('catalog-pages-page-2'));
 
     await waitFor(() =>
       expect(api.items.list).toHaveBeenLastCalledWith({
@@ -182,36 +203,35 @@ describe('<Catalog />', () => {
     await openCreateForm();
 
     await fireEvent.press(screen.getByTestId('catalog-item-submit'));
-    expect(screen.getByText('Enter an item name.')).toBeTruthy();
+    expect(screen.getByText('Informe o nome do produto.')).toBeTruthy();
 
     await fireEvent.changeText(screen.getByTestId('catalog-item-name'), 'Flat White');
     await fireEvent.press(screen.getByTestId('catalog-item-submit'));
-    expect(screen.getByText('Add at least one category.')).toBeTruthy();
+    expect(screen.getByText('Adicione pelo menos uma categoria.')).toBeTruthy();
 
     await fireEvent.changeText(screen.getByTestId('catalog-item-categories-input'), 'Drinks');
     await fireEvent.press(screen.getByTestId('catalog-item-categories-add'));
     await fireEvent.changeText(screen.getByTestId('catalog-item-categories-input'), 'drinks');
     await fireEvent.press(screen.getByTestId('catalog-item-categories-add'));
-    expect(screen.getByText('This category is already listed.')).toBeTruthy();
+    expect(screen.getByText('Esta categoria já está na lista.')).toBeTruthy();
 
     await fireEvent.changeText(screen.getByTestId('catalog-item-price'), '12.345');
     await fireEvent.press(screen.getByTestId('catalog-item-submit'));
-    expect(screen.getByText('Enter a price with up to two decimal places.')).toBeTruthy();
+    expect(screen.getByText('Informe um preço com até duas casas decimais.')).toBeTruthy();
 
     await fireEvent.changeText(screen.getByTestId('catalog-item-price'), '12.50');
     await fireEvent.changeText(screen.getByTestId('catalog-item-image'), 'not-a-url');
     await fireEvent.press(screen.getByTestId('catalog-item-submit'));
     expect(
-      screen.getByText('Enter a valid image URL starting with http:// or https://.'),
+      screen.getByText('Informe uma URL de imagem válida começando com http:// ou https://.'),
     ).toBeTruthy();
     expect(api.items.create).not.toHaveBeenCalled();
   });
 
   it('edits an item using the returned item from the update endpoint', async () => {
     await render(<Catalog />);
+    await openEditForm('2');
 
-    await fireEvent.press(await screen.findByTestId('catalog-edit-2'));
-    expect(await screen.findByTestId('catalog-item-price')).toBeTruthy();
     expect(screen.getByTestId('catalog-item-price').props.value).toBe('5.00');
 
     await fireEvent.changeText(screen.getByTestId('catalog-item-name'), ' Butter Croissant ');
@@ -236,12 +256,7 @@ describe('<Catalog />', () => {
     await render(<Catalog />);
     await screen.findByTestId('catalog-item-1');
 
-    expect(screen.getByTestId('catalog-categories-1').props.children).toBe(
-      'Drinks, Bebidas quentes',
-    );
-
-    await fireEvent.press(screen.getByTestId('catalog-edit-1'));
-    await screen.findByTestId('catalog-item-categories');
+    await openEditForm('1');
 
     expect(screen.getByText('Bebidas quentes')).toBeTruthy();
     await fireEvent.press(screen.getByTestId('catalog-item-categories-chip-1'));
@@ -262,27 +277,74 @@ describe('<Catalog />', () => {
     );
   });
 
-  it('confirms disable and remove actions with English copy', async () => {
+  it('confirms disable and remove actions from the edit form', async () => {
     await render(<Catalog />);
     await screen.findByTestId('catalog-item-1');
 
+    await openEditForm('1');
     await fireEvent.press(screen.getByTestId('catalog-disable-1'));
     expect(screen.getByTestId('catalog-confirm-copy').props.children).toContain(
-      'Disable Espresso?',
+      'Desativar Espresso?',
     );
     await fireEvent.press(screen.getByTestId('catalog-action-confirm'));
 
     await waitFor(() => expect(api.items.update).toHaveBeenCalledWith('1', { enabled: false }));
-    expect(screen.getAllByText('Disabled')).toHaveLength(2);
+    await waitFor(() => expect(screen.queryByTestId('catalog-item-form')).toBeNull());
 
+    await openEditForm('2');
     await fireEvent.press(screen.getByTestId('catalog-remove-2'));
     expect(screen.getByTestId('catalog-confirm-copy').props.children).toContain(
-      'Remove Croissant from the catalog?',
+      'Remover Croissant do catálogo?',
     );
+    await fireEvent.press(screen.getByTestId('catalog-action-cancel'));
+    expect(screen.queryByTestId('catalog-confirm-copy')).toBeNull();
+
+    await fireEvent.press(screen.getByTestId('catalog-remove-2'));
     await fireEvent.press(screen.getByTestId('catalog-action-confirm'));
 
     await waitFor(() => expect(api.items.remove).toHaveBeenCalledWith('2'));
     await waitFor(() => expect(screen.queryByTestId('catalog-item-2')).toBeNull());
+  });
+
+  it('enables a disabled item from the edit form', async () => {
+    await render(<Catalog />);
+    await screen.findByTestId('catalog-item-2');
+
+    await openEditForm('2');
+    await fireEvent.press(screen.getByTestId('catalog-enable-2'));
+    expect(screen.getByTestId('catalog-confirm-copy').props.children).toContain(
+      'Ativar Croissant?',
+    );
+    await fireEvent.press(screen.getByTestId('catalog-action-confirm'));
+
+    await waitFor(() => expect(api.items.update).toHaveBeenCalledWith('2', { enabled: true }));
+    await waitFor(() => expect(screen.queryByTestId('catalog-item-form')).toBeNull());
+  });
+
+  it('does not offer actions for an item removed from the catalog', async () => {
+    jest.spyOn(api.items, 'list').mockResolvedValue(makePage([removed], 1, 1, 1));
+
+    await render(<Catalog />);
+    await openEditForm('3');
+
+    expect(screen.queryByTestId('catalog-remove-3')).toBeNull();
+    expect(screen.queryByTestId('catalog-disable-3')).toBeNull();
+  });
+
+  it('keeps the edit form open with a fixed error when an action fails', async () => {
+    jest
+      .spyOn(api.items, 'update')
+      .mockRejectedValue(new ApiError({ status: 409, code: 'CONFLICT' }));
+
+    await render(<Catalog />);
+    await screen.findByTestId('catalog-item-1');
+    await openEditForm('1');
+    await fireEvent.press(screen.getByTestId('catalog-disable-1'));
+    await fireEvent.press(screen.getByTestId('catalog-action-confirm'));
+
+    expect(await screen.findByTestId('catalog-item-form-error')).toBeTruthy();
+    expect(screen.queryByText('CONFLICT')).toBeNull();
+    expect(screen.getByTestId('catalog-item-form')).toBeTruthy();
   });
 
   it('filters the loaded page by search and category', async () => {
@@ -310,14 +372,16 @@ describe('<Catalog />', () => {
     expect(screen.getByTestId('catalog-item-2')).toBeTruthy();
   });
 
-  it('shows a fixed English error with retry support', async () => {
+  it('shows a fixed error with retry support', async () => {
     jest
       .spyOn(api.items, 'list')
       .mockRejectedValue(new ApiError({ status: 403, code: 'FORBIDDEN' }));
 
     await render(<Catalog />);
 
-    expect(await screen.findByText('You are not allowed to perform this action.')).toBeTruthy();
+    expect(
+      await screen.findByText('Você não tem permissão para realizar esta ação.'),
+    ).toBeTruthy();
 
     jest.spyOn(api.items, 'list').mockResolvedValue(makePage([active], 1, 1, 1));
     await fireEvent.press(screen.getByTestId('catalog-error-retry'));

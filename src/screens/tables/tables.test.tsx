@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 
 import { useSession } from '@/providers/session-provider';
@@ -109,8 +109,10 @@ describe('<Tables />', () => {
 
     expect(await screen.findByTestId('table-order-10')).toBeTruthy();
     expect(screen.getByText('T-01')).toBeTruthy();
-    expect(screen.getByText('Awaiting payment')).toBeTruthy();
-    expect(screen.getByText('3 items')).toBeTruthy();
+    expect(
+      within(screen.getByTestId('table-order-status-10')).getByText('Aguardando pagamento'),
+    ).toBeTruthy();
+    expect(screen.getByText('3 itens')).toBeTruthy();
     expect(screen.getByTestId('table-order-total-10').props.children).toBe('R$15.00');
     expect(api.orders.list).toHaveBeenCalledWith({
       statuses: ['OPEN', 'AWAITING_PAYMENT'],
@@ -134,10 +136,8 @@ describe('<Tables />', () => {
 
     await render(<Tables />);
 
-    await fireEvent.changeText(
-      await screen.findByTestId('table-code-input'),
-      'T-02',
-    );
+    await fireEvent.press(await screen.findByTestId('table-rename-toggle'));
+    await fireEvent.changeText(await screen.findByTestId('table-code-input'), 'T-02');
     await fireEvent.press(screen.getByTestId('open-table-button'));
 
     await waitFor(() => expect(push).toHaveBeenCalledWith('/orders/99'));
@@ -145,9 +145,10 @@ describe('<Tables />', () => {
     expect(screen.queryByTestId('tables-error')).toBeNull();
   });
 
-  it('opens a free table and navigates to the new order', async () => {
+  it('opens a free table with a custom name and navigates to the new order', async () => {
     await render(<Tables />);
 
+    await fireEvent.press(await screen.findByTestId('table-rename-toggle'));
     await fireEvent.changeText(await screen.findByTestId('table-code-input'), ' T-02 ');
     await fireEvent.press(screen.getByTestId('open-table-button'));
 
@@ -155,14 +156,25 @@ describe('<Tables />', () => {
     expect(api.orders.openTable).toHaveBeenCalledWith({ tableCode: 'T-02' });
   });
 
-  it('rejects an empty table code', async () => {
-    await render(<Tables />);
+  it('opens the next sequential table in one tap', async () => {
+    jest
+      .spyOn(api.orders, 'list')
+      .mockResolvedValue(makePage([makeOrder('10', 'Mesa 1', 'OPEN')]));
 
+    await render(<Tables />);
     await fireEvent.press(await screen.findByTestId('open-table-button'));
 
-    expect(screen.getByText('Enter a table code.')).toBeTruthy();
-    expect(api.orders.openTable).not.toHaveBeenCalled();
-    expect(push).not.toHaveBeenCalled();
+    expect(api.orders.openTable).toHaveBeenCalledWith({ tableCode: 'Mesa 2' });
+    await waitFor(() => expect(push).toHaveBeenCalledWith('/orders/11'));
+  });
+
+  it('shows the optional rename field only when requested', async () => {
+    await render(<Tables />);
+
+    expect(screen.queryByTestId('table-code-input')).toBeNull();
+    await fireEvent.press(await screen.findByTestId('table-rename-toggle'));
+    expect(screen.getByTestId('table-code-input')).toBeTruthy();
+    expect(screen.getByText('Sugerido: Mesa 1. Deixe em branco para usar.')).toBeTruthy();
   });
 
   it('filters the table grid locally by table name', async () => {
@@ -190,7 +202,7 @@ describe('<Tables />', () => {
     expect(screen.queryByTestId('open-table-button')).toBeNull();
   });
 
-  it('shows a fixed English error when the list cannot be loaded', async () => {
+  it('shows a fixed error when the list cannot be loaded', async () => {
     jest.spyOn(api.orders, 'list').mockRejectedValue(
       new ApiError({ status: 401, code: 'UNAUTHORIZED' }),
     );
@@ -198,6 +210,6 @@ describe('<Tables />', () => {
     await render(<Tables />);
 
     expect(await screen.findByTestId('tables-error')).toBeTruthy();
-    expect(screen.getByText('Authentication is required.')).toBeTruthy();
+    expect(screen.getByText('É necessário entrar com sua conta.')).toBeTruthy();
   });
 });

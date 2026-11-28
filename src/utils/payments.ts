@@ -1,18 +1,23 @@
+import { parsePriceToCents } from '@/utils/money';
 import type { PaymentInput, PaymentMethod } from '@/types';
 
 export interface PaymentDraftRow {
   readonly id: string;
   readonly method: PaymentMethod;
+  /**
+   * Integer-cents string (for example "1250"). The editor displays it as reais
+   * with two decimals and converts typed amounts back with parsePriceToCents.
+   */
   readonly amountCents: string;
   readonly receivedCents: string;
 }
 
 export const paymentMethodLabels: Record<PaymentMethod, string> = {
-  CASH: 'Cash',
-  DEBIT_CARD: 'Debit card',
-  CREDIT_CARD: 'Credit card',
+  CASH: 'Dinheiro',
+  DEBIT_CARD: 'Cartão de débito',
+  CREDIT_CARD: 'Cartão de crédito',
   PIX: 'Pix',
-  OTHER: 'Other',
+  OTHER: 'Outro',
 };
 
 let nextPaymentRowId = 0;
@@ -29,26 +34,31 @@ export function createPaymentRow(overrides: Partial<PaymentDraftRow> = {}): Paym
   };
 }
 
-export function parseWholeCents(value: string): number | null {
-  const normalized = value.trim();
+/**
+ * Parses a draft amount into integer cents. Rows normally hold an integer-cents
+ * string; decimal reais text (for example "12.50") is accepted as well so rows
+ * initialized from a decimal input keep working.
+ */
+export function parseDraftCents(value: string): number | null {
+  const trimmed = value.trim();
 
-  if (!/^\d+$/.test(normalized)) {
-    return null;
+  if (/^\d+$/.test(trimmed)) {
+    const cents = Number(trimmed);
+    return Number.isSafeInteger(cents) ? cents : null;
   }
 
-  const amount = Number(normalized);
-  return Number.isSafeInteger(amount) ? amount : null;
+  return parsePriceToCents(trimmed);
 }
 
 export function paymentDraftTotalCents(rows: readonly PaymentDraftRow[]): number {
-  return rows.reduce((sum, row) => sum + (parseWholeCents(row.amountCents) ?? 0), 0);
+  return rows.reduce((sum, row) => sum + (parseDraftCents(row.amountCents) ?? 0), 0);
 }
 
 export function paymentInputsFromRows(rows: readonly PaymentDraftRow[]): PaymentInput[] {
   const inputs: PaymentInput[] = [];
 
   for (const row of rows) {
-    const amountCents = parseWholeCents(row.amountCents);
+    const amountCents = parseDraftCents(row.amountCents);
 
     if (amountCents === null || amountCents <= 0) {
       continue;
@@ -59,7 +69,7 @@ export function paymentInputsFromRows(rows: readonly PaymentDraftRow[]): Payment
       continue;
     }
 
-    const receivedCents = parseWholeCents(row.receivedCents);
+    const receivedCents = parseDraftCents(row.receivedCents);
 
     if (receivedCents === null || receivedCents <= 0) {
       inputs.push({ method: 'CASH', amountCents });
@@ -77,34 +87,34 @@ export function validatePaymentRows(
   totalCents: number,
 ): string | null {
   if (rows.length === 0) {
-    return totalCents === 0 ? null : 'Add at least one payment.';
+    return totalCents === 0 ? null : 'Adicione pelo menos um pagamento.';
   }
 
   for (const row of rows) {
-    const amountCents = parseWholeCents(row.amountCents);
+    const amountCents = parseDraftCents(row.amountCents);
 
     if (amountCents === null || amountCents <= 0) {
-      return 'Every payment needs a positive amount in cents.';
+      return 'Cada pagamento precisa de um valor positivo em centavos.';
     }
 
     if (row.method !== 'CASH' && row.receivedCents.trim().length > 0) {
-      return 'Only cash payments can record an amount received.';
+      return 'Somente pagamentos em dinheiro podem registrar o valor recebido.';
     }
 
     if (row.method === 'CASH' && row.receivedCents.trim().length > 0) {
-      const receivedCents = parseWholeCents(row.receivedCents);
+      const receivedCents = parseDraftCents(row.receivedCents);
 
       if (receivedCents === null || receivedCents <= 0) {
-        return 'Cash received must be a positive amount in cents.';
+        return 'O valor recebido em dinheiro deve ser positivo em centavos.';
       }
 
       if (receivedCents < amountCents) {
-        return 'Amount received cannot be less than the payment amount.';
+        return 'O valor recebido não pode ser menor que o pagamento.';
       }
     }
   }
 
   return paymentDraftTotalCents(rows) === totalCents
     ? null
-    : 'Payment amounts must equal the order total.';
+    : 'Os valores dos pagamentos devem somar o total do pedido.';
 }

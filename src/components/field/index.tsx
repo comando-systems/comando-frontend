@@ -2,6 +2,7 @@ import { Text, TextInput, View } from 'react-native';
 import type { StyleProp, TextInputProps, TextStyle, ViewStyle } from 'react-native';
 
 import { Icon, type IconName } from '@/components/icon';
+import { useIsWideScreen } from '@/hooks/use-wide-screen';
 import { colors, layout, radii, spacing, typography } from '@/theme';
 
 export interface FieldProps extends Omit<TextInputProps, 'style'> {
@@ -15,8 +16,10 @@ export interface FieldProps extends Omit<TextInputProps, 'style'> {
 
 const styles = {
   container: {
-    maxWidth: layout.formMaxWidth,
     width: '100%',
+  },
+  containerWide: {
+    maxWidth: layout.formMaxWidth,
   },
   label: {
     marginBottom: spacing.xs,
@@ -55,11 +58,12 @@ export function Field({
   accessibilityLabel = label,
   ...inputProps
 }: FieldProps) {
+  const wide = useIsWideScreen();
   const message = error ?? helper;
   const messageColor = error === null ? colors.textMuted : colors.danger;
 
   return (
-    <View style={[styles.container, containerStyle]}>
+    <View style={[styles.container, wide ? styles.containerWide : null, containerStyle]}>
       <Text style={[typography.label, styles.label, { color: colors.text }]}>{label}</Text>
       <View
         style={[

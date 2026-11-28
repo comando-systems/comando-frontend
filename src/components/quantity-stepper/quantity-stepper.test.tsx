@@ -9,6 +9,12 @@ describe('<QuantityStepper />', () => {
     expect(screen.getByTestId('quantity-stepper-decrease')).toBeTruthy();
     expect(screen.getByTestId('quantity-stepper-value').props.children).toBe(2);
     expect(screen.getByTestId('quantity-stepper-increase')).toBeTruthy();
+    expect(screen.getByTestId('quantity-stepper-decrease').props.accessibilityLabel).toBe(
+      'Diminuir quantidade',
+    );
+    expect(screen.getByTestId('quantity-stepper-increase').props.accessibilityLabel).toBe(
+      'Aumentar quantidade',
+    );
   });
 
   it('keeps the value positive', async () => {

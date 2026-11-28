@@ -43,7 +43,7 @@ export function QuantityStepper({
   onChange,
   min = 1,
   max,
-  label = 'Quantity',
+  label = 'Quantidade',
   testID = 'quantity-stepper',
 }: QuantityStepperProps) {
   const lowerBound = Math.max(1, Math.floor(min));
@@ -57,7 +57,7 @@ export function QuantityStepper({
     <View testID={testID} style={styles.container}>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel={`Decrease ${label.toLowerCase()}`}
+        accessibilityLabel={`Diminuir ${label.toLowerCase()}`}
         accessibilityState={{ disabled: decreaseDisabled }}
         disabled={decreaseDisabled}
         testID={`${testID}-decrease`}
@@ -79,7 +79,7 @@ export function QuantityStepper({
       </Text>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel={`Increase ${label.toLowerCase()}`}
+        accessibilityLabel={`Aumentar ${label.toLowerCase()}`}
         accessibilityState={{ disabled: increaseDisabled }}
         disabled={increaseDisabled}
         testID={`${testID}-increase`}
