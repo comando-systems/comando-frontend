@@ -41,26 +41,31 @@ describe('<Home />', () => {
     jest.clearAllMocks();
   });
 
-  it.each<readonly RoleCode[]>([['CASHIER'], ['SERVER']])(
-    'routes %s to tables',
-    async (role) => {
-      mockRoles([role]);
+  it('routes a server to tables', async () => {
+    mockRoles(['SERVER']);
 
-      await render(<Home />);
+    await render(<Home />);
 
-      expect(redirectedHref()).toBe('/tables');
-    },
-  );
+    expect(redirectedHref()).toBe('/tables');
+  });
 
-  it('routes an admin without cashier access to the counter', async () => {
-    mockRoles(['ADMIN']);
+  it('routes a cashier to the counter', async () => {
+    mockRoles(['CASHIER']);
 
     await render(<Home />);
 
     expect(redirectedHref()).toBe('/counter');
   });
 
-  it('routes a user without operational roles to management', async () => {
+  it('routes an admin to management', async () => {
+    mockRoles(['ADMIN']);
+
+    await render(<Home />);
+
+    expect(redirectedHref()).toBe('/management');
+  });
+
+  it('routes a user without roles to management', async () => {
     mockRoles([]);
 
     await render(<Home />);

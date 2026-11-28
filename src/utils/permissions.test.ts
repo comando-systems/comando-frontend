@@ -28,16 +28,31 @@ describe('permissions', () => {
     expect(permissions.canManage(createUser(['CASHIER']))).toBe(false);
   });
 
-  it('withholds close-order actions from servers', () => {
-    expect(permissions.canCloseOrders(createUser(['SERVER']))).toBe(false);
-    expect(permissions.canCloseOrders(createUser(['CASHIER']))).toBe(true);
-    expect(permissions.canCloseOrders(createUser(['ADMIN']))).toBe(true);
+  it('gives each operational screen to a single role', () => {
+    expect(permissions.canUseCounter(createUser(['CASHIER']))).toBe(true);
+    expect(permissions.canUseCounter(createUser(['ADMIN']))).toBe(false);
+    expect(permissions.canUseTables(createUser(['SERVER']))).toBe(true);
+    expect(permissions.canUseTables(createUser(['CASHIER']))).toBe(false);
+    expect(permissions.canViewHistory(createUser(['ADMIN']))).toBe(true);
+    expect(permissions.canViewHistory(createUser(['CASHIER']))).toBe(false);
+    expect(permissions.canViewHistory(createUser(['SERVER']))).toBe(false);
   });
 
-  it('withholds open and edit table actions from admins', () => {
+  it('allows cashiers and servers to close and cancel orders', () => {
+    expect(permissions.canCloseOrders(createUser(['SERVER']))).toBe(true);
+    expect(permissions.canCloseOrders(createUser(['CASHIER']))).toBe(true);
+    expect(permissions.canCloseOrders(createUser(['ADMIN']))).toBe(false);
+    expect(permissions.canCancelOrders(createUser(['SERVER']))).toBe(true);
+    expect(permissions.canCancelOrders(createUser(['CASHIER']))).toBe(true);
+    expect(permissions.canCancelOrders(createUser(['ADMIN']))).toBe(false);
+  });
+
+  it('gives table opening and editing to servers only', () => {
     expect(permissions.canOpenTables(createUser(['ADMIN']))).toBe(false);
     expect(permissions.canEditTables(createUser(['ADMIN']))).toBe(false);
-    expect(permissions.canOpenTables(createUser(['CASHIER']))).toBe(true);
+    expect(permissions.canOpenTables(createUser(['CASHIER']))).toBe(false);
+    expect(permissions.canEditTables(createUser(['CASHIER']))).toBe(false);
+    expect(permissions.canOpenTables(createUser(['SERVER']))).toBe(true);
     expect(permissions.canEditTables(createUser(['SERVER']))).toBe(true);
   });
 });

@@ -133,7 +133,7 @@ describe('<Order />', () => {
     expect(screen.getByTestId('order-item-count').props.children).toBe('3 itens');
     expect(screen.getByText('Aberto')).toBeTruthy();
     expect(screen.getByTestId('request-payment-button')).toBeTruthy();
-    expect(screen.queryByTestId('order-payment-button')).toBeNull();
+    expect(screen.getByTestId('order-payment-button')).toBeTruthy();
     expect(screen.getByTestId('cancel-order-button')).toBeTruthy();
     expect(await screen.findByTestId('builder-line-1')).toBeTruthy();
     expect(screen.getByTestId('line-stepper-1-increase')).toBeTruthy();
@@ -174,8 +174,8 @@ describe('<Order />', () => {
     expect(screen.queryByTestId('line-stepper-1-increase')).toBeNull();
     expect(screen.getByTestId('line-quantity-1')).toBeTruthy();
     expect(screen.queryByTestId('request-payment-button')).toBeNull();
-    expect(screen.getByTestId('order-payment-button')).toBeTruthy();
-    expect(screen.getByTestId('cancel-order-button')).toBeTruthy();
+    expect(screen.queryByTestId('order-payment-button')).toBeNull();
+    expect(screen.queryByTestId('cancel-order-button')).toBeNull();
   });
 
   it('refreshes the order from the response after a line mutation', async () => {

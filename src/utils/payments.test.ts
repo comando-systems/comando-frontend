@@ -66,8 +66,10 @@ describe('payment helpers', () => {
     expect(paymentInputsFromRows([])).toEqual([]);
   });
 
-  it('accepts no payments for a negative balance', () => {
-    expect(validatePaymentRows([], -500)).toBeNull();
+  it('blocks a negative balance before reaching the backend', () => {
+    expect(validatePaymentRows([], -500)).toBe(
+      'Não é possível finalizar com saldo negativo. Ajuste o desconto antes de continuar.',
+    );
     expect(paymentInputsFromRows([])).toEqual([]);
   });
 

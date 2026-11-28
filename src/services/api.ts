@@ -40,6 +40,7 @@ const errorMessages: Record<string, string> = {
   CONFLICT: 'A solicitação conflita com o estado atual.',
   TABLE_OCCUPIED: 'Esta mesa já está ocupada.',
   ZERO_TOTAL: 'O total do pedido não pode ser zero. Adicione itens ou ajuste o desconto antes de finalizar.',
+  NEGATIVE_TOTAL: 'Não é possível finalizar com saldo negativo. Ajuste o desconto antes de continuar.',
   INVALID_VALUE: 'Verifique os valores informados.',
   INVARIANT_VIOLATION: 'Esta operação não pode ser concluída no estado atual.',
   INVALID_STATE_TRANSITION: 'Esta operação não pode ser concluída no estado atual.',

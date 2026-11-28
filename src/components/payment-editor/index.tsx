@@ -7,6 +7,7 @@ import { Field } from '@/components/field';
 import { Icon } from '@/components/icon';
 import { MoneyText } from '@/components/money-text';
 import { Segment } from '@/components/segment';
+import { getErrorMessage } from '@/services/api';
 import { colors, spacing, typography } from '@/theme';
 import { PAYMENT_METHODS, type PaymentMethod } from '@/types';
 import { formatPriceInput, maskPriceInput, parsePriceToCents } from '@/utils/money';
@@ -249,7 +250,7 @@ export function PaymentEditor({
   const isCredit = totalCents < 0;
 
   const statusLabel = isCredit
-    ? 'Saldo negativo. Nenhum pagamento é necessário.'
+    ? getErrorMessage('NEGATIVE_TOTAL')
     : remainingCents === 0
       ? 'O total dos pagamentos é igual ao total do pedido.'
       : remainingCents > 0
@@ -277,14 +278,14 @@ export function PaymentEditor({
         </View>
         <View style={styles.summaryStatusRow}>
           <Icon
-            name={isCredit || remainingCents === 0 ? 'check' : 'payment'}
+            name={remainingCents === 0 && !isCredit ? 'check' : 'payment'}
             size="sm"
-            color={isCredit || remainingCents === 0 ? colors.success : colors.warning}
+            color={remainingCents === 0 && !isCredit ? colors.success : colors.warning}
           />
           <Text
             style={[
               typography.caption,
-              isCredit || remainingCents === 0 ? styles.statusMatch : styles.statusMismatch,
+              remainingCents === 0 && !isCredit ? styles.statusMatch : styles.statusMismatch,
             ]}
             testID={`${testID}-status`}
           >

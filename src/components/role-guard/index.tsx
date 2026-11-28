@@ -14,6 +14,7 @@ type AccessRule = (user: UserResponse | null) => boolean;
 const accessRules: readonly (readonly [string, AccessRule])[] = [
   ['/management', permissions.canManage],
   ['/counter', permissions.canUseCounter],
+  ['/tables', permissions.canUseTables],
   ['/history', permissions.canViewHistory],
 ];
 

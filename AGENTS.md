@@ -66,9 +66,10 @@ src/
 - Root layout holds providers and protected-route guards. Authenticated routes live in a `(app)` group; `login` stays public.
 - Client-side guards are UX only. The backend is authoritative for every permission.
 - Roles: `ADMIN`, `CASHIER`, `SERVER`; a user may hold several and permissions are the union of their roles. `RoleSet` is an internal partial record keyed by role, so permission checks are O(1); `src/services/api.ts` converts backend role arrays at the HTTP boundary and request bodies keep using arrays.
-  - `ADMIN`: management area (users, catalog, settings, reports), counter sales, close/cancel table orders. Cannot open or edit tables.
-  - `CASHIER`: counter sales, history, tables, close/cancel.
-  - `SERVER`: tables and edits; cannot close orders.
+  - `ADMIN`: management area (users, catalog, settings, reports) and order history. No counter or table navigation and no order actions.
+  - `CASHIER`: counter sales only, including closing and canceling table orders reached through a flow. No tables or history navigation.
+  - `SERVER`: tables and the whole table lifecycle, including close and cancel. No counter or history navigation.
+  - Each operational screen belongs to one role. `RoleGuard` redirects direct visits to `/tables`, `/counter`, `/history`, and `/management`; `/orders/:id` and `/orders/:id/payment` stay reachable from those flows.
   - Hide management navigation for non-admins and redirect direct visits.
 
 ## Icons
@@ -96,7 +97,7 @@ src/
   - `POST /orders/table` opens an order with an optional `tableCode` (blank means unnamed); `POST /orders/:id/items`, `PATCH /orders/:id/items/:itemId`, `DELETE /orders/:id/items/:itemId` edit lines while `OPEN`.
   - `PATCH /orders/:id/pricing`, `POST /orders/:id/request-payment`, `POST /orders/:id/reopen`, `POST /orders/:id/close`, `POST /orders/:id/cancel`.
   - `GET /orders` accepts `status`, `statuses`, `type`, `tableCode`, `from`, `to`, `page`, and `pageSize`.
-- Never trust client-calculated totals. The UI may preview pricing, but the backend result is authoritative after every mutation. A discount may exceed items plus surcharge, leaving a negative balance that closes without payments and charges no service fee; a zero total cannot be closed (`409 ZERO_TOTAL`), so the client blocks it before calling the backend. `OrderResponse` carries `originalTableCode`, which keeps the name after `tableCode` is cleared on finalization.
+- Never trust client-calculated totals. The UI may preview pricing, but the backend result is authoritative after every mutation. A discount may exceed items plus surcharge in the preview, but the product does not sell with a zero or negative total: both are blocked before closing (`ZERO_TOTAL` and the client-only `NEGATIVE_TOTAL` message). No service fee is charged on a non-positive balance. `OrderResponse` carries `originalTableCode`, which keeps the name after `tableCode` is cleared on finalization.
 
 ## Product behavior
 
@@ -104,14 +105,14 @@ src/
 
 - One reusable builder is used by tables and the counter: catalog browser, product image, name, unit price, quantity controls with decrease/increase buttons on both sides of the value, line total, subtotal, surcharge, discount, service fee, and total.
 - Quantities are positive integers. Adding the same item again means increasing the existing line; there is one line per item per order.
-- Surcharge and discount are independent integer-cent amounts; a discount above subtotal plus surcharge is allowed and previews a negative balance. No service fee is charged on a non-positive balance; the rate is a basis-point snapshot on the order.
+- Surcharge and discount are independent integer-cent amounts; a discount above subtotal plus surcharge is previewed, but finishing is blocked while the total is not positive. No service fee is charged on a non-positive balance; the rate is a basis-point snapshot on the order.
 - For a table order, mutations call the matching endpoint immediately and refresh the returned order.
 
 ### Tables
 
 - The tables screen lists live table orders and lets an authorized user open a free table in one tap. The client picks the first free sequential name (`Mesa 1`, `Mesa 2`, …) from live table codes; the user can optionally rename it at open time. The backend accepts a blank `tableCode` (an unnamed table), but the generated name is still sent in the request. Opening a named table does not reserve it: a name becomes occupied only when an active order has lines, and line mutations then return `409 TABLE_OCCUPIED` with the existing order ID in `error.details.orderId`. Navigate to that order instead of showing an error.
 - A table order can be saved for later payment with `request-payment` (`AWAITING_PAYMENT`) or reopened with `reopen`. Lines are locked while awaiting payment.
-- The order screen offers **Save for later** (`request-payment`) and **Finish** (payment screen). Payment rows stay hidden until the user presses **Add payment**; amounts are entered in reais with two decimals and default to the amount due when a card/Pix method is selected. Only `CASH` may record `receivedCents`; the backend derives change and payments must sum exactly to a positive total. A zero total is blocked before closing with the `ZERO_TOTAL` message; a negative balance closes with no payments and hides **Add payment**.
+- The order screen offers **Save for later** (`request-payment`) and **Finish** (payment screen). Payment rows stay hidden until the user presses **Add payment**; amounts are entered in reais with two decimals and default to the amount due when a card/Pix method is selected. Only `CASH` may record `receivedCents`; the backend derives change and payments must sum exactly to a positive total. A zero total is blocked before closing with the `ZERO_TOTAL` message; a negative total is blocked with `NEGATIVE_TOTAL` and hides **Add payment**.
 
 ### Counter
 
@@ -125,6 +126,10 @@ src/
 - Catalog: create, edit, assign up to eight unique categories per item, enable/disable items and images, and remove items from the active catalog without destroying historical orders. Search and category filters are local to the loaded page and match any assigned category; pagination and `includeRemoved` come from the backend.
 - Settings: service fee switch and rate in basis points (1000 = 10%). Only whole values from 0 to 10000 are accepted.
 - Reports: sales summary for a date range, including revenue, ticket average, canceled and open orders, and totals by payment method. The range defaults to today in UTC and is entered with simple `YYYY-MM-DD` date fields (endpoint still receives ISO 8601 instants); all totals come from the backend.
+
+### History (admin only)
+
+- The history screen lists only finalized orders. Its default status filter sends `statuses=CLOSED,CANCELED`, and the status control offers only finalized, closed, and canceled choices; pagination, dates, type, and table name filters remain available.
 
 ## UI, state, and performance
 

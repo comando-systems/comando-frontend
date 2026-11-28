@@ -32,9 +32,7 @@ import { permissions } from '@/utils/permissions';
 const PAGE_SIZE = 20;
 
 const statusOptions: readonly SegmentOption<HistoryStatusFilter>[] = [
-  { value: 'ALL', label: 'Todos' },
-  { value: 'OPEN', label: orderStatusLabels.OPEN },
-  { value: 'AWAITING_PAYMENT', label: orderStatusLabels.AWAITING_PAYMENT },
+  { value: 'FINALIZED', label: 'Fechados e cancelados' },
   { value: 'CLOSED', label: orderStatusLabels.CLOSED },
   { value: 'CANCELED', label: orderStatusLabels.CANCELED },
 ];
@@ -256,7 +254,7 @@ export default function History() {
 
   if (loading) {
     return (
-      <Screen title="Histórico" subtitle="Pedidos fechados, cancelados e em andamento">
+      <Screen title="Histórico" subtitle="Pedidos fechados e cancelados">
         <LoadingState message="Carregando histórico de pedidos..." testID="history-loading" />
       </Screen>
     );
