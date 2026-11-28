@@ -93,6 +93,17 @@ describe('<Settings />', () => {
     expect(api.settings.update).not.toHaveBeenCalled();
   });
 
+  it('rejects an unsafe integer basis-point value', async () => {
+    await render(<Settings />);
+    await screen.findByTestId('settings-form');
+
+    await fireEvent.changeText(screen.getByTestId('settings-basis-points'), '99999999999999999999');
+    await fireEvent.press(screen.getByTestId('settings-save'));
+
+    expect(screen.getByText('Enter a whole number from 0 to 10000.')).toBeTruthy();
+    expect(api.settings.update).not.toHaveBeenCalled();
+  });
+
   it('shows a fixed English error with retry support', async () => {
     jest
       .spyOn(api.settings, 'get')

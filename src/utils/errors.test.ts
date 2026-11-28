@@ -28,4 +28,14 @@ describe('error helpers', () => {
     expect(occupiedOrderId(new ApiError({ status: 409, code: 'CONFLICT' }))).toBeNull();
     expect(occupiedOrderId(new Error('conflict'))).toBeNull();
   });
+
+  it('ignores a table conflict without a usable order id', () => {
+    const error = new ApiError({
+      status: 409,
+      code: 'TABLE_OCCUPIED',
+      details: { orderId: '' },
+    });
+
+    expect(occupiedOrderId(error)).toBeNull();
+  });
 });

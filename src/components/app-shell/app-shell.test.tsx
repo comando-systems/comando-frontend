@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react-native';
 import { usePathname, useRouter } from 'expo-router';
-import { Text } from 'react-native';
+import { Text, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppShell } from '@/components/app-shell';
@@ -11,6 +11,11 @@ import { toRoleSet } from '@/utils/roles';
 jest.mock('expo-router', () => ({
   usePathname: jest.fn(),
   useRouter: jest.fn(),
+}));
+
+jest.mock('react-native/Libraries/Utilities/useWindowDimensions', () => ({
+  __esModule: true,
+  default: jest.fn(),
 }));
 
 jest.mock('react-native-safe-area-context', () => ({
@@ -41,6 +46,12 @@ describe('<AppShell />', () => {
     jest.clearAllMocks();
     push = jest.fn();
     signOut = jest.fn().mockResolvedValue(undefined);
+    jest.mocked(useWindowDimensions).mockReturnValue({
+      width: 800,
+      height: 600,
+      scale: 1,
+      fontScale: 1,
+    });
 
     jest.mocked(usePathname).mockReturnValue('/tables');
     jest.mocked(useRouter).mockReturnValue({ push } as unknown as ReturnType<typeof useRouter>);
@@ -126,5 +137,40 @@ describe('<AppShell />', () => {
 
     expect(screen.getByTestId('nav-counter').props.accessibilityState.selected).toBe(true);
     expect(screen.getByTestId('nav-tables').props.accessibilityState.selected).toBe(false);
+  });
+
+  it('highlights a nested route and shows user details on wide screens', async () => {
+    jest.mocked(usePathname).mockReturnValue('/management/users');
+
+    const { getByTestId, getByText } = await renderShell();
+
+    expect(getByTestId('nav-management').props.accessibilityState.selected).toBe(true);
+    expect(getByText('Ada Lovelace')).toBeTruthy();
+    expect(getByText('Administrator')).toBeTruthy();
+  });
+
+  it('uses a compact header on narrow screens', async () => {
+    jest.mocked(useWindowDimensions).mockReturnValue({
+      width: 375,
+      height: 800,
+      scale: 1,
+      fontScale: 1,
+    });
+
+    const { queryByText } = await renderShell();
+
+    expect(queryByText('Ada Lovelace')).toBeNull();
+  });
+
+  it('shows fallback identity when no user is available', async () => {
+    jest.mocked(useSession).mockReturnValue({
+      user: null,
+      signOut,
+    } as unknown as ReturnType<typeof useSession>);
+
+    const { getByText, getAllByText } = await renderShell();
+
+    expect(getByText('TM')).toBeTruthy();
+    expect(getAllByText('Team member')).toHaveLength(2);
   });
 });

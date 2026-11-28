@@ -9,6 +9,12 @@ describe('<Icon />', () => {
     expect(getByTestId('icon')).toBeTruthy();
   });
 
+  it('uses default size, color, test ID, and semantic label', async () => {
+    const { getByTestId } = await render(<Icon name="table" />);
+
+    expect(getByTestId('icon').props.accessibilityLabel).toBe('table');
+  });
+
   it('uses the requested semantic label for accessibility', async () => {
     const { getByTestId } = await render(
       <Icon name="table" size="sm" color="#241C15" testID="table-icon" accessibilityLabel="Tables" />,

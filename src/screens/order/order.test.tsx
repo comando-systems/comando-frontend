@@ -65,6 +65,7 @@ const coffee: ItemResponse = {
   name: 'Coffee',
   description: null,
   category: 'Drinks',
+  categories: ['Drinks'],
   priceCents: 500,
   imageUrl: null,
   enabled: true,
@@ -214,5 +215,55 @@ describe('<Order />', () => {
 
     await waitFor(() => expect(api.orders.cancel).toHaveBeenCalledWith('10'));
     await waitFor(() => expect(screen.getByText('Canceled')).toBeTruthy());
+  });
+
+  it('accepts an array route parameter', async () => {
+    jest.mocked(useLocalSearchParams).mockReturnValue({ id: ['10', '11'] } as ReturnType<
+      typeof useLocalSearchParams
+    >);
+
+    await render(<Order />);
+
+    expect(await screen.findByTestId('order-summary')).toBeTruthy();
+    expect(api.orders.get).toHaveBeenCalledWith('10');
+  });
+
+  it('shows a load error and retries with a fixed English message', async () => {
+    jest
+      .spyOn(api.orders, 'get')
+      .mockRejectedValueOnce(new Error('offline'))
+      .mockResolvedValue(makeOrder());
+
+    await render(<Order />);
+
+    expect(await screen.findByText('Something went wrong. Please try again.')).toBeTruthy();
+    await fireEvent.press(screen.getByTestId('order-error-retry'));
+
+    await waitFor(() => expect(screen.queryByTestId('order-error')).toBeNull());
+    expect(await screen.findByTestId('order-summary')).toBeTruthy();
+  });
+
+  it('shows an action error without clearing the loaded order', async () => {
+    jest.spyOn(api.orders, 'requestPayment').mockRejectedValue(new Error('offline'));
+
+    await render(<Order />);
+    await fireEvent.press(await screen.findByTestId('request-payment-button'));
+
+    expect(await screen.findByText('Something went wrong. Please try again.')).toBeTruthy();
+    expect(screen.getByTestId('order-summary')).toBeTruthy();
+  });
+
+  it('offers a way back when the route has no order id', async () => {
+    jest.mocked(useLocalSearchParams).mockReturnValue({ id: '' } as ReturnType<
+      typeof useLocalSearchParams
+    >);
+
+    await render(<Order />);
+
+    expect(await screen.findByText('Order not found')).toBeTruthy();
+    await fireEvent.press(screen.getByText('Back to tables'));
+
+    expect(push).toHaveBeenCalledWith('/tables');
+    expect(api.orders.get).toHaveBeenCalledWith('');
   });
 });

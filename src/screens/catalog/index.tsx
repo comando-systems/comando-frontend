@@ -5,6 +5,7 @@ import { FlatList, RefreshControl, Switch, Text, View } from 'react-native';
 import { Badge, type BadgeTone } from '@/components/badge';
 import { Button } from '@/components/button';
 import { Card } from '@/components/card';
+import { CategoryEditor } from '@/components/category-editor';
 import { EmptyState } from '@/components/empty-state';
 import { ErrorBanner } from '@/components/error-banner';
 import { Field } from '@/components/field';
@@ -27,6 +28,7 @@ import {
   type CatalogFilters,
   filterCatalogItems,
 } from '@/utils/catalog-filters';
+import { formatCategories } from '@/utils/categories';
 import { toErrorMessage } from '@/utils/errors';
 import { formatPriceInput, parsePriceToCents } from '@/utils/money';
 import { permissions } from '@/utils/permissions';
@@ -42,7 +44,7 @@ const visibilityOptions: readonly SegmentOption<'active' | 'all'>[] = [
 interface ItemFormValues {
   readonly name: string;
   readonly description: string;
-  readonly category: string;
+  readonly categories: readonly string[];
   readonly price: string;
   readonly imageUrl: string;
   readonly enabled: boolean;
@@ -73,8 +75,8 @@ function validateItemForm(values: ItemFormValues): string | null {
     return 'Enter an item name.';
   }
 
-  if (values.category.trim().length === 0) {
-    return 'Enter a category.';
+  if (values.categories.length === 0) {
+    return 'Add at least one category.';
   }
 
   if (parsePriceToCents(values.price) === null) {
@@ -95,7 +97,7 @@ function ItemForm({ initialItem, busy, error, onSubmit, onCancel }: ItemFormProp
   const [values, setValues] = useState<ItemFormValues>({
     name: initialItem?.name ?? '',
     description: initialItem?.description ?? '',
-    category: initialItem?.category ?? '',
+    categories: initialItem?.categories ?? [],
     price: initialItem === null ? '' : formatPriceInput(initialItem.priceCents),
     imageUrl: initialItem?.imageUrl ?? '',
     enabled: initialItem?.enabled ?? true,
@@ -120,7 +122,6 @@ function ItemForm({ initialItem, busy, error, onSubmit, onCancel }: ItemFormProp
       ...values,
       name: values.name.trim(),
       description: values.description.trim(),
-      category: values.category.trim(),
       imageUrl: values.imageUrl.trim(),
     });
   };
@@ -157,14 +158,11 @@ function ItemForm({ initialItem, busy, error, onSubmit, onCancel }: ItemFormProp
           />
         </View>
         <View style={{ marginTop: spacing.md }}>
-          <Field
-            label="Category"
-            value={values.category}
-            onChangeText={(category) => update('category', category)}
-            placeholder="Drinks"
-            maxLength={80}
-            editable={!busy}
-            testID="catalog-item-category"
+          <CategoryEditor
+            value={values.categories}
+            onChange={(categories) => update('categories', categories)}
+            disabled={busy}
+            testID="catalog-item-categories"
           />
         </View>
         <View style={{ marginTop: spacing.md }}>
@@ -284,8 +282,11 @@ const ItemRow = memo(function ItemRow({ item, busy, onEdit, onAction }: ItemRowP
           testID={`catalog-status-${item.id}`}
         />
       </View>
-      <Text style={[typography.caption, { color: colors.textMuted, marginTop: spacing.xs }]}>
-        {item.category}
+      <Text
+        style={[typography.caption, { color: colors.textMuted, marginTop: spacing.xs }]}
+        testID={`catalog-categories-${item.id}`}
+      >
+        {formatCategories(item.categories, item.category)}
       </Text>
       <Text style={[typography.body, { color: colors.textMuted, marginTop: spacing.sm }]}>
         {item.description === null || item.description.length === 0
@@ -430,7 +431,8 @@ export default function Catalog() {
           const body: CreateItemRequest = {
             name: values.name,
             description: values.description.length === 0 ? null : values.description,
-            category: values.category,
+            category: values.categories[0],
+            categories: values.categories,
             priceCents,
             imageUrl: values.imageUrl.length === 0 ? null : values.imageUrl,
             enabled: values.enabled,
@@ -443,7 +445,8 @@ export default function Catalog() {
           const body: UpdateItemRequest = {
             name: values.name,
             description: values.description.length === 0 ? null : values.description,
-            category: values.category,
+            category: values.categories[0],
+            categories: values.categories,
             priceCents,
             imageUrl: values.imageUrl.length === 0 ? null : values.imageUrl,
             enabled: values.enabled,

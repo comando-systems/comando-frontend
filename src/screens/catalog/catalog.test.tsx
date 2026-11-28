@@ -5,7 +5,7 @@ import { Redirect, useFocusEffect } from 'expo-router';
 import { useSession } from '@/providers/session-provider';
 import { api, ApiError } from '@/services/api';
 import Catalog from '@/screens/catalog';
-import type { CreateItemRequest, ItemResponse, PageResponse } from '@/types';
+import type { CreateItemRequest, ItemResponse, PageResponse, UpdateItemRequest } from '@/types';
 import { toRoleSet } from '@/utils/roles';
 
 jest.mock('expo-router', () => ({
@@ -26,12 +26,14 @@ function makeItem(
   priceCents: number,
   enabled = true,
   isActive = true,
+  categories: readonly string[] = [category],
 ): ItemResponse {
   return {
     id,
     name,
     description: `${name} description`,
     category,
+    categories,
     priceCents,
     imageUrl: null,
     enabled,
@@ -73,7 +75,10 @@ async function openCreateForm() {
 }
 
 describe('<Catalog />', () => {
-  const active = { ...makeItem('1', 'Espresso', 'Drinks', 1250), description: 'Strong coffee' };
+  const active = {
+    ...makeItem('1', 'Espresso', 'Drinks', 1250, true, true, ['Drinks', 'Bebidas quentes']),
+    description: 'Strong coffee',
+  };
   const disabled = makeItem('2', 'Croissant', 'Bakery', 500, false);
   const removed = makeItem('3', 'Old Cake', 'Bakery', 700, true, false);
 
@@ -152,7 +157,8 @@ describe('<Catalog />', () => {
 
     await fireEvent.changeText(screen.getByTestId('catalog-item-name'), '  Flat White ');
     await fireEvent.changeText(screen.getByTestId('catalog-item-description'), '  Coffee with milk ');
-    await fireEvent.changeText(screen.getByTestId('catalog-item-category'), ' Drinks ');
+    await fireEvent.changeText(screen.getByTestId('catalog-item-categories-input'), ' Drinks ');
+    await fireEvent.press(screen.getByTestId('catalog-item-categories-add'));
     await fireEvent.changeText(screen.getByTestId('catalog-item-price'), '14.90');
     await fireEvent.changeText(screen.getByTestId('catalog-item-image'), ' https://example.com/flat.jpg ');
     await fireEvent.press(screen.getByTestId('catalog-item-submit'));
@@ -162,6 +168,7 @@ describe('<Catalog />', () => {
         name: 'Flat White',
         description: 'Coffee with milk',
         category: 'Drinks',
+        categories: ['Drinks'],
         priceCents: 1490,
         imageUrl: 'https://example.com/flat.jpg',
         enabled: true,
@@ -179,9 +186,14 @@ describe('<Catalog />', () => {
 
     await fireEvent.changeText(screen.getByTestId('catalog-item-name'), 'Flat White');
     await fireEvent.press(screen.getByTestId('catalog-item-submit'));
-    expect(screen.getByText('Enter a category.')).toBeTruthy();
+    expect(screen.getByText('Add at least one category.')).toBeTruthy();
 
-    await fireEvent.changeText(screen.getByTestId('catalog-item-category'), 'Drinks');
+    await fireEvent.changeText(screen.getByTestId('catalog-item-categories-input'), 'Drinks');
+    await fireEvent.press(screen.getByTestId('catalog-item-categories-add'));
+    await fireEvent.changeText(screen.getByTestId('catalog-item-categories-input'), 'drinks');
+    await fireEvent.press(screen.getByTestId('catalog-item-categories-add'));
+    expect(screen.getByText('This category is already listed.')).toBeTruthy();
+
     await fireEvent.changeText(screen.getByTestId('catalog-item-price'), '12.345');
     await fireEvent.press(screen.getByTestId('catalog-item-submit'));
     expect(screen.getByText('Enter a price with up to two decimal places.')).toBeTruthy();
@@ -211,12 +223,43 @@ describe('<Catalog />', () => {
         name: 'Butter Croissant',
         description: 'Croissant description',
         category: 'Bakery',
+        categories: ['Bakery'],
         priceCents: 725,
         imageUrl: null,
         enabled: false,
       }),
     );
     await waitFor(() => expect(screen.queryByTestId('catalog-item-form')).toBeNull());
+  });
+
+  it('shows all assigned categories and replaces the whole set on edit', async () => {
+    await render(<Catalog />);
+    await screen.findByTestId('catalog-item-1');
+
+    expect(screen.getByTestId('catalog-categories-1').props.children).toBe(
+      'Drinks, Bebidas quentes',
+    );
+
+    await fireEvent.press(screen.getByTestId('catalog-edit-1'));
+    await screen.findByTestId('catalog-item-categories');
+
+    expect(screen.getByText('Bebidas quentes')).toBeTruthy();
+    await fireEvent.press(screen.getByTestId('catalog-item-categories-chip-1'));
+    await fireEvent.changeText(screen.getByTestId('catalog-item-categories-input'), 'Vegan');
+    await fireEvent.press(screen.getByTestId('catalog-item-categories-add'));
+    await fireEvent.press(screen.getByTestId('catalog-item-submit'));
+
+    await waitFor(() =>
+      expect(api.items.update).toHaveBeenCalledWith('1', {
+        name: 'Espresso',
+        description: 'Strong coffee',
+        category: 'Drinks',
+        categories: ['Drinks', 'Vegan'],
+        priceCents: 1250,
+        imageUrl: null,
+        enabled: true,
+      } satisfies UpdateItemRequest),
+    );
   });
 
   it('confirms disable and remove actions with English copy', async () => {
@@ -256,6 +299,10 @@ describe('<Catalog />', () => {
 
     expect(screen.queryByTestId('catalog-item-1')).toBeNull();
     expect(screen.getByTestId('catalog-item-2')).toBeTruthy();
+
+    await fireEvent.changeText(screen.getByTestId('catalog-category-filter'), 'bebidas quentes');
+    expect(screen.getByTestId('catalog-item-1')).toBeTruthy();
+    expect(screen.queryByTestId('catalog-item-2')).toBeNull();
 
     await fireEvent.press(screen.getByTestId('catalog-clear-filters'));
 

@@ -29,6 +29,7 @@ import type {
   OrderResponse,
   SettingsResponse,
 } from '@/types';
+import { formatCategories } from '@/utils/categories';
 import {
   buildOrderPreview,
   clampDiscountCents,
@@ -257,7 +258,9 @@ const CatalogRow = memo(function CatalogRow({
         )}
         <View style={styles.itemDetails}>
           <Text style={styles.itemName}>{item.name}</Text>
-          <Text style={styles.itemMeta}>{item.category}</Text>
+          <Text style={styles.itemMeta}>
+            {formatCategories(item.categories, item.category)}
+          </Text>
           <MoneyText cents={item.priceCents} size="sm" color={colors.primaryDark} />
         </View>
         {!isSellable(item) ? <Badge label="Cannot order" tone="danger" /> : null}
@@ -408,7 +411,7 @@ export function OrderBuilder(props: OrderBuilderProps) {
     return sellableItems.filter(
       (item) =>
         item.name.toLowerCase().includes(normalized) ||
-        item.category.toLowerCase().includes(normalized),
+        item.categories.some((category) => category.toLowerCase().includes(normalized)),
     );
   }, [query, sellableItems]);
 

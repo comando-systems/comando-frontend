@@ -26,4 +26,16 @@ describe('<Card />', () => {
 
     expect(onPress).toHaveBeenCalledTimes(1);
   });
+
+  it('applies pressed feedback to interactive cards', async () => {
+    await render(
+      <Card onPress={jest.fn()}>
+        <Text>Press me</Text>
+      </Card>,
+    );
+
+    await fireEvent(screen.getByTestId('card'), 'pressIn');
+
+    expect(screen.getByText('Press me')).toBeTruthy();
+  });
 });

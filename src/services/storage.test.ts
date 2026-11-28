@@ -73,6 +73,50 @@ describe('session storage', () => {
     await expect(storage.read()).resolves.toBeNull();
   });
 
+  it('treats secure-store read failures as no session', async () => {
+    secureStore.getItemAsync.mockRejectedValue(new Error('locked'));
+
+    await expect(createSessionStorage('native').read()).resolves.toBeNull();
+  });
+
+  it('saves and clears a native session and ignores delete failures', async () => {
+    const storage = createSessionStorage('native');
+
+    await storage.save(session);
+    expect(secureStore.setItemAsync).toHaveBeenCalledWith(
+      'comando.session',
+      JSON.stringify(session),
+    );
+
+    await storage.clear();
+    expect(secureStore.deleteItemAsync).toHaveBeenCalledWith('comando.session');
+
+    secureStore.deleteItemAsync.mockRejectedValueOnce(new Error('locked'));
+    await expect(storage.clear()).resolves.toBeUndefined();
+  });
+
+  it('removes persisted data with an invalid session shape', async () => {
+    const storage = createSessionStorage('web');
+    localStorage.setItem('comando.session', JSON.stringify({ ...session, user: { id: '1' } }));
+
+    await expect(storage.read()).resolves.toBeNull();
+    expect(localStorage.removeItem).toHaveBeenCalledWith('comando.session');
+  });
+
+  it('falls back to memory when localStorage is unavailable', async () => {
+    Object.defineProperty(globalThis, 'localStorage', {
+      configurable: true,
+      writable: true,
+      value: undefined,
+    });
+    const storage = createSessionStorage('web');
+
+    await storage.save(session);
+    await expect(storage.read()).resolves.toEqual(session);
+    await storage.clear();
+    await expect(storage.read()).resolves.toBeNull();
+  });
+
   it('notifies subscribers when the session changes', async () => {
     const listener = jest.fn();
     const unsubscribe = subscribeToSession(listener);

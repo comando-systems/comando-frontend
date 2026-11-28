@@ -89,7 +89,8 @@ src/
 - Primary endpoints used by the app:
   - `POST /auth/login`, `POST /auth/refresh`, `POST /auth/logout` (public).
   - `GET/POST/PATCH/DELETE /users`, `GET/PUT /settings`, `GET /reports/summary` (admin).
-  - `GET/POST/PATCH/DELETE /items`; `GET /items` is the sellable catalog, `includeRemoved=true` is admin-only. The list query accepts only `page`, `pageSize`, and `includeRemoved`, so catalog search and category filtering apply to the loaded page.
+  - `GET/POST/PATCH/DELETE /items`; `GET /items` is the sellable catalog, `includeRemoved=true` is admin-only. The list query accepts `page`, `pageSize`, `includeRemoved`, and `search` (accent-insensitive over name, description, and primary category). The UI keeps search and category filtering local to the loaded page so that secondary categories are covered too.
+  - `Item` carries `category` (primary) and `categories` (all labels, maximum 8, case-insensitively unique). `categories` replaces the whole set on write; the first entry becomes the primary `category`. There are no category CRUD endpoints: categories are managed only through items.
   - `POST /orders/counter` creates a **closed and paid** order in one call.
   - `POST /orders/table` opens an order; `POST /orders/:id/items`, `PATCH /orders/:id/items/:itemId`, `DELETE /orders/:id/items/:itemId` edit lines while `OPEN`.
   - `PATCH /orders/:id/pricing`, `POST /orders/:id/request-payment`, `POST /orders/:id/reopen`, `POST /orders/:id/close`, `POST /orders/:id/cancel`.
@@ -120,7 +121,7 @@ src/
 ### Management (admin only)
 
 - Users: create, edit, reactivate, and deactivate. No public sign-up and no physical deletion. An admin cannot deactivate or demote themselves, and the last active admin cannot be removed.
-- Catalog: create, edit, enable/disable category and image, and remove items from the active catalog without destroying historical orders. Search and category filters are local to the loaded page; pagination and `includeRemoved` come from the backend.
+- Catalog: create, edit, assign up to eight unique categories per item, enable/disable items and images, and remove items from the active catalog without destroying historical orders. Search and category filters are local to the loaded page and match any assigned category; pagination and `includeRemoved` come from the backend.
 - Settings: service fee switch and rate in basis points (1000 = 10%). Only whole values from 0 to 10000 are accepted.
 - Reports: sales summary for a date range, including revenue, ticket average, canceled and open orders, and totals by payment method. The range defaults to today in UTC and accepts explicit ISO 8601 instants; all totals come from the backend.
 
@@ -143,6 +144,7 @@ src/
   - `npx expo lint`
   - `npx tsc --noEmit`
   - `pnpm test`
+  - `pnpm test:coverage` (enforces the 90% global threshold for statements, branches, functions, and lines)
   - `npx expo-doctor` when dependencies, app config, or SDK versions change
   - `npx expo export --platform web` when routing, bundling, or web behavior changes
 - Update this file and the README whenever a decision, dependency, or contract changes.

@@ -112,7 +112,7 @@ A user can hold multiple roles; permissions are the union of them. Internally, r
 
 The backend contract is published at `GET /openapi.json`, with interactive documentation at `/docs`. The frontend talks to it only through `src/services/api.ts`. Endpoint definitions use the typed `http.get`, `http.post`, `http.patch`, `http.put`, and `http.delete` helpers, which wrap the shared `request` function and preserve authentication, refresh, query serialization, and error normalization.
 
-Money is always integer cents, IDs are decimal strings, and timestamps are ISO 8601 UTC. Order totals, pricing, and payment validation are calculated by the backend; the client never submits trusted totals. Catalog pagination and `includeRemoved` are server-owned, while search and category filters apply to the loaded page because the backend item list exposes no search parameters. Sales reports default to today in UTC, accept explicit ISO 8601 instants, and display backend-owned totals without local recalculation.
+Money is always integer cents, IDs are decimal strings, and timestamps are ISO 8601 UTC. Order totals, pricing, and payment validation are calculated by the backend; the client never submits trusted totals. Catalog pagination and `includeRemoved` are server-owned; the item list also accepts `search`, but the UI keeps search and category filtering local to the loaded page so secondary categories are covered (the backend search only inspects the primary category). Each item carries a primary `category` and up to eight unique `categories`; there are no category CRUD endpoints, so administrators manage categories through item create/update payloads. Sales reports default to today in UTC, accept explicit ISO 8601 instants, and display backend-owned totals without local recalculation.
 
 ## Development workflow
 
@@ -126,6 +126,7 @@ Before marking work done, run:
 npx expo lint
 npx tsc --noEmit
 pnpm test
+pnpm test:coverage
 npx expo-doctor
 npx expo export --platform web
 ```

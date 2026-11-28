@@ -13,6 +13,20 @@ describe('payment helpers', () => {
     expect(parseWholeCents('15.5')).toBeNull();
     expect(parseWholeCents('-1')).toBeNull();
     expect(parseWholeCents('')).toBeNull();
+    expect(parseWholeCents('99999999999999999999')).toBeNull();
+  });
+
+  it('skips invalid rows and omits invalid cash received amounts', () => {
+    const rows = [
+      createPaymentRow({ amountCents: 'oops' }),
+      createPaymentRow({ amountCents: '0' }),
+      createPaymentRow({ method: 'CASH', amountCents: '700', receivedCents: 'abc' }),
+    ];
+
+    expect(paymentInputsFromRows(rows)).toEqual([{ method: 'CASH', amountCents: 700 }]);
+    expect(validatePaymentRows([rows[2]!], 700)).toBe(
+      'Cash received must be a positive amount in cents.',
+    );
   });
 
   it('builds split payment inputs and omits received cents for non-cash methods', () => {
