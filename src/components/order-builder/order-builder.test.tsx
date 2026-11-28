@@ -29,7 +29,11 @@ jest.mock('@/services/api', () => ({
       this.details = input.details;
     }
   },
-  getErrorMessage: jest.fn(() => 'Não foi possível concluir a solicitação.'),
+  getErrorMessage: jest.fn((code: string) =>
+    code === 'NEGATIVE_TOTAL'
+      ? 'Não é possível finalizar com saldo negativo. Ajuste o desconto antes de continuar.'
+      : 'Não foi possível concluir a solicitação.',
+  ),
 }));
 
 const addItemsMock = api.orders.addItems as jest.MockedFunction<typeof api.orders.addItems>;
@@ -293,7 +297,7 @@ describe('<OrderBuilder />', () => {
     );
     expect(screen.getByTestId('preview-discount').props.children).toBe('-R$99.99');
     expect(screen.getByTestId('preview-total').props.children).toBe('-R$89.99');
-    expect(screen.getByText(/Saldo negativo de R\$89\.99/)).toBeTruthy();
+    expect(screen.getByText(/Não é possível finalizar com saldo negativo/)).toBeTruthy();
   });
 
   it('adds table items immediately and refreshes the returned order', async () => {

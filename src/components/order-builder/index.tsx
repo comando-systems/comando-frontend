@@ -821,7 +821,7 @@ export function OrderBuilder(props: OrderBuilderProps) {
       </View>
       {preview.totalCents < 0 ? (
         <Text style={[styles.caption, styles.captionSpaced]}>
-          {`Saldo negativo de ${formatMoney(Math.abs(preview.totalCents))}. Nenhum pagamento será necessário.`}
+          {`${getErrorMessage('NEGATIVE_TOTAL')} (saldo de ${formatMoney(preview.totalCents)}).`}
         </Text>
       ) : null}
     </Card>

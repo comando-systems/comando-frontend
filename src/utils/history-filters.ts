@@ -1,6 +1,6 @@
 import type { OrderListParams, OrderStatus, OrderType } from '@/types';
 
-export type HistoryStatusFilter = OrderStatus | 'ALL';
+export type HistoryStatusFilter = 'FINALIZED' | Extract<OrderStatus, 'CLOSED' | 'CANCELED'>;
 export type HistoryTypeFilter = OrderType | 'ALL';
 
 export interface HistoryFilters {
@@ -12,7 +12,7 @@ export interface HistoryFilters {
 }
 
 export const EMPTY_HISTORY_FILTERS: HistoryFilters = {
-  status: 'ALL',
+  status: 'FINALIZED',
   type: 'ALL',
   tableCode: '',
   fromDate: '',
@@ -93,7 +93,9 @@ export function historyListQuery(
   return {
     page,
     pageSize,
-    ...(filters.status === 'ALL' ? {} : { status: filters.status }),
+    ...(filters.status === 'FINALIZED'
+      ? { statuses: ['CLOSED', 'CANCELED'] as const }
+      : { status: filters.status }),
     ...(filters.type === 'ALL' ? {} : { type: filters.type }),
     ...(tableCode.length === 0 ? {} : { tableCode }),
     ...(from === null ? {} : { from }),

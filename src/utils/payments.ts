@@ -83,17 +83,27 @@ export function paymentInputsFromRows(rows: readonly PaymentDraftRow[]): Payment
   return inputs;
 }
 
-export function validatePaymentRows(
-  rows: readonly PaymentDraftRow[],
-  totalCents: number,
-): string | null {
+export function validateClosableTotal(totalCents: number): string | null {
   if (totalCents === 0) {
     return getErrorMessage('ZERO_TOTAL');
   }
 
+  // The backend accepts a credit, but the product does not sell with a negative total.
+  return totalCents < 0 ? getErrorMessage('NEGATIVE_TOTAL') : null;
+}
+
+export function validatePaymentRows(
+  rows: readonly PaymentDraftRow[],
+  totalCents: number,
+): string | null {
+  const totalError = validateClosableTotal(totalCents);
+
+  if (totalError !== null) {
+    return totalError;
+  }
+
   if (rows.length === 0) {
-    // A negative balance is a credit: the backend closes it without payments.
-    return totalCents < 0 ? null : 'Adicione pelo menos um pagamento.';
+    return 'Adicione pelo menos um pagamento.';
   }
 
   for (const row of rows) {

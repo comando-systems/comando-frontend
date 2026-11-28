@@ -117,14 +117,18 @@ describe('<History />', () => {
         effect();
       }, [effect]);
     });
-    mockRoles(['CASHIER']);
+    mockRoles(['ADMIN']);
     jest.spyOn(api.orders, 'list').mockResolvedValue(makePage([], 1, 0, 0));
   });
 
   it('sends filters as supported query parameters with ISO 8601 UTC dates', async () => {
     await render(<History />);
 
-    expect(api.orders.list).toHaveBeenCalledWith({ page: 1, pageSize: 20 });
+    expect(api.orders.list).toHaveBeenCalledWith({
+      statuses: ['CLOSED', 'CANCELED'],
+      page: 1,
+      pageSize: 20,
+    });
 
     await fireEvent.press(screen.getByTestId('history-status-CLOSED'));
     await fireEvent.press(screen.getByTestId('history-type-TABLE'));
@@ -144,6 +148,25 @@ describe('<History />', () => {
         pageSize: 20,
       } satisfies OrderListParams),
     );
+  });
+
+  it('only offers finalized status filters', async () => {
+    await render(<History />);
+
+    expect(screen.getByTestId('history-status-FINALIZED').props.accessibilityState.selected).toBe(
+      true,
+    );
+    expect(screen.queryByTestId('history-status-OPEN')).toBeNull();
+    expect(screen.queryByTestId('history-status-AWAITING_PAYMENT')).toBeNull();
+  });
+
+  it('blocks history access and requests for a cashier', async () => {
+    mockRoles(['CASHIER']);
+
+    await render(<History />);
+
+    expect(await screen.findByText('Indisponível')).toBeTruthy();
+    expect(api.orders.list).not.toHaveBeenCalled();
   });
 
   it('loads another page and keeps navigation controls in sync', async () => {
@@ -168,7 +191,11 @@ describe('<History />', () => {
     await fireEvent.press(screen.getByTestId('history-pages-page-2'));
 
     await waitFor(() =>
-      expect(api.orders.list).toHaveBeenLastCalledWith({ page: 2, pageSize: 20 }),
+      expect(api.orders.list).toHaveBeenLastCalledWith({
+        statuses: ['CLOSED', 'CANCELED'],
+        page: 2,
+        pageSize: 20,
+      }),
     );
     expect(await screen.findByTestId('history-order-11')).toBeTruthy();
     expect(screen.getByTestId('history-page-label').props.children).toBe('Página 2 de 2');

@@ -13,8 +13,12 @@ describe('history filter helpers', () => {
     expect(dateInputToUtcIso('31/01/2026', false)).toBeNull();
   });
 
-  it('builds a query with supported parameters only', () => {
-    expect(historyListQuery(EMPTY_HISTORY_FILTERS, 2, 20)).toEqual({ page: 2, pageSize: 20 });
+  it('defaults to finalized orders and builds a query with supported parameters only', () => {
+    expect(historyListQuery(EMPTY_HISTORY_FILTERS, 2, 20)).toEqual({
+      statuses: ['CLOSED', 'CANCELED'],
+      page: 2,
+      pageSize: 20,
+    });
 
     expect(
       historyListQuery(

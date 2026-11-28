@@ -260,7 +260,7 @@ export interface ItemListParams extends PaginationParams {
 
 export interface OrderListParams extends PaginationParams {
   readonly status?: OrderStatus;
-  readonly statuses?: OrderStatus[];
+  readonly statuses?: readonly OrderStatus[];
   readonly type?: OrderType;
   readonly tableCode?: string;
   readonly from?: string;

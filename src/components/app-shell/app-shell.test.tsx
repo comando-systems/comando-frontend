@@ -96,7 +96,7 @@ describe('<AppShell />', () => {
     expect(getByText('Screen content')).toBeTruthy();
     expect(getByTestId('app-logo')).toBeTruthy();
     expect(getByTestId('header-nav')).toBeTruthy();
-    expect(getByTestId('nav-counter')).toBeTruthy();
+    expect(queryByTestId('nav-counter')).toBeNull();
     expect(getByTestId('nav-history')).toBeTruthy();
     expect(getByTestId('nav-management')).toBeTruthy();
     expect(queryByTestId('nav-tables')).toBeNull();
@@ -113,22 +113,22 @@ describe('<AppShell />', () => {
     expect(queryByTestId('nav-management')).toBeNull();
   });
 
-  it('shows counter and history but not management for a cashier', async () => {
+  it('shows only the counter for a cashier', async () => {
     mockRoles(['CASHIER']);
     const { getByTestId, queryByTestId } = await renderShell();
 
-    expect(getByTestId('nav-tables')).toBeTruthy();
     expect(getByTestId('nav-counter')).toBeTruthy();
-    expect(getByTestId('nav-history')).toBeTruthy();
+    expect(queryByTestId('nav-tables')).toBeNull();
+    expect(queryByTestId('nav-history')).toBeNull();
     expect(queryByTestId('nav-management')).toBeNull();
   });
 
   it('navigates with complete hrefs', async () => {
     await renderShell();
 
-    await fireEvent.press(screen.getByTestId('nav-counter'));
+    await fireEvent.press(screen.getByTestId('nav-history'));
 
-    expect(push).toHaveBeenCalledWith('/counter');
+    expect(push).toHaveBeenCalledWith('/history');
   });
 
   it('signs out from the header', async () => {
@@ -146,7 +146,7 @@ describe('<AppShell />', () => {
     await renderShell();
 
     expect(screen.getByTestId('nav-counter').props.accessibilityState.selected).toBe(true);
-    expect(screen.getByTestId('nav-tables').props.accessibilityState.selected).toBe(false);
+    expect(screen.queryByTestId('nav-tables')).toBeNull();
   });
 
   it('highlights a nested route and shows user details on wide screens', async () => {
@@ -169,7 +169,7 @@ describe('<AppShell />', () => {
 
     expect(getByTestId('app-logo')).toBeTruthy();
     expect(getByTestId('bottom-tab-bar')).toBeTruthy();
-    expect(getByTestId('nav-counter')).toBeTruthy();
+    expect(queryByTestId('nav-counter')).toBeNull();
     expect(getByTestId('nav-history')).toBeTruthy();
     expect(getByTestId('nav-management')).toBeTruthy();
     expect(queryByTestId('header-nav')).toBeNull();
@@ -184,17 +184,17 @@ describe('<AppShell />', () => {
 
   it('navigates and highlights the active tab in the narrow bottom bar', async () => {
     mockWidth(375);
-    jest.mocked(usePathname).mockReturnValue('/counter');
-    mockRoles(['CASHIER']);
+    jest.mocked(usePathname).mockReturnValue('/management');
+    mockRoles(['ADMIN']);
 
     await renderShell();
 
-    expect(screen.getByTestId('nav-counter').props.accessibilityState.selected).toBe(true);
-    expect(screen.getByTestId('nav-tables').props.accessibilityState.selected).toBe(false);
+    expect(screen.getByTestId('nav-management').props.accessibilityState.selected).toBe(true);
+    expect(screen.getByTestId('nav-history').props.accessibilityState.selected).toBe(false);
 
-    await fireEvent.press(screen.getByTestId('nav-tables'));
+    await fireEvent.press(screen.getByTestId('nav-history'));
 
-    expect(push).toHaveBeenCalledWith('/tables');
+    expect(push).toHaveBeenCalledWith('/history');
   });
 
   it('hides unauthorized tabs on narrow screens', async () => {

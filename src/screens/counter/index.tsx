@@ -28,6 +28,7 @@ import { type OrderPreview } from '@/utils/order-pricing';
 import {
   type PaymentDraftRow,
   paymentInputsFromRows,
+  validateClosableTotal,
   validatePaymentRows,
 } from '@/utils/payments';
 import { permissions } from '@/utils/permissions';
@@ -156,6 +157,13 @@ export default function Counter() {
 
     if (draftError !== null) {
       setError(draftError);
+      return;
+    }
+
+    const totalError = validateClosableTotal(preview?.totalCents ?? 0);
+
+    if (totalError !== null) {
+      setError(totalError);
       return;
     }
 

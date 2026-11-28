@@ -51,7 +51,7 @@ async function renderGuard() {
 describe('<RoleGuard />', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    jest.mocked(usePathname).mockReturnValue('/tables');
+    jest.mocked(usePathname).mockReturnValue('/management');
     mockUser(['ADMIN']);
   });
 
@@ -102,7 +102,17 @@ describe('<RoleGuard />', () => {
     expect(Redirect).not.toHaveBeenCalled();
   });
 
+  it('redirects cashiers away from history', async () => {
+    jest.mocked(usePathname).mockReturnValue('/history');
+    mockUser(['CASHIER']);
+
+    await renderGuard();
+
+    expect(redirectedHref()).toBe('/');
+  });
+
   it('redirects signed-out users to login', async () => {
+    jest.mocked(usePathname).mockReturnValue('/orders/10');
     mockUser(null);
 
     await renderGuard();
@@ -110,9 +120,18 @@ describe('<RoleGuard />', () => {
     expect(redirectedHref()).toBe('/login');
   });
 
-  it('allows admins to view tables without granting table actions', async () => {
+  it('redirects admins away from tables', async () => {
     jest.mocked(usePathname).mockReturnValue('/tables');
     mockUser(['ADMIN']);
+
+    await renderGuard();
+
+    expect(redirectedHref()).toBe('/');
+  });
+
+  it('allows servers to open tables', async () => {
+    jest.mocked(usePathname).mockReturnValue('/tables');
+    mockUser(['SERVER']);
 
     const { getByText } = await renderGuard();
 

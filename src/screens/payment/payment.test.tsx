@@ -152,28 +152,30 @@ describe('<Payment />', () => {
     expect(back).not.toHaveBeenCalled();
   });
 
-  it('hides close and payment editing from a server', async () => {
+  it('allows servers to close and hand over their own tables', async () => {
     mockRoles(['SERVER']);
+
+    await render(<Payment />);
+
+    expect(await screen.findByTestId('payment-order-summary')).toBeTruthy();
+    expect(screen.getByTestId('payment-editor')).toBeTruthy();
+    expect(screen.getByTestId('payment-close-button')).toBeTruthy();
+    expect(screen.getByTestId('payment-request-button')).toBeTruthy();
+    expect(screen.getByTestId('payment-cancel-button')).toBeTruthy();
+    expect(screen.queryByTestId('payment-close-restricted')).toBeNull();
+  });
+
+  it('hides all order actions from an administrator', async () => {
+    mockRoles(['ADMIN']);
 
     await render(<Payment />);
 
     expect(await screen.findByTestId('payment-order-summary')).toBeTruthy();
     expect(screen.queryByTestId('payment-editor')).toBeNull();
     expect(screen.queryByTestId('payment-close-button')).toBeNull();
-    expect(screen.getByTestId('payment-request-button')).toBeTruthy();
-    expect(screen.getByTestId('payment-cancel-button')).toBeTruthy();
-    expect(screen.getByTestId('payment-close-restricted')).toBeTruthy();
-  });
-
-  it('hides table request-payment and reopen actions from an administrator', async () => {
-    mockRoles(['ADMIN']);
-
-    await render(<Payment />);
-
-    expect(await screen.findByTestId('payment-close-button')).toBeTruthy();
     expect(screen.queryByTestId('payment-request-button')).toBeNull();
     expect(screen.queryByTestId('payment-reopen-button')).toBeNull();
-    expect(screen.getByTestId('payment-cancel-button')).toBeTruthy();
+    expect(screen.queryByTestId('payment-cancel-button')).toBeNull();
   });
 
   it('saves an order for later payment and reopens it', async () => {
@@ -187,7 +189,6 @@ describe('<Payment />', () => {
     await waitFor(() => expect(screen.getByText('Aguardando pagamento')).toBeTruthy());
     expect(screen.getByTestId('payment-saved-later')).toBeTruthy();
 
-    mockRoles(['CASHIER']);
     jest.spyOn(api.orders, 'get').mockResolvedValue(makeOrder({ status: 'AWAITING_PAYMENT' }));
     await fireEvent.press(screen.getByTestId('payment-reopen-button'));
 
@@ -211,18 +212,20 @@ describe('<Payment />', () => {
     expect(api.orders.close).not.toHaveBeenCalled();
   });
 
-  it('closes a negative balance without payment rows', async () => {
+  it('blocks a negative balance with the NEGATIVE_TOTAL message', async () => {
     jest.spyOn(api.orders, 'get').mockResolvedValue(makeOrder({ totalCents: -500 }));
 
     await render(<Payment />);
 
     expect(await screen.findByTestId('payment-editor')).toBeTruthy();
     expect(screen.queryByTestId('payment-editor-amount-0')).toBeNull();
-    expect(screen.getByText('Saldo negativo. Nenhum pagamento é necessário.')).toBeTruthy();
+    expect(screen.getByText(/Não é possível finalizar com saldo negativo/)).toBeTruthy();
+    expect(screen.getByTestId('payment-editor-add').props.accessibilityState.disabled).toBe(true);
 
     await fireEvent.press(screen.getByTestId('payment-close-button'));
 
-    await waitFor(() => expect(api.orders.close).toHaveBeenCalledWith('10', { payments: [] }));
+    await waitFor(() => expect(screen.getByTestId('payment-error')).toBeTruthy());
+    expect(api.orders.close).not.toHaveBeenCalled();
   });
 
   it('shows an error state when the order cannot be loaded', async () => {
