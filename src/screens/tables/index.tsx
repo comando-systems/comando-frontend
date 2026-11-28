@@ -16,8 +16,8 @@ import { useSession } from '@/providers/session-provider';
 import { api } from '@/services/api';
 import { colors, radii, spacing, typography } from '@/theme';
 import type { OrderResponse } from '@/types';
-import { occupiedOrderId, toErrorMessage } from '@/utils/errors';
-import { orderItemCountLabel, orderStatusLabels } from '@/utils/order-display';
+import { toErrorMessage } from '@/utils/errors';
+import { orderItemCountLabel, orderStatusLabels, orderTableLabel } from '@/utils/order-display';
 import { permissions } from '@/utils/permissions';
 import { nextTableCode, resolveTableCode } from '@/utils/table-codes';
 
@@ -156,7 +156,7 @@ const OrderRow = memo(function OrderRow({ order, onPress }: OrderRowProps) {
         </View>
         <OrderStatusBadge status={order.status} testID={`table-order-status-${order.id}`} />
       </View>
-      <Text style={styles.tableName}>{order.tableCode ?? `Pedido ${order.id}`}</Text>
+      <Text style={styles.tableName}>{orderTableLabel(order) ?? `Pedido ${order.id}`}</Text>
       <MoneyText
         cents={order.totalCents}
         size="md"
@@ -238,15 +238,6 @@ export default function Tables() {
       setRenamingTable(false);
       router.push(`/orders/${order.id}`);
     } catch (openError) {
-      const existingOrderId = occupiedOrderId(openError);
-
-      if (existingOrderId !== null) {
-        setCustomTableCode('');
-        setRenamingTable(false);
-        router.push(`/orders/${existingOrderId}`);
-        return;
-      }
-
       setError(toErrorMessage(openError));
     } finally {
       setOpening(false);
@@ -259,7 +250,7 @@ export default function Tables() {
       normalizedQuery.length === 0
         ? orders
         : orders.filter((order) =>
-            (order.tableCode ?? `Pedido ${order.id}`).toLowerCase().includes(normalizedQuery),
+            (orderTableLabel(order) ?? `Pedido ${order.id}`).toLowerCase().includes(normalizedQuery),
           ),
     [normalizedQuery, orders],
   );

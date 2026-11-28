@@ -26,7 +26,7 @@ import {
   historyListQuery,
   validateHistoryFilters,
 } from '@/utils/history-filters';
-import { orderItemCountLabel, orderStatusLabels } from '@/utils/order-display';
+import { orderItemCountLabel, orderStatusLabels, orderTableLabel } from '@/utils/order-display';
 import { permissions } from '@/utils/permissions';
 
 const PAGE_SIZE = 20;
@@ -113,7 +113,7 @@ interface OrderRowProps {
 }
 
 const OrderRow = memo(function OrderRow({ order, onPress }: OrderRowProps) {
-  const title = order.tableCode ?? order.label ?? `Pedido ${order.id}`;
+  const title = orderTableLabel(order) ?? order.label ?? `Pedido ${order.id}`;
   const channel = order.type === 'TABLE' ? 'Mesas' : 'Balcão';
 
   return (

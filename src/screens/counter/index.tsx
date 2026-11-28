@@ -23,6 +23,7 @@ import type {
   SettingsResponse,
 } from '@/types';
 import { occupiedOrderId, toErrorMessage } from '@/utils/errors';
+import { orderTableLabel } from '@/utils/order-display';
 import { type OrderPreview } from '@/utils/order-pricing';
 import {
   type PaymentDraftRow,
@@ -88,7 +89,7 @@ export default function Counter() {
     () => [
       ...tableOrders.map((order) => ({
         value: order.id,
-        label: order.tableCode ?? order.label ?? `Mesa ${order.id}`,
+        label: orderTableLabel(order) ?? order.label ?? `Mesa ${order.id}`,
         disabled: busy,
       })),
       { value: NEW_TABLE, label: 'Nova mesa', disabled: busy },
@@ -246,26 +247,27 @@ export default function Counter() {
       let targetOrderId = orderId;
 
       if (orderId === NEW_TABLE) {
-        try {
-          const openedOrder = await api.orders.openTable({ tableCode: suggestedTableCode });
-          targetOrderId = openedOrder.id;
-        } catch (openError) {
-          const existingOrderId = occupiedOrderId(openError);
-
-          if (existingOrderId !== null) {
-            resetCounter();
-            router.push(`/orders/${existingOrderId}`);
-            return;
-          }
-
-          throw openError;
-        }
+        const openedOrder = await api.orders.openTable({ tableCode: suggestedTableCode });
+        targetOrderId = openedOrder.id;
       }
 
-      const updatedOrder = await api.orders.addItems(targetOrderId, { items: draft.items });
+      try {
+        const updatedOrder = await api.orders.addItems(targetOrderId, { items: draft.items });
 
-      resetCounter();
-      router.push(`/orders/${updatedOrder.id}`);
+        resetCounter();
+        router.push(`/orders/${updatedOrder.id}`);
+      } catch (addError) {
+        // Adding lines is when a named table becomes occupied. Follow the existing order.
+        const existingOrderId = occupiedOrderId(addError);
+
+        if (existingOrderId !== null) {
+          resetCounter();
+          router.push(`/orders/${existingOrderId}`);
+          return;
+        }
+
+        throw addError;
+      }
     } catch (exportError) {
       setError(toErrorMessage(exportError));
     } finally {

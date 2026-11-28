@@ -82,7 +82,7 @@ src/
 ## Backend contract and API client
 
 - Source of truth: the backend README and `GET /openapi.json` at <https://github.com/comando-systems/comando-backend>. When the backend changes, update the client types and this document in the same PR.
-- `src/services/api.ts` is the single HTTP adapter. It reads `process.env.EXPO_PUBLIC_API_URL` (statically referenced as `process.env.EXPO_PUBLIC_API_URL`), sends `Content-Type: application/json`, attaches `Authorization: Bearer <accessToken>`, and normalizes errors to `{ code, message, details?, requestId? }`. Endpoint definitions call the typed `http.get`, `http.post`, `http.patch`, `http.put`, and `http.delete` helpers instead of constructing raw method options.
+- `src/services/api.ts` is the single HTTP adapter. It reads `process.env.EXPO_PUBLIC_API_URL` (statically referenced as `process.env.EXPO_PUBLIC_API_URL`), sends `Content-Type: application/json`, attaches `Authorization: Bearer <accessToken>`, and normalizes errors to `{ code, message, details?, requestId? }`. Endpoint definitions call the typed `http.get`, `http.post`, `http.patch`, `http.put`, and `http.delete` helpers instead of constructing raw method options. The `errorMessages` map in that file is the single place where backend codes become fixed Portuguese messages; add a translation there whenever the backend introduces a code, including `ZERO_TOTAL` (409).
 - IDs are decimal strings. All money values are integer cents. Timestamps are ISO 8601 UTC strings. Format for display only; never compute money with floats.
 - On `401`, refresh once through `POST /auth/refresh`, store the rotated pair, and retry the original request. Refresh tokens are single use; a reused token revokes the whole family. On refresh failure, clear the session and return to `login`.
 - Session persistence is an adapter in `src/services/storage.ts`: `expo-secure-store` on native, `localStorage` on web. Keep the token handling behind one interface; only that file checks `Platform.OS`.
@@ -93,10 +93,10 @@ src/
   - `GET/POST/PATCH/DELETE /items`; `GET /items` is the sellable catalog, `includeRemoved=true` is admin-only. The list query accepts `page`, `pageSize`, `includeRemoved`, and `search` (accent-insensitive over name, description, and primary category). The UI keeps search and category filtering local to the loaded page so that secondary categories are covered too.
   - `Item` carries `category` (primary) and `categories` (all labels, maximum 8, case-insensitively unique). `categories` replaces the whole set on write; the first entry becomes the primary `category`. There are no category CRUD endpoints: categories are managed only through items.
   - `POST /orders/counter` creates a **closed and paid** order in one call.
-  - `POST /orders/table` opens an order; `POST /orders/:id/items`, `PATCH /orders/:id/items/:itemId`, `DELETE /orders/:id/items/:itemId` edit lines while `OPEN`.
+  - `POST /orders/table` opens an order with an optional `tableCode` (blank means unnamed); `POST /orders/:id/items`, `PATCH /orders/:id/items/:itemId`, `DELETE /orders/:id/items/:itemId` edit lines while `OPEN`.
   - `PATCH /orders/:id/pricing`, `POST /orders/:id/request-payment`, `POST /orders/:id/reopen`, `POST /orders/:id/close`, `POST /orders/:id/cancel`.
   - `GET /orders` accepts `status`, `statuses`, `type`, `tableCode`, `from`, `to`, `page`, and `pageSize`.
-- Never trust client-calculated totals. The UI may preview pricing, but the backend result is authoritative after every mutation.
+- Never trust client-calculated totals. The UI may preview pricing, but the backend result is authoritative after every mutation. A discount may exceed items plus surcharge, leaving a negative balance that closes without payments and charges no service fee; a zero total cannot be closed (`409 ZERO_TOTAL`), so the client blocks it before calling the backend. `OrderResponse` carries `originalTableCode`, which keeps the name after `tableCode` is cleared on finalization.
 
 ## Product behavior
 
@@ -104,14 +104,14 @@ src/
 
 - One reusable builder is used by tables and the counter: catalog browser, product image, name, unit price, quantity controls with decrease/increase buttons on both sides of the value, line total, subtotal, surcharge, discount, service fee, and total.
 - Quantities are positive integers. Adding the same item again means increasing the existing line; there is one line per item per order.
-- Surcharge and discount are independent integer-cent amounts; the discount cannot exceed subtotal plus surcharge. Service fee is a basis-point snapshot on the order.
+- Surcharge and discount are independent integer-cent amounts; a discount above subtotal plus surcharge is allowed and previews a negative balance. No service fee is charged on a non-positive balance; the rate is a basis-point snapshot on the order.
 - For a table order, mutations call the matching endpoint immediately and refresh the returned order.
 
 ### Tables
 
-- The tables screen lists live table orders and lets an authorized user open a free table in one tap. The client picks the first free sequential name (`Mesa 1`, `Mesa 2`, …) from live table codes; the user can optionally rename it at open time. The backend still requires a non-empty `tableCode`, so the generated name is sent in the request. Opening an occupied table returns `409 TABLE_OCCUPIED` with the existing order ID in `error.details.orderId`; navigate to that order instead of showing an error.
+- The tables screen lists live table orders and lets an authorized user open a free table in one tap. The client picks the first free sequential name (`Mesa 1`, `Mesa 2`, …) from live table codes; the user can optionally rename it at open time. The backend accepts a blank `tableCode` (an unnamed table), but the generated name is still sent in the request. Opening a named table does not reserve it: a name becomes occupied only when an active order has lines, and line mutations then return `409 TABLE_OCCUPIED` with the existing order ID in `error.details.orderId`. Navigate to that order instead of showing an error.
 - A table order can be saved for later payment with `request-payment` (`AWAITING_PAYMENT`) or reopened with `reopen`. Lines are locked while awaiting payment.
-- The order screen offers **Save for later** (`request-payment`) and **Finish** (payment screen). Payment rows stay hidden until the user presses **Add payment**; amounts are entered in reais with two decimals and default to the amount due when a card/Pix method is selected. Only `CASH` may record `receivedCents`; the backend derives change and payments must sum exactly to the total.
+- The order screen offers **Save for later** (`request-payment`) and **Finish** (payment screen). Payment rows stay hidden until the user presses **Add payment**; amounts are entered in reais with two decimals and default to the amount due when a card/Pix method is selected. Only `CASH` may record `receivedCents`; the backend derives change and payments must sum exactly to a positive total. A zero total is blocked before closing with the `ZERO_TOTAL` message; a negative balance closes with no payments and hides **Add payment**.
 
 ### Counter
 

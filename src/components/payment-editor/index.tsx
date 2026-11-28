@@ -246,9 +246,11 @@ export function PaymentEditor({
 }: PaymentEditorProps) {
   const enteredCents = paymentDraftTotalCents(rows);
   const remainingCents = totalCents - enteredCents;
+  const isCredit = totalCents < 0;
 
-  const statusLabel =
-    remainingCents === 0
+  const statusLabel = isCredit
+    ? 'Saldo negativo. Nenhum pagamento é necessário.'
+    : remainingCents === 0
       ? 'O total dos pagamentos é igual ao total do pedido.'
       : remainingCents > 0
         ? 'O total dos pagamentos é menor que o total do pedido.'
@@ -275,14 +277,14 @@ export function PaymentEditor({
         </View>
         <View style={styles.summaryStatusRow}>
           <Icon
-            name={remainingCents === 0 ? 'check' : 'payment'}
+            name={isCredit || remainingCents === 0 ? 'check' : 'payment'}
             size="sm"
-            color={remainingCents === 0 ? colors.success : colors.warning}
+            color={isCredit || remainingCents === 0 ? colors.success : colors.warning}
           />
           <Text
             style={[
               typography.caption,
-              remainingCents === 0 ? styles.statusMatch : styles.statusMismatch,
+              isCredit || remainingCents === 0 ? styles.statusMatch : styles.statusMismatch,
             ]}
             testID={`${testID}-status`}
           >
@@ -313,7 +315,7 @@ export function PaymentEditor({
         label="Adicionar pagamento"
         onPress={addPayment}
         variant="secondary"
-        disabled={disabled}
+        disabled={disabled || isCredit}
         icon="add"
         fullWidth
         testID={`${testID}-add`}

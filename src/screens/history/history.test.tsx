@@ -48,6 +48,7 @@ function makeOrder(
     type,
     status,
     tableCode,
+    originalTableCode: tableCode,
     label: null,
     openedByUserId: 'user-1',
     closedByUserId: null,

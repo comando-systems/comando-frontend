@@ -11,3 +11,10 @@ export function orderItemCountLabel(order: OrderResponse): string {
   const count = order.items.reduce((sum, line) => sum + line.quantity, 0);
   return `${count} ${count === 1 ? 'item' : 'itens'}`;
 }
+
+/**
+ * Finalized orders release `tableCode`; `originalTableCode` keeps the name used when opened.
+ */
+export function orderTableLabel(order: OrderResponse): string | null {
+  return order.tableCode ?? order.originalTableCode;
+}

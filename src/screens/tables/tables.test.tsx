@@ -26,6 +26,7 @@ function makeOrder(id: string, tableCode: string, status: OrderResponse['status'
     type: 'TABLE',
     status,
     tableCode,
+    originalTableCode: tableCode,
     label: null,
     openedByUserId: 'user-1',
     closedByUserId: null,
@@ -125,14 +126,10 @@ describe('<Tables />', () => {
     expect(push).toHaveBeenCalledWith('/orders/10');
   });
 
-  it('navigates to the existing order when a table is occupied', async () => {
-    jest.spyOn(api.orders, 'openTable').mockRejectedValue(
-      new ApiError({
-        status: 409,
-        code: 'TABLE_OCCUPIED',
-        details: { orderId: '99' },
-      }),
-    );
+  it('shows an error banner when the backend rejects opening a table', async () => {
+    jest
+      .spyOn(api.orders, 'openTable')
+      .mockRejectedValue(new ApiError({ status: 403, code: 'FORBIDDEN' }));
 
     await render(<Tables />);
 
@@ -140,9 +137,9 @@ describe('<Tables />', () => {
     await fireEvent.changeText(await screen.findByTestId('table-code-input'), 'T-02');
     await fireEvent.press(screen.getByTestId('open-table-button'));
 
-    await waitFor(() => expect(push).toHaveBeenCalledWith('/orders/99'));
+    await waitFor(() => expect(screen.getByTestId('tables-error')).toBeTruthy());
     expect(api.orders.openTable).toHaveBeenCalledWith({ tableCode: 'T-02' });
-    expect(screen.queryByTestId('tables-error')).toBeNull();
+    expect(push).not.toHaveBeenCalled();
   });
 
   it('opens a free table with a custom name and navigates to the new order', async () => {

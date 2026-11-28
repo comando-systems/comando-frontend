@@ -1,7 +1,6 @@
 import {
   buildOrderPreview,
   calculateServiceFeeCents,
-  clampDiscountCents,
   parseCentsInput,
 } from '@/utils/order-pricing';
 
@@ -16,11 +15,6 @@ describe('order pricing preview', () => {
     expect(parseCentsInput('-10')).toBe(0);
     expect(parseCentsInput('12.9')).toBe(12);
     expect(parseCentsInput('invalid')).toBe(0);
-  });
-
-  it('clamps discounts to the subtotal plus surcharge', () => {
-    expect(clampDiscountCents(3000, 2250)).toBe(2250);
-    expect(clampDiscountCents(-5, 2250)).toBe(0);
   });
 
   it('calculates the service fee with half-up rounding', () => {
@@ -38,23 +32,25 @@ describe('order pricing preview', () => {
     });
 
     expect(preview.subtotalCents).toBe(2250);
-    expect(preview.maxDiscountCents).toBe(2750);
+    expect(preview.adjustedCents).toBe(2550);
     expect(preview.discountCents).toBe(200);
     expect(preview.serviceFeeCents).toBe(255);
     expect(preview.totalCents).toBe(2805);
     expect(preview.lines[0].lineTotalCents).toBe(1000);
   });
 
-  it('keeps preview discounts within the allowed maximum', () => {
+  it('allows a discount above the adjusted subtotal without charging a fee', () => {
     const preview = buildOrderPreview(lines, {
       surchargeCents: 500,
       discountCents: 9999,
-      applyServiceFee: false,
-      serviceFeeBasisPoints: 0,
+      applyServiceFee: true,
+      serviceFeeBasisPoints: 1000,
     });
 
-    expect(preview.discountCents).toBe(2750);
-    expect(preview.totalCents).toBe(0);
+    expect(preview.discountCents).toBe(9999);
+    expect(preview.adjustedCents).toBe(-7249);
+    expect(preview.serviceFeeCents).toBe(0);
+    expect(preview.totalCents).toBe(-7249);
   });
 
   it('normalizes non-finite line quantities to one', () => {

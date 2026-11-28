@@ -28,6 +28,7 @@ function makeOrder(status: OrderResponse['status'] = 'OPEN'): OrderResponse {
     type: 'TABLE',
     status,
     tableCode: 'T-01',
+    originalTableCode: 'T-01',
     label: null,
     openedByUserId: 'user-1',
     closedByUserId: null,

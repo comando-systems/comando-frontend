@@ -70,6 +70,7 @@ export interface OrderResponse {
   readonly type: OrderType;
   readonly status: OrderStatus;
   readonly tableCode: string | null;
+  readonly originalTableCode: string | null;
   readonly label: string | null;
   readonly openedByUserId: string;
   readonly closedByUserId: string | null;
@@ -220,7 +221,7 @@ export interface CreateCounterOrderRequest {
 }
 
 export interface OpenTableOrderRequest {
-  readonly tableCode: string;
+  readonly tableCode?: string;
 }
 
 export interface AddOrderItemsRequest {

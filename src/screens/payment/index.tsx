@@ -18,7 +18,7 @@ import { colors, spacing, typography } from '@/theme';
 import type { OrderResponse } from '@/types';
 import { toErrorMessage } from '@/utils/errors';
 import { formatPriceInput } from '@/utils/money';
-import { orderItemCountLabel } from '@/utils/order-display';
+import { orderItemCountLabel, orderTableLabel } from '@/utils/order-display';
 import {
   createPaymentRow,
   type PaymentDraftRow,
@@ -78,7 +78,7 @@ const styles = StyleSheet.create({
 });
 
 function rowsFromOrder(order: OrderResponse): readonly PaymentDraftRow[] {
-  if (order.totalCents === 0) {
+  if (order.totalCents <= 0) {
     return [];
   }
 
@@ -196,7 +196,7 @@ export default function Payment() {
   const actionDisabled = busy !== null;
 
   return (
-    <Screen scroll title={order.tableCode ?? `Pedido ${order.id}`} subtitle="Pagamento">
+    <Screen scroll title={orderTableLabel(order) ?? `Pedido ${order.id}`} subtitle="Pagamento">
       <View style={styles.content}>
         {error === null ? null : (
           <View style={styles.errorAbove}>

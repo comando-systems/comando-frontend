@@ -39,6 +39,7 @@ const errorMessages: Record<string, string> = {
   NOT_FOUND: 'O recurso solicitado não foi encontrado.',
   CONFLICT: 'A solicitação conflita com o estado atual.',
   TABLE_OCCUPIED: 'Esta mesa já está ocupada.',
+  ZERO_TOTAL: 'O total do pedido não pode ser zero. Adicione itens ou ajuste o desconto antes de finalizar.',
   INVALID_VALUE: 'Verifique os valores informados.',
   INVARIANT_VIOLATION: 'Esta operação não pode ser concluída no estado atual.',
   INVALID_STATE_TRANSITION: 'Esta operação não pode ser concluída no estado atual.',

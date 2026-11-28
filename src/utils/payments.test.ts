@@ -59,8 +59,15 @@ describe('payment helpers', () => {
     );
   });
 
-  it('accepts no payments for a zero-total order', () => {
-    expect(validatePaymentRows([], 0)).toBeNull();
+  it('rejects a zero-total order before reaching the backend', () => {
+    expect(validatePaymentRows([], 0)).toBe(
+      'O total do pedido não pode ser zero. Adicione itens ou ajuste o desconto antes de finalizar.',
+    );
+    expect(paymentInputsFromRows([])).toEqual([]);
+  });
+
+  it('accepts no payments for a negative balance', () => {
+    expect(validatePaymentRows([], -500)).toBeNull();
     expect(paymentInputsFromRows([])).toEqual([]);
   });
 

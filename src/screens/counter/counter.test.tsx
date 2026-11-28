@@ -54,6 +54,7 @@ function makeOrder(id: string, tableCode = 'T-02'): OrderResponse {
     type: 'TABLE',
     status: 'OPEN',
     tableCode,
+    originalTableCode: tableCode,
     label: null,
     openedByUserId: 'user-1',
     closedByUserId: null,
@@ -297,8 +298,8 @@ describe('<Counter />', () => {
     await waitFor(() => expect(api.orders.openTable).toHaveBeenCalledWith({ tableCode: 'Mesa 3' }));
   });
 
-  it('navigates to the existing order when the generated table is occupied', async () => {
-    jest.spyOn(api.orders, 'openTable').mockRejectedValue(
+  it('navigates to the existing order when adding lines finds the table occupied', async () => {
+    jest.spyOn(api.orders, 'addItems').mockRejectedValue(
       new ApiError({
         status: 409,
         code: 'TABLE_OCCUPIED',
@@ -312,7 +313,7 @@ describe('<Counter />', () => {
     await fireEvent.press(screen.getByTestId('counter-export-table-NEW'));
 
     await waitFor(() => expect(push).toHaveBeenCalledWith('/orders/99'));
-    expect(api.orders.addItems).not.toHaveBeenCalled();
+    expect(api.orders.openTable).toHaveBeenCalledWith({ tableCode: 'Mesa 1' });
     expect(screen.queryByTestId('counter-error')).toBeNull();
     expect(screen.queryByTestId('counter-export-panel')).toBeNull();
   });

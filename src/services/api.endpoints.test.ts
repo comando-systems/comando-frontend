@@ -249,7 +249,7 @@ describe('API endpoint definitions', () => {
     expect(sessionStorage.clear).toHaveBeenCalledTimes(2);
   });
 
-  it('exposes the fixed English messages and custom error messages', () => {
+  it('exposes the fixed Portuguese messages and custom error messages', () => {
     expect(getErrorMessage('UNKNOWN')).toBe('A solicitação não pôde ser concluída.');
     expect(getErrorMessage('LAST_ADMIN')).toBe('O último administrador ativo não pode ser removido.');
     expect(new ApiError({ status: 400, code: 'VALIDATION_ERROR', message: 'Custom' }).message).toBe(
