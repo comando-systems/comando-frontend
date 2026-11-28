@@ -10,6 +10,7 @@
     "lint": "expo lint",
     "typecheck": "tsc --noEmit",
     "test": "jest --runInBand",
+    "test:coverage": "jest --runInBand --coverage",
     "prepare": "node scripts/setup-git-hooks.mjs"
   },
   "dependencies": {
@@ -42,6 +43,14 @@
   "jest": {
     "preset": "jest-expo",
     "testMatch": ["<rootDir>/src/**/*.test.[jt]s?(x)"],
+    "coverageThreshold": {
+      "global": {
+        "branches": 90,
+        "functions": 90,
+        "lines": 90,
+        "statements": 90
+      }
+    },
     "setupFiles": ["<rootDir>/jest.setup.js"],
     "moduleNameMapper": {
       "^@/(.*)$": "<rootDir>/src/$1"

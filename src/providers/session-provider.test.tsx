@@ -148,4 +148,41 @@ describe('SessionProvider', () => {
       expect(result.current.isLoading).toBe(false);
     });
   });
+
+  it('keeps a session with an unparseable expiry and finishes loading on read failure', async () => {
+    const session = createSession({ refreshExpiresAt: 'not-a-date' });
+    jest.mocked(sessionStorage.read).mockResolvedValue(session);
+
+    const { result, unmount } = await renderHook(() => useSession(), { wrapper: SessionProvider });
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(result.current.session).toEqual(session);
+    expect(result.current.hasAnyRole([])).toBe(false);
+    unmount();
+
+    jest.mocked(sessionStorage.read).mockRejectedValue(new Error('storage unavailable'));
+    const failed = await renderHook(() => useSession(), { wrapper: SessionProvider });
+    await waitFor(() => {
+      expect(failed.result.current.isLoading).toBe(false);
+      expect(failed.result.current.session).toBeNull();
+    });
+  });
+
+  it('ignores storage updates that arrive after unmount', async () => {
+    let resolveRead: (session: SessionResponse | null) => void = () => undefined;
+    jest.mocked(sessionStorage.read).mockReturnValue(
+      new Promise<SessionResponse | null>((resolve) => {
+        resolveRead = resolve;
+      }),
+    );
+
+    const { unmount } = await renderHook(() => useSession(), { wrapper: SessionProvider });
+    unmount();
+
+    await act(async () => {
+      resolveRead(createSession());
+      listener?.(createSession(), 'save');
+    });
+
+    expect(sessionStorage.clear).not.toHaveBeenCalled();
+  });
 });

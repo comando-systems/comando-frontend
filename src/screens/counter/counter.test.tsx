@@ -32,6 +32,7 @@ const coffee: ItemResponse = {
   name: 'Coffee',
   description: null,
   category: 'Drinks',
+  categories: ['Drinks'],
   priceCents: 1500,
   imageUrl: null,
   enabled: true,

@@ -33,6 +33,7 @@ function makeItem(overrides: Partial<ItemResponse> = {}): ItemResponse {
     name: 'Coffee',
     description: null,
     category: 'Drinks',
+    categories: ['Drinks'],
     priceCents: 500,
     imageUrl: null,
     enabled: true,
@@ -93,11 +94,12 @@ function orderWithCoffee(quantity: number): OrderResponse {
 }
 
 const catalog: readonly ItemResponse[] = [
-  makeItem(),
+  makeItem({ categories: ['Drinks', 'Bebidas quentes'] }),
   makeItem({
     id: '2',
     name: 'Cake',
     category: 'Desserts',
+    categories: ['Desserts'],
     priceCents: 1250,
   }),
 ];
@@ -205,6 +207,19 @@ describe('<OrderBuilder />', () => {
 
     expect(screen.queryByTestId('add-item-1')).toBeNull();
     expect(screen.getByTestId('add-item-2')).toBeTruthy();
+  });
+
+  it('searches and displays every assigned category', async () => {
+    await render(
+      <OrderBuilder mode="draft" draft={EMPTY_ORDER_DRAFT} onDraftChange={jest.fn()} catalog={catalog} />,
+    );
+
+    expect(await screen.findByTestId('add-item-1')).toBeTruthy();
+
+    await fireEvent.changeText(screen.getByTestId('catalog-search'), 'bebidas quentes');
+
+    expect(screen.getByTestId('add-item-1')).toBeTruthy();
+    expect(screen.queryByTestId('add-item-2')).toBeNull();
   });
 
   it('previews pricing with the backend rounding rule', async () => {

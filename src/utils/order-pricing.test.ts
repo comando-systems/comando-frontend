@@ -56,4 +56,19 @@ describe('order pricing preview', () => {
     expect(preview.discountCents).toBe(2750);
     expect(preview.totalCents).toBe(0);
   });
+
+  it('normalizes non-finite line quantities to one', () => {
+    const preview = buildOrderPreview(
+      [{ itemId: '3', itemName: 'Tea', unitPriceCents: 300, quantity: Number.NaN }],
+      {
+        surchargeCents: 0,
+        discountCents: 0,
+        applyServiceFee: false,
+        serviceFeeBasisPoints: 0,
+      },
+    );
+
+    expect(preview.lines[0].quantity).toBe(1);
+    expect(preview.subtotalCents).toBe(300);
+  });
 });

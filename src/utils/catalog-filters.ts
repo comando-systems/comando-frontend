@@ -14,7 +14,10 @@ function normalize(value: string): string {
   return value.trim().toLocaleLowerCase('en-US');
 }
 
-/** Filters the loaded page locally because the catalog endpoint does not expose search parameters. */
+/**
+ * Filters the loaded page locally. The backend search only covers the primary category,
+ * so the client also looks at secondary categories and applies the category filter locally.
+ */
 export function filterCatalogItems(
   items: readonly ItemResponse[],
   filters: CatalogFilters,
@@ -23,7 +26,7 @@ export function filterCatalogItems(
   const category = normalize(filters.category);
 
   return items.filter((item) => {
-    if (category !== '' && normalize(item.category) !== category) {
+    if (category !== '' && !item.categories.some((entry) => normalize(entry) === category)) {
       return false;
     }
 
@@ -31,7 +34,9 @@ export function filterCatalogItems(
       return true;
     }
 
-    const haystack = normalize(`${item.name} ${item.category} ${item.description ?? ''}`);
+    const haystack = normalize(
+      `${item.name} ${item.categories.join(' ')} ${item.description ?? ''}`,
+    );
     return haystack.includes(term);
   });
 }

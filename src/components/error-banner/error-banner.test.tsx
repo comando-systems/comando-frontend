@@ -18,4 +18,18 @@ describe('<ErrorBanner />', () => {
 
     expect(onRetry).toHaveBeenCalledTimes(1);
   });
+
+  it('supports a custom retry label and pressed feedback', async () => {
+    await render(
+      <ErrorBanner
+        message="The order could not be loaded."
+        onRetry={jest.fn()}
+        retryLabel="Try again"
+        testID="banner"
+      />,
+    );
+
+    expect(screen.getByText('Try again')).toBeTruthy();
+    await fireEvent(screen.getByTestId('banner-retry'), 'pressIn');
+  });
 });

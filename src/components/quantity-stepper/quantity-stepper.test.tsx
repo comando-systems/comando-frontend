@@ -27,7 +27,9 @@ describe('<QuantityStepper />', () => {
     const onChange = jest.fn();
     await render(<QuantityStepper value={2} onChange={onChange} />);
 
+    await fireEvent(screen.getByTestId('quantity-stepper-increase'), 'pressIn');
     await fireEvent.press(screen.getByTestId('quantity-stepper-increase'));
+    await fireEvent(screen.getByTestId('quantity-stepper-decrease'), 'pressIn');
     await fireEvent.press(screen.getByTestId('quantity-stepper-decrease'));
 
     expect(onChange).toHaveBeenNthCalledWith(1, 3);
@@ -44,5 +46,22 @@ describe('<QuantityStepper />', () => {
     await fireEvent.press(screen.getByTestId('quantity-stepper-increase'));
 
     expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it('clamps non-finite values and respects a custom minimum', async () => {
+    await render(<QuantityStepper value={Number.NaN} min={2.8} onChange={jest.fn()} />);
+
+    expect(screen.getByTestId('quantity-stepper-value').props.children).toBe(2);
+    expect(
+      screen.getByTestId('quantity-stepper-decrease').props.accessibilityState.disabled,
+    ).toBe(true);
+  });
+
+  it('clamps values above the maximum and ignores a maximum below the minimum', async () => {
+    await render(<QuantityStepper value={100} max={4} onChange={jest.fn()} />);
+    expect(screen.getByTestId('quantity-stepper-value').props.children).toBe(4);
+
+    await render(<QuantityStepper value={100} min={5} max={2} onChange={jest.fn()} testID="other" />);
+    expect(screen.getByTestId('other-value').props.children).toBe(5);
   });
 });

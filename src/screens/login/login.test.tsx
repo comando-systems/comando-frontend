@@ -86,4 +86,16 @@ describe('<Login />', () => {
       expect(screen.getByText('Authentication is required.')).toBeTruthy();
     });
   });
+
+  it('falls back to a fixed English message for unexpected sign-in errors', async () => {
+    signIn.mockRejectedValue(new Error('raw backend detail'));
+    await render(<Login />);
+    await fillForm('ada@example.com', 'secret123');
+
+    await fireEvent.press(screen.getByTestId('sign-in-button'));
+
+    await waitFor(() => {
+      expect(screen.getByText('Something went wrong. Please try again.')).toBeTruthy();
+    });
+  });
 });

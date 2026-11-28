@@ -38,7 +38,10 @@ export interface ItemResponse {
   readonly id: string;
   readonly name: string;
   readonly description: string | null;
+  /** Primary category: the first entry of `categories`, or "Uncategorized". */
   readonly category: string;
+  /** Every category assigned to the item, in display order. */
+  readonly categories: readonly string[];
   readonly priceCents: number;
   readonly imageUrl: string | null;
   readonly enabled: boolean;
@@ -168,7 +171,9 @@ export interface UpdateUserRequest {
 export interface CreateItemRequest {
   readonly name: string;
   readonly description?: string | null;
+  /** Primary category shorthand; `categories` takes precedence when both are sent. */
   readonly category?: string;
+  readonly categories?: readonly string[];
   readonly enabled?: boolean;
   readonly priceCents: number;
   readonly imageUrl?: string | null;
@@ -178,6 +183,8 @@ export interface UpdateItemRequest {
   readonly name?: string;
   readonly description?: string | null;
   readonly category?: string;
+  /** Replaces the whole category set; the first entry becomes the primary category. */
+  readonly categories?: readonly string[];
   readonly enabled?: boolean;
   readonly priceCents?: number;
   readonly imageUrl?: string | null;
@@ -246,6 +253,8 @@ export interface PaginationParams {
 
 export interface ItemListParams extends PaginationParams {
   readonly includeRemoved?: boolean;
+  /** Backend search over name, description, and primary category (1-100 chars). */
+  readonly search?: string;
 }
 
 export interface OrderListParams extends PaginationParams {
