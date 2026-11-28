@@ -1,4 +1,4 @@
-import { Pressable, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Icon, type IconName } from '@/components/icon';
 import { colors, radii, spacing, typography } from '@/theme';
@@ -18,7 +18,7 @@ export interface SegmentProps<T extends string> {
   readonly testID?: string;
 }
 
-const styles = {
+const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     backgroundColor: colors.surfaceMuted,
@@ -35,10 +35,34 @@ const styles = {
     paddingVertical: spacing.sm,
     borderRadius: radii.sm,
   },
+  selectedOption: {
+    backgroundColor: colors.surface,
+  },
+  disabledOption: {
+    opacity: 0.5,
+  },
+  pressedOption: {
+    opacity: 0.8,
+  },
   optionLabel: {
     ...typography.label,
   },
-} as const;
+  labelSelected: {
+    color: colors.primaryDark,
+  },
+  labelDisabled: {
+    color: colors.textMuted,
+  },
+  labelIdle: {
+    color: colors.text,
+  },
+  labelWithIcon: {
+    marginLeft: spacing.xs,
+  },
+  labelWithoutIcon: {
+    marginLeft: 0,
+  },
+});
 
 export function Segment<T extends string>({
   options,
@@ -52,6 +76,17 @@ export function Segment<T extends string>({
       {options.map((option) => {
         const isSelected = option.value === value;
         const isDisabled = option.disabled === true;
+        const optionStyle = ({ pressed }: { pressed: boolean }) => [
+          styles.option,
+          isSelected ? styles.selectedOption : null,
+          isDisabled ? styles.disabledOption : null,
+          pressed && !isDisabled ? styles.pressedOption : null,
+        ];
+        const labelColorStyle = isDisabled
+          ? styles.labelDisabled
+          : isSelected
+            ? styles.labelSelected
+            : styles.labelIdle;
 
         return (
           <Pressable
@@ -62,12 +97,7 @@ export function Segment<T extends string>({
             disabled={isDisabled}
             testID={`${testID}-${option.value}`}
             onPress={() => onChange(option.value)}
-            style={({ pressed }) => [
-              styles.option,
-              isSelected ? { backgroundColor: colors.surface } : null,
-              isDisabled ? { opacity: 0.5 } : null,
-              pressed && !isDisabled ? { opacity: 0.8 } : null,
-            ]}
+            style={optionStyle}
           >
             {option.icon === undefined ? null : (
               <Icon
@@ -79,14 +109,8 @@ export function Segment<T extends string>({
             <Text
               style={[
                 styles.optionLabel,
-                {
-                  color: isDisabled
-                    ? colors.textMuted
-                    : isSelected
-                      ? colors.primaryDark
-                      : colors.text,
-                  marginLeft: option.icon === undefined ? 0 : spacing.xs,
-                },
+                labelColorStyle,
+                option.icon === undefined ? styles.labelWithoutIcon : styles.labelWithIcon,
               ]}
             >
               {option.label}

@@ -27,8 +27,10 @@ export function MoneyText({
   style,
   testID = 'money-text',
 }: MoneyTextProps) {
+  const colorStyle = { color };
+
   return (
-    <Text testID={testID} style={[sizeStyles[size], { color }, style]}>
+    <Text testID={testID} style={[sizeStyles[size], colorStyle, style]}>
       {formatMoney(cents)}
     </Text>
   );

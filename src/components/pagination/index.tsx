@@ -1,4 +1,4 @@
-import { Pressable, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { colors, radii, spacing, typography } from '@/theme';
 
@@ -14,7 +14,7 @@ type PageToken = number | 'ellipsis';
 const MAX_LISTED_PAGES = 7;
 const EDGE_PAGES = 5;
 
-const styles = {
+const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
     flexDirection: 'row',
@@ -37,12 +37,21 @@ const styles = {
     backgroundColor: colors.primary,
     borderColor: colors.primary,
   },
+  pressed: {
+    opacity: 0.8,
+  },
   ellipsis: {
     color: colors.textMuted,
     marginHorizontal: spacing.xs,
     ...typography.label,
   },
-} as const;
+  activeLabel: {
+    color: colors.white,
+  },
+  inactiveLabel: {
+    color: colors.text,
+  },
+});
 
 function pageTokens(page: number, totalPages: number): readonly PageToken[] {
   if (totalPages <= MAX_LISTED_PAGES) {
@@ -105,6 +114,11 @@ export function Pagination({
         }
 
         const isCurrent = token === current;
+        const pageStyle = ({ pressed }: { pressed: boolean }) => [
+          styles.page,
+          isCurrent ? styles.activePage : null,
+          pressed && !isCurrent ? styles.pressed : null,
+        ];
 
         return (
           <Pressable
@@ -116,13 +130,9 @@ export function Pagination({
             accessibilityState={{ selected: isCurrent }}
             testID={`${testID}-page-${token}`}
             onPress={() => onPageChange(token)}
-            style={({ pressed }) => [
-              styles.page,
-              isCurrent ? styles.activePage : null,
-              pressed && !isCurrent ? { opacity: 0.8 } : null,
-            ]}
+            style={pageStyle}
           >
-            <Text style={[typography.label, { color: isCurrent ? colors.white : colors.text }]}>
+            <Text style={[typography.label, isCurrent ? styles.activeLabel : styles.inactiveLabel]}>
               {String(token)}
             </Text>
           </Pressable>

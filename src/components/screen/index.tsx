@@ -1,6 +1,6 @@
 import { useContext } from 'react';
 import type { ReactNode } from 'react';
-import { ScrollView, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import type { StyleProp, ViewStyle } from 'react-native';
 import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 
@@ -18,7 +18,7 @@ export interface ScreenProps {
   readonly testID?: string;
 }
 
-const styles = {
+const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
@@ -35,7 +35,14 @@ const styles = {
     flexGrow: 1,
     paddingHorizontal: spacing.lg,
   },
-} as const;
+  titleText: {
+    color: colors.text,
+  },
+  subtitleText: {
+    color: colors.textMuted,
+    marginTop: spacing.xs,
+  },
+});
 
 export function Screen({
   children,
@@ -56,31 +63,29 @@ export function Screen({
   };
   const paddingTop = topInset ? insets.top + spacing.lg : spacing.lg;
   const paddingBottom = bottomInset ? insets.bottom + spacing.xl : spacing.xl;
+  const topPaddingStyle = { paddingTop };
+  const bottomPaddingStyle = { paddingBottom };
 
   const content = scroll ? (
     <ScrollView
-      contentContainerStyle={[styles.scrollContent, contentStyle, { paddingBottom }]}
+      contentContainerStyle={[styles.scrollContent, contentStyle, bottomPaddingStyle]}
       keyboardShouldPersistTaps="handled"
     >
       {children}
     </ScrollView>
   ) : (
-    <View style={[styles.body, contentStyle, { paddingBottom }]}>{children}</View>
+    <View style={[styles.body, contentStyle, bottomPaddingStyle]}>{children}</View>
   );
 
   return (
-    <View testID={testID} style={[styles.container, { paddingTop }]}>
+    <View testID={testID} style={[styles.container, topPaddingStyle]}>
       {title === undefined && subtitle === undefined && action === undefined ? null : (
         <View style={styles.header}>
           {title === undefined ? null : (
-            <Text style={[typography.title, { color: colors.text }]}>{title}</Text>
+            <Text style={[typography.title, styles.titleText]}>{title}</Text>
           )}
           {subtitle === undefined ? null : (
-            <Text
-              style={[typography.body, { color: colors.textMuted, marginTop: spacing.xs }]}
-            >
-              {subtitle}
-            </Text>
+            <Text style={[typography.body, styles.subtitleText]}>{subtitle}</Text>
           )}
           {action}
         </View>

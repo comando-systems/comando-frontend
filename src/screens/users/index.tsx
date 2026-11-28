@@ -1,6 +1,6 @@
 import { Redirect, useFocusEffect } from 'expo-router';
 import { memo, useCallback, useState } from 'react';
-import { FlatList, RefreshControl, Text, View } from 'react-native';
+import { FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
 
 import { Badge } from '@/components/badge';
 import { Button } from '@/components/button';
@@ -36,6 +36,82 @@ const roleLabels: Record<RoleCode, string> = {
   CASHIER: 'Caixa',
   SERVER: 'Garçom',
 };
+
+const styles = StyleSheet.create({
+  blockSpacing: {
+    marginTop: spacing.md,
+  },
+  blockSpacingLg: {
+    marginTop: spacing.lg,
+  },
+  sectionLabel: {
+    ...typography.label,
+    color: colors.text,
+    marginTop: spacing.lg,
+  },
+  roleRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginTop: spacing.sm,
+  },
+  roleChip: {
+    backgroundColor: colors.surfaceMuted,
+    borderColor: colors.border,
+    borderRadius: 999,
+    borderWidth: 1,
+    marginRight: spacing.sm,
+    marginBottom: spacing.sm,
+    opacity: 1,
+  },
+  roleChipSelected: {
+    backgroundColor: colors.primarySoft,
+    borderColor: colors.primary,
+  },
+  roleChipDisabled: {
+    opacity: 0.6,
+  },
+  mutedCaption: {
+    ...typography.caption,
+    color: colors.textMuted,
+    marginTop: spacing.xs,
+  },
+  selfNote: {
+    ...typography.caption,
+    color: colors.textMuted,
+    marginTop: spacing.sm,
+  },
+  userCard: {
+    marginBottom: spacing.md,
+  },
+  userRowTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  userName: {
+    ...typography.subtitle,
+    color: colors.text,
+    flex: 1,
+  },
+  userActions: {
+    flexDirection: 'row',
+    marginTop: spacing.md,
+  },
+  userActionLeft: {
+    flex: 1,
+    marginRight: spacing.sm,
+  },
+  userActionRight: {
+    flex: 1,
+  },
+  textLabel: {
+    ...typography.label,
+    color: colors.text,
+  },
+  listContent: {
+    paddingBottom: spacing.xl,
+  },
+});
 
 interface UserFormValues {
   readonly name: string;
@@ -162,7 +238,7 @@ function UserForm({
           editable={!busy}
           testID="user-name"
         />
-        <View style={{ marginTop: spacing.md }}>
+        <View style={styles.blockSpacing}>
           <Field
             label="E-mail"
             value={values.email}
@@ -178,7 +254,7 @@ function UserForm({
             testID="user-email"
           />
         </View>
-        <View style={{ marginTop: spacing.md }}>
+        <View style={styles.blockSpacing}>
           <Field
             label={isEdit ? 'Nova senha (opcional)' : 'Senha'}
             value={values.password}
@@ -196,8 +272,8 @@ function UserForm({
           />
         </View>
 
-        <Text style={[typography.label, { color: colors.text, marginTop: spacing.lg }]}>Perfis</Text>
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: spacing.sm }}>
+        <Text style={styles.sectionLabel}>Perfis</Text>
+        <View style={styles.roleRow}>
           {ROLE_CODES.map((role) => {
             const selected = values.roles[role] === role;
             const disabled = busy || (isSelf && role === 'ADMIN');
@@ -205,15 +281,11 @@ function UserForm({
             return (
               <View
                 key={role}
-                style={{
-                  backgroundColor: selected ? colors.primarySoft : colors.surfaceMuted,
-                  borderColor: selected ? colors.primary : colors.border,
-                  borderRadius: 999,
-                  borderWidth: 1,
-                  marginRight: spacing.sm,
-                  marginBottom: spacing.sm,
-                  opacity: disabled ? 0.6 : 1,
-                }}
+                style={[
+                  styles.roleChip,
+                  selected ? styles.roleChipSelected : null,
+                  disabled ? styles.roleChipDisabled : null,
+                ]}
               >
                 <Button
                   label={roleLabels[role]}
@@ -228,7 +300,7 @@ function UserForm({
         </View>
         {isSelf ? (
           <Text
-            style={[typography.caption, { color: colors.textMuted, marginTop: spacing.xs }]}
+            style={styles.mutedCaption}
             testID="user-self-role-note"
           >
             Você não pode remover seu próprio perfil de administrador.
@@ -236,7 +308,7 @@ function UserForm({
         ) : null}
 
         {displayedError === null ? null : (
-          <View style={{ marginTop: spacing.md }}>
+          <View style={styles.blockSpacing}>
             <ErrorBanner message={displayedError} testID="user-form-error" />
           </View>
         )}
@@ -266,23 +338,23 @@ const UserRow = memo(function UserRow({
   const isSelf = user.id === currentUserId;
 
   return (
-    <Card testID={`user-row-${user.id}`} style={{ marginBottom: spacing.md }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Text style={[typography.subtitle, { color: colors.text, flex: 1 }]}>{user.name}</Text>
+    <Card testID={`user-row-${user.id}`} style={styles.userCard}>
+      <View style={styles.userRowTop}>
+        <Text style={styles.userName}>{user.name}</Text>
         <Badge
           label={user.isActive ? 'Ativo' : 'Inativo'}
           tone={user.isActive ? 'success' : 'neutral'}
           testID={`user-active-${user.id}`}
         />
       </View>
-      <Text style={[typography.caption, { color: colors.textMuted, marginTop: spacing.xs }]}>
+      <Text style={styles.mutedCaption}>
         {user.email}
       </Text>
-      <Text style={[typography.caption, { color: colors.textMuted, marginTop: spacing.xs }]}>
+      <Text style={styles.mutedCaption}>
         {roleSummary(user.roles)}
       </Text>
-      <View style={{ flexDirection: 'row', marginTop: spacing.md }}>
-        <View style={{ flex: 1, marginRight: spacing.sm }}>
+      <View style={styles.userActions}>
+        <View style={styles.userActionLeft}>
           <Button
             label="Editar"
             onPress={() => onEdit(user)}
@@ -291,12 +363,12 @@ const UserRow = memo(function UserRow({
             testID={`user-edit-${user.id}`}
           />
         </View>
-        <View style={{ flex: 1 }}>
+        <View style={styles.userActionRight}>
           {user.isActive ? (
             <Button
               label="Desativar"
               onPress={() => onDeactivate(user)}
-              variant="danger"
+              variant="secondary"
               disabled={busy || isSelf}
               testID={`user-deactivate-${user.id}`}
             />
@@ -312,7 +384,7 @@ const UserRow = memo(function UserRow({
       </View>
       {user.isActive && isSelf ? (
         <Text
-          style={[typography.caption, { color: colors.textMuted, marginTop: spacing.sm }]}
+          style={styles.selfNote}
           testID={`user-self-note-${user.id}`}
         >
           Você não pode desativar sua própria conta.
@@ -483,7 +555,7 @@ export default function Users() {
         testID="add-user-button"
       />
       {error === null ? null : (
-        <View style={{ marginTop: spacing.md }}>
+        <View style={styles.blockSpacing}>
           <ErrorBanner
             message={error}
             onRetry={() => {
@@ -494,19 +566,19 @@ export default function Users() {
         </View>
       )}
       {users.length === 0 ? null : (
-        <View style={{ marginTop: spacing.lg }}>
-          <Text style={[typography.label, { color: colors.text }]}>Usuários</Text>
+        <View style={styles.blockSpacingLg}>
+          <Text style={styles.textLabel}>Usuários</Text>
         </View>
       )}
     </View>
   );
 
   const listFooter = (
-    <Card testID="users-pagination" style={{ marginTop: spacing.md }}>
-      <Text style={[typography.label, { color: colors.text }]} testID="users-page-label">
+    <Card testID="users-pagination" style={styles.blockSpacing}>
+      <Text style={styles.textLabel} testID="users-page-label">
         {`Página ${page} de ${totalPages}`}
       </Text>
-      <View style={{ marginTop: spacing.md }}>
+      <View style={styles.blockSpacing}>
         <Pagination
           page={page}
           totalPages={totalPages}
@@ -532,7 +604,7 @@ export default function Users() {
             icon="users"
           />
         }
-        contentContainerStyle={{ paddingBottom: spacing.xl }}
+        contentContainerStyle={styles.listContent}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={() => void loadUsers(true)} />
         }

@@ -1,6 +1,6 @@
 import { Redirect, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { Switch, Text, View } from 'react-native';
+import { StyleSheet, Switch, Text, View } from 'react-native';
 
 import { ErrorBanner } from '@/components/error-banner';
 import { Field } from '@/components/field';
@@ -15,6 +15,39 @@ import { toErrorMessage } from '@/utils/errors';
 import { permissions } from '@/utils/permissions';
 
 const MAX_BASIS_POINTS = 10_000;
+
+const switchTrackColor = { false: colors.border, true: colors.primary };
+
+const styles = StyleSheet.create({
+  feeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  feeInfo: {
+    flex: 1,
+    marginRight: spacing.md,
+  },
+  subtitle: {
+    ...typography.subtitle,
+    color: colors.text,
+  },
+  caption: {
+    ...typography.caption,
+    color: colors.textMuted,
+    marginTop: spacing.xs,
+  },
+  fieldSpacing: {
+    marginTop: spacing.lg,
+  },
+  blockSpacing: {
+    marginTop: spacing.md,
+  },
+  savedText: {
+    ...typography.label,
+    color: colors.success,
+  },
+});
 
 interface SettingsFormValues {
   readonly enabled: boolean;
@@ -150,10 +183,10 @@ export default function Settings() {
         onSubmit={() => void saveSettings()}
         submitButtonProps={{ loading: saving, icon: 'check', size: 'lg', testID: 'settings-save' }}
       >
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-          <View style={{ flex: 1, marginRight: spacing.md }}>
-            <Text style={[typography.subtitle, { color: colors.text }]}>Taxa de serviço</Text>
-            <Text style={[typography.caption, { color: colors.textMuted, marginTop: spacing.xs }]}>
+        <View style={styles.feeRow}>
+          <View style={styles.feeInfo}>
+            <Text style={styles.subtitle}>Taxa de serviço</Text>
+            <Text style={styles.caption}>
               Adicione a taxa configurada aos novos pedidos. Pedidos existentes mantêm seu próprio valor.
             </Text>
           </View>
@@ -166,11 +199,11 @@ export default function Settings() {
             disabled={saving}
             accessibilityLabel="Taxa de serviço ativada"
             testID="settings-enabled"
-            trackColor={{ false: colors.border, true: colors.primary }}
+            trackColor={switchTrackColor}
             thumbColor={colors.white}
           />
         </View>
-        <View style={{ marginTop: spacing.lg }}>
+        <View style={styles.fieldSpacing}>
           <Field
             label="Taxa de serviço (pontos-base)"
             value={form.basisPoints}
@@ -187,7 +220,7 @@ export default function Settings() {
           />
         </View>
         {displayedError === null ? null : (
-          <View style={{ marginTop: spacing.md }}>
+          <View style={styles.blockSpacing}>
             <ErrorBanner
               message={displayedError}
               onRetry={validationError === null ? () => void loadSettings() : undefined}
@@ -196,8 +229,8 @@ export default function Settings() {
           </View>
         )}
         {saved ? (
-          <View style={{ marginTop: spacing.md }}>
-            <Text style={[typography.label, { color: colors.success }]} testID="settings-saved">
+          <View style={styles.blockSpacing}>
+            <Text style={styles.savedText} testID="settings-saved">
               Configurações salvas.
             </Text>
           </View>

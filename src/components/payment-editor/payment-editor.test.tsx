@@ -72,7 +72,7 @@ describe('<PaymentEditor />', () => {
     expect(screen.getByTestId('payment-editor-amount-0').props.value).toBe('12.50');
   });
 
-  it('formats partial input on blur and follows external row updates', async () => {
+  it('masks typed digits as reais on blur and follows external row updates', async () => {
     const onRowsChange = jest.fn();
     const rows = [createPaymentRow({ id: 'one', amountCents: '500', receivedCents: '600' })];
     const view = await render(
@@ -81,11 +81,11 @@ describe('<PaymentEditor />', () => {
 
     await fireEvent.changeText(screen.getByTestId('payment-editor-amount-0'), '12.5');
     await fireEvent(screen.getByTestId('payment-editor-amount-0'), 'blur');
-    expect(screen.getByTestId('payment-editor-amount-0').props.value).toBe('12.50');
+    expect(screen.getByTestId('payment-editor-amount-0').props.value).toBe('1.25');
 
     await fireEvent.changeText(screen.getByTestId('payment-editor-received-0'), '7.5');
     await fireEvent(screen.getByTestId('payment-editor-received-0'), 'blur');
-    expect(screen.getByTestId('payment-editor-received-0').props.value).toBe('7.50');
+    expect(screen.getByTestId('payment-editor-received-0').props.value).toBe('0.75');
 
     await act(async () => {
       view.rerender(

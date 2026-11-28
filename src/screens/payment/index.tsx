@@ -1,6 +1,6 @@
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 import { Button } from '@/components/button';
 import { Card } from '@/components/card';
@@ -29,6 +29,53 @@ import {
 import { permissions } from '@/utils/permissions';
 
 type PaymentAction = 'close' | 'request-payment' | 'reopen' | 'cancel' | null;
+
+const styles = StyleSheet.create({
+  spacingMd: {
+    marginTop: spacing.md,
+  },
+  spacingLg: {
+    marginTop: spacing.lg,
+  },
+  errorAbove: {
+    marginBottom: spacing.lg,
+  },
+  content: {
+    paddingBottom: spacing.xl,
+  },
+  summaryRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  itemCount: {
+    color: colors.textMuted,
+    marginTop: spacing.md,
+    ...typography.body,
+  },
+  savedLater: {
+    color: colors.warning,
+    marginTop: spacing.md,
+    ...typography.caption,
+  },
+  labelText: {
+    color: colors.text,
+    ...typography.label,
+  },
+  recordedLabel: {
+    color: colors.textMuted,
+    ...typography.body,
+  },
+  changeLabel: {
+    color: colors.textMuted,
+    ...typography.caption,
+  },
+  restrictedText: {
+    color: colors.textMuted,
+    marginTop: spacing.md,
+    ...typography.caption,
+  },
+});
 
 function rowsFromOrder(order: OrderResponse): readonly PaymentDraftRow[] {
   if (order.totalCents === 0) {
@@ -134,7 +181,7 @@ export default function Payment() {
           onAction={() => router.push('/tables')}
         />
         {error === null ? null : (
-          <View style={{ marginTop: spacing.lg }}>
+          <View style={styles.spacingLg}>
             <ErrorBanner message={error} onRetry={() => void loadOrder()} testID="payment-error" />
           </View>
         )}
@@ -150,45 +197,39 @@ export default function Payment() {
 
   return (
     <Screen scroll title={order.tableCode ?? `Pedido ${order.id}`} subtitle="Pagamento">
-      <View style={{ paddingBottom: spacing.xl }}>
+      <View style={styles.content}>
         {error === null ? null : (
-          <View style={{ marginBottom: spacing.lg }}>
+          <View style={styles.errorAbove}>
             <ErrorBanner message={error} onRetry={() => void loadOrder()} testID="payment-error" />
           </View>
         )}
 
         <Card testID="payment-order-summary">
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+          <View style={styles.summaryRow}>
             <OrderStatusBadge status={order.status} testID="payment-order-status" />
             <MoneyText cents={order.totalCents} size="lg" testID="payment-order-total" />
           </View>
-          <Text
-            style={[typography.body, { color: colors.textMuted, marginTop: spacing.md }]}
-            testID="payment-item-count"
-          >
+          <Text style={styles.itemCount} testID="payment-item-count">
             {orderItemCountLabel(order)}
           </Text>
           {order.status === 'AWAITING_PAYMENT' ? (
-            <Text
-              style={[typography.caption, { color: colors.warning, marginTop: spacing.md }]}
-              testID="payment-saved-later"
-            >
+            <Text style={styles.savedLater} testID="payment-saved-later">
               Este pedido foi salvo para pagamento posterior.
             </Text>
           ) : null}
         </Card>
 
         {order.payments.length === 0 ? null : (
-          <Card testID="recorded-payments" style={{ marginTop: spacing.md }}>
-            <Text style={[typography.label, { color: colors.text }]}>Pagamentos registrados</Text>
+          <Card testID="recorded-payments" style={styles.spacingMd}>
+            <Text style={styles.labelText}>Pagamentos registrados</Text>
             {order.payments.map((payment, index) => (
               <View
                 key={`${payment.method}-${index}`}
-                style={{ marginTop: spacing.md }}
+                style={styles.spacingMd}
                 testID={`recorded-payment-${index}`}
               >
-                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <Text style={[typography.body, { color: colors.textMuted }]}>
+                <View style={styles.summaryRow}>
+                  <Text style={styles.recordedLabel}>
                     {paymentMethodLabels[payment.method]}
                   </Text>
                   <MoneyText
@@ -199,9 +240,9 @@ export default function Payment() {
                 </View>
                 {payment.changeCents === null ? null : (
                   <View
-                    style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
+                    style={styles.summaryRow}
                   >
-                    <Text style={[typography.caption, { color: colors.textMuted }]}>Troco</Text>
+                    <Text style={styles.changeLabel}>Troco</Text>
                     <MoneyText
                       cents={payment.changeCents}
                       size="sm"
@@ -225,7 +266,7 @@ export default function Payment() {
               icon: 'check',
               testID: 'payment-close-button',
             }}
-            style={{ marginTop: spacing.lg }}
+            style={styles.spacingLg}
           >
             <PaymentEditor
               rows={rows}
@@ -237,7 +278,7 @@ export default function Payment() {
         )}
 
         {!isActive || !canRequestPayment ? null : (
-          <View style={{ marginTop: spacing.md }}>
+          <View style={styles.spacingMd}>
             {order.status === 'OPEN' ? (
               <Button
                 label="Solicitar pagamento"
@@ -267,7 +308,7 @@ export default function Payment() {
         )}
 
         {!isActive || !canCancel ? null : (
-          <View style={{ marginTop: spacing.md }}>
+          <View style={styles.spacingMd}>
             <Button
               label="Cancelar pedido"
               onPress={() => {
@@ -275,7 +316,7 @@ export default function Payment() {
               }}
               loading={busy === 'cancel'}
               disabled={actionDisabled}
-              variant="danger"
+              variant="secondary"
               icon="close"
               fullWidth
               testID="payment-cancel-button"
@@ -284,15 +325,12 @@ export default function Payment() {
         )}
 
         {!isActive || canClose || !canRequestPayment ? null : (
-          <Text
-            style={[typography.caption, { color: colors.textMuted, marginTop: spacing.md }]}
-            testID="payment-close-restricted"
-          >
+          <Text style={styles.restrictedText} testID="payment-close-restricted">
             Um administrador ou operador de caixa deve fechar este pedido.
           </Text>
         )}
 
-        <View style={{ marginTop: spacing.lg }}>
+        <View style={styles.spacingLg}>
           <Button
             label="Voltar"
             onPress={() => router.back()}

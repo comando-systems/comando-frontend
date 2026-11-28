@@ -1,5 +1,5 @@
 import { Redirect, useRouter, type Href } from 'expo-router';
-import { Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 import { Card } from '@/components/card';
 import { Icon, type IconName } from '@/components/icon';
@@ -47,6 +47,29 @@ const links: readonly ManagementLink[] = [
   },
 ];
 
+const styles = StyleSheet.create({
+  linkCard: {
+    marginBottom: spacing.md,
+  },
+  linkContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  linkText: {
+    marginLeft: spacing.md,
+    flex: 1,
+  },
+  linkLabel: {
+    ...typography.subtitle,
+    color: colors.text,
+  },
+  linkDescription: {
+    ...typography.caption,
+    color: colors.textMuted,
+    marginTop: spacing.xs,
+  },
+});
+
 export default function Management() {
   const { user } = useSession();
   const router = useRouter();
@@ -62,13 +85,13 @@ export default function Management() {
           key={link.id}
           testID={`management-${link.id}-link`}
           onPress={() => router.push(link.href)}
-          style={{ marginBottom: spacing.md }}
+          style={styles.linkCard}
         >
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <View style={styles.linkContent}>
             <Icon name={link.icon} size="lg" color={colors.primaryDark} />
-            <View style={{ marginLeft: spacing.md, flex: 1 }}>
-              <Text style={[typography.subtitle, { color: colors.text }]}>{link.label}</Text>
-              <Text style={[typography.caption, { color: colors.textMuted, marginTop: spacing.xs }]}>
+            <View style={styles.linkText}>
+              <Text style={styles.linkLabel}>{link.label}</Text>
+              <Text style={styles.linkDescription}>
                 {link.description}
               </Text>
             </View>

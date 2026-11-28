@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { KeyboardAvoidingView, Text, View } from 'react-native';
+import { KeyboardAvoidingView, StyleSheet, Text, View } from 'react-native';
 
 import { ErrorBanner } from '@/components/error-banner';
 import { Field } from '@/components/field';
@@ -9,6 +9,41 @@ import { Screen } from '@/components/screen';
 import { useSession } from '@/providers/session-provider';
 import { ApiError, getErrorMessage } from '@/services/api';
 import { colors, radii, spacing, typography } from '@/theme';
+
+const styles = StyleSheet.create({
+  keyboardContainer: {
+    flex: 1,
+  },
+  header: {
+    alignItems: 'center',
+    marginBottom: spacing.xxl,
+  },
+  logoBadge: {
+    width: 64,
+    height: 64,
+    borderRadius: radii.lg,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  brand: {
+    ...typography.display,
+    color: colors.primaryDark,
+    marginTop: spacing.lg,
+  },
+  intro: {
+    ...typography.body,
+    color: colors.textMuted,
+    marginTop: spacing.xs,
+    textAlign: 'center',
+  },
+  emailField: {
+    marginBottom: spacing.lg,
+  },
+  errorContainer: {
+    marginTop: spacing.md,
+  },
+});
 
 export default function Login() {
   const { signIn } = useSession();
@@ -47,32 +82,16 @@ export default function Login() {
   }
 
   return (
-    <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
+    <KeyboardAvoidingView style={styles.keyboardContainer} behavior="padding">
       <Screen scroll topInset bottomInset>
-        <View style={{ alignItems: 'center', marginBottom: spacing.xxl }}>
-          <View
-            style={{
-              width: 64,
-              height: 64,
-              borderRadius: radii.lg,
-              backgroundColor: colors.primary,
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
+        <View style={styles.header}>
+          <View style={styles.logoBadge}>
             <Icon name="food" size="lg" color={colors.white} />
           </View>
-          <Text
-            style={[
-              typography.display,
-              { color: colors.primaryDark, marginTop: spacing.lg },
-            ]}
-          >
+          <Text style={styles.brand}>
             Comando
           </Text>
-          <Text
-            style={[typography.body, { color: colors.textMuted, marginTop: spacing.xs, textAlign: 'center' }]}
-          >
+          <Text style={styles.intro}>
             Entre para gerenciar seus pedidos.
           </Text>
         </View>
@@ -99,7 +118,7 @@ export default function Login() {
             keyboardType="email-address"
             placeholder="voce@exemplo.com"
             editable={!isSubmitting}
-            containerStyle={{ marginBottom: spacing.lg }}
+            containerStyle={styles.emailField}
           />
 
           <Field
@@ -115,7 +134,7 @@ export default function Login() {
           />
 
           {error === null ? null : (
-            <View style={{ marginTop: spacing.md }}>
+            <View style={styles.errorContainer}>
               <ErrorBanner message={error} testID="login-error" />
             </View>
           )}

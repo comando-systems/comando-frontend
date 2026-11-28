@@ -216,6 +216,9 @@ describe('<Catalog />', () => {
     expect(screen.getByText('Esta categoria já está na lista.')).toBeTruthy();
 
     await fireEvent.changeText(screen.getByTestId('catalog-item-price'), '12.345');
+    expect(screen.getByTestId('catalog-item-price').props.value).toBe('123.45');
+
+    await fireEvent.changeText(screen.getByTestId('catalog-item-price'), 'abc');
     await fireEvent.press(screen.getByTestId('catalog-item-submit'));
     expect(screen.getByText('Informe um preço com até duas casas decimais.')).toBeTruthy();
 

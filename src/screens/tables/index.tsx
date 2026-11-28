@@ -121,6 +121,24 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
     ...typography.label,
   },
+  legendDotSuccess: {
+    backgroundColor: colors.success,
+  },
+  legendDotAwaiting: {
+    backgroundColor: colors.primary,
+  },
+  renameSection: {
+    marginBottom: spacing.xl,
+  },
+  errorSection: {
+    marginBottom: spacing.lg,
+  },
+  columnWrapper: {
+    gap: spacing.md,
+  },
+  listContent: {
+    paddingBottom: spacing.xl,
+  },
 });
 
 const OrderRow = memo(function OrderRow({ order, onPress }: OrderRowProps) {
@@ -263,11 +281,11 @@ export default function Tables() {
         />
         <View style={styles.legend}>
           <View style={styles.legendItem}>
-            <View style={[styles.legendDot, { backgroundColor: colors.success }]} />
+            <View style={[styles.legendDot, styles.legendDotSuccess]} />
             <Text style={styles.legendText}>{orderStatusLabels.OPEN}</Text>
           </View>
           <View style={styles.legendItem}>
-            <View style={[styles.legendDot, { backgroundColor: colors.primary }]} />
+            <View style={[styles.legendDot, styles.legendDotAwaiting]} />
             <Text style={styles.legendText}>{orderStatusLabels.AWAITING_PAYMENT}</Text>
           </View>
         </View>
@@ -286,7 +304,7 @@ export default function Tables() {
       </View>
 
       {canOpenTable ? (
-        <View style={{ marginBottom: spacing.xl }}>
+        <View style={styles.renameSection}>
           <Button
             label={renamingTable ? 'Usar nome sugerido' : 'Renomear mesa'}
             onPress={() => {
@@ -314,7 +332,7 @@ export default function Tables() {
       ) : null}
 
       {error === null ? null : (
-        <View style={{ marginBottom: spacing.lg }}>
+        <View style={styles.errorSection}>
           <ErrorBanner
             message={error}
             onRetry={() => {
@@ -357,7 +375,7 @@ export default function Tables() {
         data={visibleOrders}
         keyExtractor={(order) => order.id}
         numColumns={columns}
-        columnWrapperStyle={{ gap: spacing.md }}
+        columnWrapperStyle={styles.columnWrapper}
         ListHeaderComponent={listHeader}
         ListEmptyComponent={
           <EmptyState
@@ -371,7 +389,7 @@ export default function Tables() {
           />
         }
         renderItem={({ item }) => <OrderRow order={item} onPress={openOrder} />}
-        contentContainerStyle={{ paddingBottom: spacing.xl }}
+        contentContainerStyle={styles.listContent}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void loadOrders(true)} />}
       />
     </Screen>

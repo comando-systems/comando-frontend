@@ -1,10 +1,11 @@
-import { ActivityIndicator, Pressable, Text } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, Text } from 'react-native';
+import type { TextStyle, ViewStyle } from 'react-native';
 
 import { Icon, type IconName } from '@/components/icon';
 import { useIsWideScreen } from '@/hooks/use-wide-screen';
 import { colors, layout, radii, spacing, typography } from '@/theme';
 
-export type ButtonVariant = 'primary' | 'secondary' | 'tertiary' | 'danger' | 'ghost';
+export type ButtonVariant = 'primary' | 'secondary' | 'tertiary';
 export type ButtonSize = 'md' | 'lg';
 
 export interface ButtonProps {
@@ -36,24 +37,9 @@ const palettes: Record<ButtonVariant, { background: string; text: string; border
     text: colors.primaryDark,
     border: 'transparent',
   },
-  danger: {
-    background: colors.danger,
-    text: colors.white,
-    border: colors.danger,
-  },
-  ghost: {
-    background: 'transparent',
-    text: colors.primaryDark,
-    border: 'transparent',
-  },
 };
 
-const sizeStyles: Record<ButtonSize, { height: number; paddingHorizontal: number }> = {
-  md: { height: 44, paddingHorizontal: spacing.lg },
-  lg: { height: 52, paddingHorizontal: spacing.xl },
-};
-
-const styles = {
+const styles = StyleSheet.create({
   base: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -67,7 +53,72 @@ const styles = {
   fullWidthWide: {
     maxWidth: layout.formMaxWidth,
   },
-} as const;
+  sizeMd: {
+    height: 44,
+    paddingHorizontal: spacing.lg,
+  },
+  sizeLg: {
+    height: 52,
+    paddingHorizontal: spacing.xl,
+  },
+  surfacePrimary: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  surfaceSecondary: {
+    backgroundColor: 'transparent',
+    borderColor: colors.primary,
+  },
+  surfaceTertiary: {
+    backgroundColor: 'transparent',
+    borderColor: 'transparent',
+  },
+  surfaceDisabled: {
+    backgroundColor: colors.surfaceMuted,
+    borderColor: colors.border,
+  },
+  pressed: {
+    opacity: 0.8,
+  },
+  notPressed: {
+    opacity: 1,
+  },
+  labelPrimary: {
+    color: colors.white,
+  },
+  labelSecondary: {
+    color: colors.primaryDark,
+  },
+  labelTertiary: {
+    color: colors.primaryDark,
+  },
+  labelDisabled: {
+    color: colors.textMuted,
+  },
+  labelLeadingSpacing: {
+    marginLeft: spacing.sm,
+  },
+  labelTrailingSpacing: {
+    marginRight: spacing.sm,
+  },
+});
+
+const sizeStyles: Record<ButtonSize, ViewStyle> = {
+  md: styles.sizeMd,
+  lg: styles.sizeLg,
+};
+
+const surfaceStyles: Record<ButtonVariant, ViewStyle> = {
+  primary: styles.surfacePrimary,
+  secondary: styles.surfaceSecondary,
+  tertiary: styles.surfaceTertiary,
+};
+
+const labelColorStyles: Record<ButtonVariant, TextStyle> = {
+  primary: styles.labelPrimary,
+  secondary: styles.labelSecondary,
+  tertiary: styles.labelTertiary,
+};
 
 export function Button({
   label,
@@ -93,6 +144,19 @@ export function Button({
     icon === undefined || iconPosition === 'left' ? null : (
       <Icon name={icon} size="sm" color={iconColor} testID={`${testID}-icon`} />
     );
+  const pressableStyle = ({ pressed }: { pressed: boolean }) => [
+    styles.base,
+    sizeStyles[size],
+    fullWidth ? [styles.fullWidth, wide ? styles.fullWidthWide : null] : null,
+    isDisabled ? styles.surfaceDisabled : surfaceStyles[variant],
+    pressed && !isDisabled ? styles.pressed : styles.notPressed,
+  ];
+  const labelStyle = [
+    typography.label,
+    isDisabled ? styles.labelDisabled : labelColorStyles[variant],
+    leadingIcon === null ? null : styles.labelLeadingSpacing,
+    trailingIcon === null ? null : styles.labelTrailingSpacing,
+  ];
 
   return (
     <Pressable
@@ -102,34 +166,14 @@ export function Button({
       disabled={isDisabled}
       testID={testID}
       onPress={onPress}
-      style={({ pressed }) => [
-        styles.base,
-        sizeStyles[size],
-        fullWidth ? [styles.fullWidth, wide ? styles.fullWidthWide : null] : null,
-        {
-          backgroundColor: isDisabled ? colors.surfaceMuted : palette.background,
-          borderColor: isDisabled ? colors.border : palette.border,
-          opacity: pressed && !isDisabled ? 0.8 : 1,
-        },
-      ]}
+      style={pressableStyle}
     >
       {loading ? (
         <ActivityIndicator color={palette.text} testID={`${testID}-spinner`} />
       ) : (
         <>
           {leadingIcon}
-          <Text
-            style={[
-              typography.label,
-              {
-                color: isDisabled ? colors.textMuted : palette.text,
-                marginLeft: leadingIcon === null ? 0 : spacing.sm,
-                marginRight: trailingIcon === null ? 0 : spacing.sm,
-              },
-            ]}
-          >
-            {label}
-          </Text>
+          <Text style={labelStyle}>{label}</Text>
           {trailingIcon}
         </>
       )}
