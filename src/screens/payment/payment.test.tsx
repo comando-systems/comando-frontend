@@ -38,6 +38,7 @@ function makeOrder({
     type: 'TABLE',
     status,
     tableCode: 'T-01',
+    originalTableCode: 'T-01',
     label: null,
     openedByUserId: 'user-1',
     closedByUserId: null,
@@ -194,13 +195,30 @@ describe('<Payment />', () => {
     await waitFor(() => expect(screen.getByText('Aberto')).toBeTruthy());
   });
 
-  it('accepts a zero-total order without payment rows', async () => {
+  it('blocks a zero-total order with the ZERO_TOTAL message', async () => {
     jest.spyOn(api.orders, 'get').mockResolvedValue(makeOrder({ totalCents: 0 }));
 
     await render(<Payment />);
 
     expect(await screen.findByTestId('payment-editor')).toBeTruthy();
     expect(screen.queryByTestId('payment-editor-amount-0')).toBeNull();
+
+    await fireEvent.press(screen.getByTestId('payment-close-button'));
+
+    await waitFor(() =>
+      expect(screen.getByText(/O total do pedido não pode ser zero/)).toBeTruthy(),
+    );
+    expect(api.orders.close).not.toHaveBeenCalled();
+  });
+
+  it('closes a negative balance without payment rows', async () => {
+    jest.spyOn(api.orders, 'get').mockResolvedValue(makeOrder({ totalCents: -500 }));
+
+    await render(<Payment />);
+
+    expect(await screen.findByTestId('payment-editor')).toBeTruthy();
+    expect(screen.queryByTestId('payment-editor-amount-0')).toBeNull();
+    expect(screen.getByText('Saldo negativo. Nenhum pagamento é necessário.')).toBeTruthy();
 
     await fireEvent.press(screen.getByTestId('payment-close-button'));
 

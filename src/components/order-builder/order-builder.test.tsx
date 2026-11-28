@@ -1,9 +1,14 @@
 import { useState } from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { useRouter } from 'expo-router';
 
 import { EMPTY_ORDER_DRAFT, OrderBuilder } from '@/components/order-builder';
-import { api } from '@/services/api';
+import { api, ApiError } from '@/services/api';
 import type { ItemResponse, OrderResponse, SettingsResponse } from '@/types';
+
+jest.mock('expo-router', () => ({
+  useRouter: jest.fn(),
+}));
 
 jest.mock('@/services/api', () => ({
   api: {
@@ -14,7 +19,16 @@ jest.mock('@/services/api', () => ({
       setPricing: jest.fn(),
     },
   },
-  ApiError: class ApiError extends Error {},
+  ApiError: class ApiError extends Error {
+    readonly code: string;
+    readonly details?: unknown;
+
+    constructor(input: { code: string; details?: unknown; message?: string }) {
+      super(input.message ?? input.code);
+      this.code = input.code;
+      this.details = input.details;
+    }
+  },
   getErrorMessage: jest.fn(() => 'Não foi possível concluir a solicitação.'),
 }));
 
@@ -24,6 +38,7 @@ const changeQuantityMock = api.orders.changeQuantity as jest.MockedFunction<
 >;
 const removeItemMock = api.orders.removeItem as jest.MockedFunction<typeof api.orders.removeItem>;
 const setPricingMock = api.orders.setPricing as jest.MockedFunction<typeof api.orders.setPricing>;
+const push = jest.fn();
 
 const createdAt = '2026-01-01T00:00:00.000Z';
 
@@ -50,6 +65,7 @@ function makeOrder(overrides: Partial<OrderResponse> = {}): OrderResponse {
     type: 'TABLE',
     status: 'OPEN',
     tableCode: 'T-01',
+    originalTableCode: 'T-01',
     label: null,
     openedByUserId: 'user-1',
     closedByUserId: null,
@@ -113,6 +129,9 @@ const settings: SettingsResponse = {
 describe('<OrderBuilder />', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    jest.mocked(useRouter).mockReturnValue({
+      push,
+    } as unknown as ReturnType<typeof useRouter>);
     addItemsMock.mockResolvedValue(orderWithCoffee(1));
     changeQuantityMock.mockResolvedValue(orderWithCoffee(2));
     removeItemMock.mockResolvedValue(makeOrder());
@@ -254,7 +273,7 @@ describe('<OrderBuilder />', () => {
     );
   });
 
-  it('clamps an invalid discount before submitting it', async () => {
+  it('keeps a discount above the subtotal and shows the credit balance', async () => {
     const onDraftChange = jest.fn();
 
     await render(
@@ -270,10 +289,11 @@ describe('<OrderBuilder />', () => {
     await fireEvent.press(screen.getByTestId('apply-pricing-button'));
 
     expect(onDraftChange).toHaveBeenCalledWith(
-      expect.objectContaining({ discountCents: 1000 }),
+      expect.objectContaining({ discountCents: 9999 }),
     );
-    expect(screen.getByTestId('preview-discount').props.children).toBe('-R$10.00');
-    expect(screen.getByTestId('preview-total').props.children).toBe('R$0.00');
+    expect(screen.getByTestId('preview-discount').props.children).toBe('-R$99.99');
+    expect(screen.getByTestId('preview-total').props.children).toBe('-R$89.99');
+    expect(screen.getByText(/Saldo negativo de R\$89\.99/)).toBeTruthy();
   });
 
   it('adds table items immediately and refreshes the returned order', async () => {
@@ -302,6 +322,31 @@ describe('<OrderBuilder />', () => {
     );
     expect(await screen.findByTestId('builder-line-1')).toBeTruthy();
     expect(screen.getByTestId('preview-total').props.children).toBe('R$5.00');
+  });
+
+  it('navigates to the order holding the name when adding a line finds it occupied', async () => {
+    addItemsMock.mockRejectedValue(
+      new ApiError({
+        status: 409,
+        code: 'TABLE_OCCUPIED',
+        message: 'Esta mesa já está ocupada.',
+        details: { orderId: '99' },
+      }),
+    );
+
+    await render(
+      <OrderBuilder
+        mode="order"
+        order={makeOrder()}
+        onOrderChange={jest.fn()}
+        catalog={catalog}
+      />,
+    );
+
+    await fireEvent.press(await screen.findByTestId('add-item-1'));
+
+    await waitFor(() => expect(push).toHaveBeenCalledWith('/orders/99'));
+    expect(screen.queryByTestId('order-builder-error')).toBeNull();
   });
 
   it('sends table quantity changes and item removal immediately', async () => {
@@ -335,7 +380,7 @@ describe('<OrderBuilder />', () => {
     await waitFor(() => expect(screen.queryByTestId('builder-line-1')).toBeNull());
   });
 
-  it('submits clamped pricing for table orders and uses the returned snapshot', async () => {
+  it('submits unclamped pricing for table orders and uses the returned snapshot', async () => {
     setPricingMock.mockResolvedValue(
       makeOrder({
         applyServiceFee: true,
@@ -373,7 +418,7 @@ describe('<OrderBuilder />', () => {
     await waitFor(() =>
       expect(setPricingMock).toHaveBeenCalledWith('10', {
         surchargeCents: 500,
-        discountCents: 1500,
+        discountCents: 9000,
         applyServiceFee: true,
       }),
     );

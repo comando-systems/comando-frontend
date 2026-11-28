@@ -22,7 +22,7 @@ export interface OrderPricingInput {
 export interface OrderPreview extends OrderPricingInput {
   readonly lines: readonly OrderPreviewLineResult[];
   readonly subtotalCents: number;
-  readonly maxDiscountCents: number;
+  readonly adjustedCents: number;
   readonly serviceFeeCents: number;
   readonly totalCents: number;
 }
@@ -33,10 +33,6 @@ function toNonNegativeInteger(value: number): number {
 
 export function parseCentsInput(value: string): number {
   return toNonNegativeInteger(Number.parseInt(value, 10));
-}
-
-export function clampDiscountCents(value: number, maxDiscountCents: number): number {
-  return Math.min(toNonNegativeInteger(value), toNonNegativeInteger(maxDiscountCents));
 }
 
 export function calculateServiceFeeCents(baseCents: number, basisPoints: number): number {
@@ -61,12 +57,14 @@ export function buildOrderPreview(
 
   const subtotalCents = normalizedLines.reduce((sum, line) => sum + line.lineTotalCents, 0);
   const surchargeCents = toNonNegativeInteger(pricing.surchargeCents);
-  const maxDiscountCents = subtotalCents + surchargeCents;
-  const discountCents = clampDiscountCents(pricing.discountCents, maxDiscountCents);
-  const adjustedCents = maxDiscountCents - discountCents;
-  const serviceFeeCents = pricing.applyServiceFee
-    ? calculateServiceFeeCents(adjustedCents, pricing.serviceFeeBasisPoints)
-    : 0;
+  // A discount larger than the adjusted subtotal leaves a negative credit balance.
+  const discountCents = toNonNegativeInteger(pricing.discountCents);
+  const adjustedCents = subtotalCents + surchargeCents - discountCents;
+  // No fee is charged on a negative balance.
+  const serviceFeeCents =
+    pricing.applyServiceFee && adjustedCents > 0
+      ? calculateServiceFeeCents(adjustedCents, pricing.serviceFeeBasisPoints)
+      : 0;
 
   return {
     ...pricing,
@@ -74,7 +72,7 @@ export function buildOrderPreview(
     discountCents,
     lines: normalizedLines,
     subtotalCents,
-    maxDiscountCents,
+    adjustedCents,
     serviceFeeCents,
     totalCents: adjustedCents + serviceFeeCents,
   };

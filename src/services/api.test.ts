@@ -1,4 +1,4 @@
-import { ApiError, api, http, type HttpRequestInput } from '@/services/api';
+import { ApiError, api, getErrorMessage, http, type HttpRequestInput } from '@/services/api';
 import { sessionStorage } from '@/services/storage';
 import type { BackendSessionResponse, OrderResponse, SessionResponse } from '@/types';
 import { toRoleSet } from '@/utils/roles';
@@ -57,6 +57,7 @@ const order: OrderResponse = {
   type: 'TABLE',
   status: 'OPEN',
   tableCode: 'T-01',
+  originalTableCode: 'T-01',
   label: null,
   openedByUserId: '1',
   closedByUserId: null,
@@ -240,7 +241,7 @@ describe('API client', () => {
     expect(sessionStorage.clear).toHaveBeenCalled();
   });
 
-  it('normalizes backend errors into fixed English messages and preserves details', async () => {
+  it('normalizes backend errors into fixed Portuguese messages and preserves details', async () => {
     jest.mocked(sessionStorage.read).mockResolvedValue(session);
     fetchMock.mockResolvedValue(errorResponse('TABLE_OCCUPIED', 409, { orderId: '77' }));
 
@@ -258,7 +259,21 @@ describe('API client', () => {
     }
   });
 
-  it('uses a generic English message for unknown backend codes', async () => {
+  it('normalizes zero-total conflicts into an actionable Portuguese message', async () => {
+    jest.mocked(sessionStorage.read).mockResolvedValue(session);
+    fetchMock.mockResolvedValue(errorResponse('ZERO_TOTAL', 409));
+
+    await expect(api.orders.close('10', { payments: [] })).rejects.toMatchObject({
+      code: 'ZERO_TOTAL',
+      message: getErrorMessage('ZERO_TOTAL'),
+      status: 409,
+    });
+    expect(getErrorMessage('ZERO_TOTAL')).toBe(
+      'O total do pedido não pode ser zero. Adicione itens ou ajuste o desconto antes de finalizar.',
+    );
+  });
+
+  it('uses a generic Portuguese message for unknown backend codes', async () => {
     jest.mocked(sessionStorage.read).mockResolvedValue(session);
     fetchMock.mockResolvedValue(errorResponse('NEW_BACKEND_CODE', 400));
 

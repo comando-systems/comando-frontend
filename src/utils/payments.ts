@@ -1,3 +1,4 @@
+import { getErrorMessage } from '@/services/api';
 import { parsePriceToCents } from '@/utils/money';
 import type { PaymentInput, PaymentMethod } from '@/types';
 
@@ -86,8 +87,13 @@ export function validatePaymentRows(
   rows: readonly PaymentDraftRow[],
   totalCents: number,
 ): string | null {
+  if (totalCents === 0) {
+    return getErrorMessage('ZERO_TOTAL');
+  }
+
   if (rows.length === 0) {
-    return totalCents === 0 ? null : 'Adicione pelo menos um pagamento.';
+    // A negative balance is a credit: the backend closes it without payments.
+    return totalCents < 0 ? null : 'Adicione pelo menos um pagamento.';
   }
 
   for (const row of rows) {

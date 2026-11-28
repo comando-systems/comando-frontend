@@ -1,4 +1,5 @@
 import { memo, useCallback, useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'expo-router';
 import { ActivityIndicator, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Badge } from '@/components/badge';
@@ -22,10 +23,10 @@ import type {
   SettingsResponse,
 } from '@/types';
 import { formatCategories } from '@/utils/categories';
+import { occupiedOrderId } from '@/utils/errors';
 import { formatMoney, formatPriceInput, maskPriceInput, parsePriceToCents } from '@/utils/money';
 import {
   buildOrderPreview,
-  clampDiscountCents,
   type OrderPreview,
   type OrderPreviewLine,
   type OrderPreviewLineResult,
@@ -438,6 +439,7 @@ function SummaryRow({ label, cents, testID, total = false }: SummaryRowProps) {
 
 export function OrderBuilder(props: OrderBuilderProps) {
   const { catalog, settings, loading = false, error = null, onRetry, canEdit = true } = props;
+  const router = useRouter();
   const [query, setQuery] = useState('');
   const [pendingPricing, setPendingPricing] = useState<PendingPricing | null>(null);
   const [busy, setBusy] = useState(false);
@@ -561,6 +563,15 @@ export function OrderBuilder(props: OrderBuilderProps) {
           onOrderChange(updatedOrder);
         }
       } catch (submitError) {
+        // Line mutations are the only place the backend reports TABLE_OCCUPIED:
+        // another active order already holds the name. Open that order instead.
+        const existingOrderId = occupiedOrderId(submitError);
+
+        if (existingOrderId !== null) {
+          router.push(`/orders/${existingOrderId}`);
+          return;
+        }
+
         setActionError(
           submitError instanceof ApiError ? submitError.message : getErrorMessage('INTERNAL_ERROR'),
         );
@@ -568,7 +579,7 @@ export function OrderBuilder(props: OrderBuilderProps) {
         setBusy(false);
       }
     },
-    [onOrderChange],
+    [onOrderChange, router],
   );
 
   const handleQuantityChange = useCallback(
@@ -642,10 +653,7 @@ export function OrderBuilder(props: OrderBuilderProps) {
     }
 
     const nextSurchargeCents = parsePriceToCents(fields.surcharge) ?? 0;
-    const nextDiscountCents = clampDiscountCents(
-      parsePriceToCents(fields.discount) ?? 0,
-      preview.maxDiscountCents,
-    );
+    const nextDiscountCents = parsePriceToCents(fields.discount) ?? 0;
     const nextApplyServiceFee = fields.fee === 'on';
 
     setPendingPricing({
@@ -811,9 +819,11 @@ export function OrderBuilder(props: OrderBuilderProps) {
         <SummaryRow label="Taxa de serviço" cents={preview.serviceFeeCents} testID="preview-fee" />
         <SummaryRow label="Total" cents={preview.totalCents} testID="preview-total" total />
       </View>
-      <Text style={[styles.caption, styles.captionSpaced]}>
-        {`Desconto máximo: ${formatMoney(preview.maxDiscountCents)}`}
-      </Text>
+      {preview.totalCents < 0 ? (
+        <Text style={[styles.caption, styles.captionSpaced]}>
+          {`Saldo negativo de ${formatMoney(Math.abs(preview.totalCents))}. Nenhum pagamento será necessário.`}
+        </Text>
+      ) : null}
     </Card>
   );
 

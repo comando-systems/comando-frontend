@@ -17,7 +17,7 @@ import { api } from '@/services/api';
 import { colors, spacing, typography } from '@/theme';
 import type { ItemResponse, OrderResponse, SettingsResponse } from '@/types';
 import { toErrorMessage } from '@/utils/errors';
-import { orderItemCountLabel } from '@/utils/order-display';
+import { orderItemCountLabel, orderTableLabel } from '@/utils/order-display';
 import { permissions } from '@/utils/permissions';
 
 const styles = StyleSheet.create({
@@ -153,7 +153,11 @@ export default function Order() {
     (order.status === 'OPEN' || order.status === 'AWAITING_PAYMENT');
 
   return (
-    <Screen scroll title={order.tableCode ?? `Pedido ${order.id}`} subtitle={order.label ?? undefined}>
+    <Screen
+      scroll
+      title={orderTableLabel(order) ?? `Pedido ${order.id}`}
+      subtitle={order.label ?? undefined}
+    >
       {error === null ? null : (
         <View style={styles.errorAbove}>
           <ErrorBanner message={error} onRetry={() => void loadOrder()} testID="order-error" />
