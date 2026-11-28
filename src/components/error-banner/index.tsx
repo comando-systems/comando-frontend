@@ -1,4 +1,4 @@
-import { Pressable, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Icon } from '@/components/icon';
 import { colors, radii, spacing, typography } from '@/theme';
@@ -10,7 +10,7 @@ export interface ErrorBannerProps {
   readonly testID?: string;
 }
 
-const styles = {
+const styles = StyleSheet.create({
   container: {
     backgroundColor: colors.dangerSoft,
     borderColor: colors.danger,
@@ -29,11 +29,17 @@ const styles = {
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
   },
+  pressed: {
+    opacity: 0.7,
+  },
+  notPressed: {
+    opacity: 1,
+  },
   retryLabel: {
     color: colors.danger,
     ...typography.label,
   },
-} as const;
+});
 
 export function ErrorBanner({
   message,
@@ -41,6 +47,11 @@ export function ErrorBanner({
   retryLabel = 'Tentar novamente',
   testID = 'error-banner',
 }: ErrorBannerProps) {
+  const retryStyle = ({ pressed }: { pressed: boolean }) => [
+    styles.retry,
+    pressed ? styles.pressed : styles.notPressed,
+  ];
+
   return (
     <View testID={testID} style={styles.container}>
       <Icon name="warning" size="sm" color={colors.danger} />
@@ -51,7 +62,7 @@ export function ErrorBanner({
           accessibilityLabel={retryLabel}
           testID={`${testID}-retry`}
           onPress={onRetry}
-          style={({ pressed }) => [styles.retry, { opacity: pressed ? 0.7 : 1 }]}
+          style={retryStyle}
         >
           <Text style={styles.retryLabel}>{retryLabel}</Text>
         </Pressable>

@@ -1,6 +1,6 @@
 import { useFocusEffect, useRouter } from 'expo-router';
-import { memo, useCallback, useMemo, useState } from 'react';
-import { ScrollView, Text, View } from 'react-native';
+import { useCallback, useMemo, useState } from 'react';
+import { StyleSheet, Text, View } from 'react-native';
 
 import { Button } from '@/components/button';
 import { Card } from '@/components/card';
@@ -8,7 +8,6 @@ import { EmptyState } from '@/components/empty-state';
 import { ErrorBanner } from '@/components/error-banner';
 import { Field } from '@/components/field';
 import { LoadingState } from '@/components/loading-state';
-import { MoneyText } from '@/components/money-text';
 import { EMPTY_ORDER_DRAFT, OrderBuilder } from '@/components/order-builder';
 import { PaymentEditor } from '@/components/payment-editor';
 import { Screen } from '@/components/screen';
@@ -35,19 +34,30 @@ import { nextTableCode } from '@/utils/table-codes';
 
 const NEW_TABLE = 'NEW';
 
-interface SummaryCardProps {
-  readonly totalCents: number;
-}
-
-const SummaryCard = memo(function SummaryCard({ totalCents }: SummaryCardProps) {
-  return (
-    <Card testID="counter-summary" style={{ marginBottom: spacing.md }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Text style={[typography.label, { color: colors.textMuted }]}>Total atual</Text>
-        <MoneyText cents={totalCents} size="lg" testID="counter-total" />
-      </View>
-    </Card>
-  );
+const styles = StyleSheet.create({
+  errorSection: {
+    marginBottom: spacing.lg,
+  },
+  spacingMd: {
+    marginTop: spacing.md,
+  },
+  actionRow: {
+    flexDirection: 'row',
+    gap: spacing.md,
+    marginTop: spacing.md,
+  },
+  flexOne: {
+    flex: 1,
+  },
+  labelText: {
+    color: colors.text,
+    ...typography.label,
+  },
+  captionMutedSpaced: {
+    color: colors.textMuted,
+    marginTop: spacing.xs,
+    ...typography.caption,
+  },
 });
 
 export default function Counter() {
@@ -286,94 +296,95 @@ export default function Counter() {
   const totalCents = preview?.totalCents ?? 0;
 
   return (
-    <Screen title="Balcão" subtitle="Vendas fechadas e pagas">
-      <View style={{ flex: 1 }}>
-        {/*
-         * Keep the builder's FlatList outside of a ScrollView so React Native does not
-         * warn about nested virtualized lists. The header, panels and actions scroll
-         * independently and stay reachable on small screens.
-         */}
-        <ScrollView
-          style={{ flexGrow: 0, maxHeight: 360 }}
-          contentContainerStyle={{ paddingBottom: spacing.md }}
-          keyboardShouldPersistTaps="handled"
-        >
-          {error === null ? null : (
-            <View style={{ marginBottom: spacing.lg }}>
-              <ErrorBanner
-                message={error}
-                onRetry={() => {
-                  void loadData();
-                }}
-                testID="counter-error"
-              />
-            </View>
-          )}
-
-          <Card testID="counter-options">
-            <Field
-              label="Identificação ou nome do cliente"
-              value={label}
-              onChangeText={setLabel}
-              placeholder="Opcional"
-              maxLength={160}
-              editable={!busy}
-              testID="counter-label-input"
-            />
-          </Card>
-
-          <View style={{ marginTop: spacing.md }}>
-            <SummaryCard totalCents={totalCents} />
-          </View>
-
-          {showExport ? (
-            <Card testID="counter-export-panel" style={{ marginTop: spacing.md }}>
-              <Text style={[typography.label, { color: colors.text }]}>Mesa de destino</Text>
-              <Text
-                style={[typography.caption, { color: colors.textMuted, marginTop: spacing.xs }]}
-              >
-                {`Escolha uma mesa ou abra ${suggestedTableCode}.`}
-              </Text>
-              <View style={{ marginTop: spacing.md }}>
-                <Segment
-                  label="Mesa de destino"
-                  value=""
-                  onChange={(orderId) => {
-                    void handleExportTo(orderId);
-                  }}
-                  options={exportOptions}
-                  testID="counter-export-table"
-                />
-              </View>
-            </Card>
-          ) : null}
-
-          {showPayment ? (
-            <View testID="counter-payment-panel" style={{ marginTop: spacing.md }}>
-              <PaymentEditor
-                rows={paymentRows}
-                onRowsChange={setPaymentRows}
-                totalCents={totalCents}
-                disabled={busy}
-              />
-            </View>
-          ) : null}
-        </ScrollView>
-
-        <View style={{ flex: 1, minHeight: 180 }}>
-          <OrderBuilder
-            mode="draft"
-            draft={draft}
-            onDraftChange={setDraft}
-            catalog={catalog}
-            settings={settings ?? undefined}
-            canEdit={!busy}
-            onPreviewChange={setPreview}
+    <Screen scroll title="Balcão" subtitle="Vendas fechadas e pagas">
+      {error === null ? null : (
+        <View style={styles.errorSection}>
+          <ErrorBanner
+            message={error}
+            onRetry={() => {
+              void loadData();
+            }}
+            testID="counter-error"
           />
         </View>
+      )}
 
-        <View style={{ paddingTop: spacing.md }}>
-          {showPayment ? (
+      <Card testID="counter-options">
+        <Field
+          label="Identificação ou nome do cliente"
+          value={label}
+          onChangeText={setLabel}
+          placeholder="Opcional"
+          maxLength={160}
+          editable={!busy}
+          testID="counter-label-input"
+        />
+      </Card>
+
+      <View style={styles.spacingMd}>
+        <OrderBuilder
+          mode="draft"
+          draft={draft}
+          onDraftChange={setDraft}
+          catalog={catalog}
+          settings={settings ?? undefined}
+          canEdit={!busy}
+          onPreviewChange={setPreview}
+        />
+      </View>
+
+      <View style={styles.actionRow}>
+        <View style={styles.flexOne}>
+          <Button
+            label="Finalizar"
+            onPress={handleFinish}
+            disabled={busy}
+            icon="check"
+            testID="counter-finish-button"
+          />
+        </View>
+        <View style={styles.flexOne}>
+          <Button
+            label="Exportar para mesa"
+            onPress={() => {
+              void handleOpenExport();
+            }}
+            disabled={busy}
+            icon="table"
+            testID="counter-export-button"
+          />
+        </View>
+      </View>
+
+      {showExport ? (
+        <Card testID="counter-export-panel" style={styles.spacingMd}>
+          <Text style={styles.labelText}>Mesa de destino</Text>
+          <Text style={styles.captionMutedSpaced}>
+            {`Escolha uma mesa ou abra ${suggestedTableCode}.`}
+          </Text>
+          <View style={styles.spacingMd}>
+            <Segment
+              label="Mesa de destino"
+              value=""
+              onChange={(orderId) => {
+                void handleExportTo(orderId);
+              }}
+              options={exportOptions}
+              testID="counter-export-table"
+            />
+          </View>
+        </Card>
+      ) : null}
+
+      {showPayment ? (
+        <View testID="counter-payment-panel" style={styles.spacingMd}>
+          <PaymentEditor
+            rows={paymentRows}
+            onRowsChange={setPaymentRows}
+            totalCents={totalCents}
+            disabled={busy}
+          />
+          <View style={styles.spacingMd}>
             <Button
               label="Confirmar venda"
               onPress={() => {
@@ -384,37 +395,9 @@ export default function Counter() {
               fullWidth
               testID="counter-confirm-sale-button"
             />
-          ) : null}
-          <View
-            style={{
-              flexDirection: 'row',
-              gap: spacing.md,
-              marginTop: showPayment ? spacing.sm : 0,
-            }}
-          >
-            <View style={{ flex: 1 }}>
-              <Button
-                label="Finalizar"
-                onPress={handleFinish}
-                disabled={busy}
-                icon="check"
-                testID="counter-finish-button"
-              />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Button
-                label="Exportar para mesa"
-                onPress={() => {
-                  void handleOpenExport();
-                }}
-                disabled={busy}
-                icon="table"
-                testID="counter-export-button"
-              />
-            </View>
           </View>
         </View>
-      </View>
+      ) : null}
     </Screen>
   );
 }

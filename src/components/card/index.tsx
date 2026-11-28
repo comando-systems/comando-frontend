@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Pressable, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import type { StyleProp, ViewStyle } from 'react-native';
 
 import { colors, radii, shadows, spacing } from '@/theme';
@@ -11,7 +11,7 @@ export interface CardProps {
   readonly testID?: string;
 }
 
-const styles = {
+const styles = StyleSheet.create({
   base: {
     backgroundColor: colors.surface,
     borderColor: colors.border,
@@ -20,7 +20,13 @@ const styles = {
     padding: spacing.lg,
     ...shadows.card,
   },
-} as const;
+  pressed: {
+    opacity: 0.8,
+  },
+  notPressed: {
+    opacity: 1,
+  },
+});
 
 export function Card({ children, onPress, style, testID = 'card' }: CardProps) {
   if (onPress === undefined) {
@@ -31,12 +37,18 @@ export function Card({ children, onPress, style, testID = 'card' }: CardProps) {
     );
   }
 
+  const pressableStyle = ({ pressed }: { pressed: boolean }) => [
+    styles.base,
+    style,
+    pressed ? styles.pressed : styles.notPressed,
+  ];
+
   return (
     <Pressable
       accessibilityRole="button"
       testID={testID}
       onPress={onPress}
-      style={({ pressed }) => [styles.base, style, { opacity: pressed ? 0.8 : 1 }]}
+      style={pressableStyle}
     >
       {children}
     </Pressable>

@@ -43,6 +43,16 @@ const styles = StyleSheet.create({
     gap: spacing.lg,
     paddingBottom: spacing.md,
   },
+  headerWide: {
+    gap: spacing.lg,
+    justifyContent: 'flex-start',
+    paddingHorizontal: spacing.xl,
+  },
+  headerNarrow: {
+    gap: spacing.sm,
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.md,
+  },
   brand: {
     flexShrink: 0,
   },
@@ -208,20 +218,19 @@ export function AppShell({ children }: AppShellProps) {
           .toUpperCase();
   const isActive = (href: NavHref) => pathname === href || pathname.startsWith(`${href}/`);
   const visibleItems = items.filter((item) => item.enabled);
+  const headerStyle = [
+    styles.header,
+    wide ? styles.headerWide : styles.headerNarrow,
+    { paddingTop: insets.top + spacing.sm },
+  ];
+  const contentStyle = wide
+    ? styles.content
+    : [styles.content, styles.contentMobile, { paddingBottom: TAB_BAR_HEIGHT + insets.bottom }];
+  const bottomBarStyle = [styles.bottomBar, { paddingBottom: insets.bottom }];
 
   return (
     <View style={styles.container}>
-      <View
-        style={[
-          styles.header,
-          {
-            gap: wide ? spacing.lg : spacing.sm,
-            justifyContent: wide ? 'flex-start' : 'space-between',
-            paddingHorizontal: wide ? spacing.xl : spacing.md,
-            paddingTop: insets.top + spacing.sm,
-          },
-        ]}
-      >
+      <View style={headerStyle}>
         <View style={styles.brand}>
           <Image
             source={require('../../../assets/full-logo.png')}
@@ -291,20 +300,12 @@ export function AppShell({ children }: AppShellProps) {
         </Pressable>
       </View>
 
-      <View
-        testID="app-shell-content"
-        style={[
-          styles.content,
-          wide
-            ? null
-            : [styles.contentMobile, { paddingBottom: TAB_BAR_HEIGHT + insets.bottom }],
-        ]}
-      >
+      <View testID="app-shell-content" style={contentStyle}>
         {children}
       </View>
 
       {wide ? null : (
-        <View testID="bottom-tab-bar" style={[styles.bottomBar, { paddingBottom: insets.bottom }]}>
+        <View testID="bottom-tab-bar" style={bottomBarStyle}>
           {visibleItems.map((item) => {
             const active = isActive(item.href);
 

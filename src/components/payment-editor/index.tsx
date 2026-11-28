@@ -1,5 +1,5 @@
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
-import { Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 import { Button } from '@/components/button';
 import { Card } from '@/components/card';
@@ -9,7 +9,7 @@ import { MoneyText } from '@/components/money-text';
 import { Segment } from '@/components/segment';
 import { colors, spacing, typography } from '@/theme';
 import { PAYMENT_METHODS, type PaymentMethod } from '@/types';
-import { formatPriceInput, parsePriceToCents } from '@/utils/money';
+import { formatPriceInput, maskPriceInput, parsePriceToCents } from '@/utils/money';
 import {
   createPaymentRow,
   type PaymentDraftRow,
@@ -37,6 +37,53 @@ const methodOptions = PAYMENT_METHODS.map((method) => ({
 }));
 
 const nonCashMethods: readonly PaymentMethod[] = ['DEBIT_CARD', 'CREDIT_CARD', 'PIX', 'OTHER'];
+
+const styles = StyleSheet.create({
+  rowCard: {
+    marginBottom: spacing.md,
+  },
+  rowHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  mutedCaption: {
+    color: colors.textMuted,
+  },
+  section: {
+    marginTop: spacing.sm,
+  },
+  summaryHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  summaryRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: spacing.md,
+  },
+  summaryStatusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: spacing.sm,
+  },
+  mutedLabel: {
+    color: colors.textMuted,
+  },
+  statusMatch: {
+    color: colors.success,
+    marginLeft: spacing.sm,
+  },
+  statusMismatch: {
+    color: colors.warning,
+    marginLeft: spacing.sm,
+  },
+  rows: {
+    marginTop: spacing.md,
+  },
+});
 
 function toDisplayAmount(value: string): string {
   const cents = parseDraftCents(value);
@@ -94,9 +141,11 @@ const PaymentRow = memo(function PaymentRow({
 
   const commitAmountText = useCallback(
     (text: string) => {
-      setAmountText(text);
-      const cents = parsePriceToCents(text);
-      const next = cents === null ? text : String(cents);
+      const masked = maskPriceInput(text);
+      const cents = parsePriceToCents(masked);
+      const next = cents === null ? '' : String(cents);
+
+      setAmountText(masked);
       amountRef.current = next;
       updateRow({ amountCents: next });
     },
@@ -105,9 +154,11 @@ const PaymentRow = memo(function PaymentRow({
 
   const commitReceivedText = useCallback(
     (text: string) => {
-      setReceivedText(text);
-      const cents = parsePriceToCents(text);
-      const next = cents === null ? text : String(cents);
+      const masked = maskPriceInput(text);
+      const cents = parsePriceToCents(masked);
+      const next = cents === null ? '' : String(cents);
+
+      setReceivedText(masked);
       receivedRef.current = next;
       updateRow({ receivedCents: next });
     },
@@ -136,9 +187,9 @@ const PaymentRow = memo(function PaymentRow({
   );
 
   return (
-    <Card testID={`${testID}-row-${index}`} style={{ marginBottom: spacing.md }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Text style={[typography.caption, { color: colors.textMuted }]}>{`Pagamento ${index + 1}`}</Text>
+    <Card testID={`${testID}-row-${index}`} style={styles.rowCard}>
+      <View style={styles.rowHeader}>
+        <Text style={[typography.caption, styles.mutedCaption]}>{`Pagamento ${index + 1}`}</Text>
         <Button
           label="Remover"
           onPress={() => onRowsChange(rows.filter((entry) => entry.id !== row.id))}
@@ -147,7 +198,7 @@ const PaymentRow = memo(function PaymentRow({
           testID={`${testID}-remove-${index}`}
         />
       </View>
-      <View style={{ marginTop: spacing.sm }}>
+      <View style={styles.section}>
         <Segment
           label="Forma de pagamento"
           value={row.method}
@@ -156,7 +207,7 @@ const PaymentRow = memo(function PaymentRow({
           testID={`${testID}-method-${index}`}
         />
       </View>
-      <View style={{ marginTop: spacing.sm }}>
+      <View style={styles.section}>
         <Field
           label="Valor"
           value={amountText}
@@ -169,7 +220,7 @@ const PaymentRow = memo(function PaymentRow({
         />
       </View>
       {row.method === 'CASH' ? (
-        <View style={{ marginTop: spacing.sm }}>
+        <View style={styles.section}>
           <Field
             label="Valor recebido (opcional)"
             value={receivedText}
@@ -214,22 +265,15 @@ export function PaymentEditor({
   return (
     <View testID={testID}>
       <Card testID={`${testID}-summary`}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-          <Text style={[typography.label, { color: colors.textMuted }]}>Total do pedido</Text>
+        <View style={styles.summaryHeader}>
+          <Text style={[typography.label, styles.mutedLabel]}>Total do pedido</Text>
           <MoneyText cents={totalCents} size="md" testID={`${testID}-total`} />
         </View>
-        <View
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            marginTop: spacing.md,
-          }}
-        >
-          <Text style={[typography.label, { color: colors.textMuted }]}>Valor informado</Text>
+        <View style={styles.summaryRow}>
+          <Text style={[typography.label, styles.mutedLabel]}>Valor informado</Text>
           <MoneyText cents={enteredCents} size="md" testID={`${testID}-entered`} />
         </View>
-        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: spacing.sm }}>
+        <View style={styles.summaryStatusRow}>
           <Icon
             name={remainingCents === 0 ? 'check' : 'payment'}
             size="sm"
@@ -238,10 +282,7 @@ export function PaymentEditor({
           <Text
             style={[
               typography.caption,
-              {
-                color: remainingCents === 0 ? colors.success : colors.warning,
-                marginLeft: spacing.sm,
-              },
+              remainingCents === 0 ? styles.statusMatch : styles.statusMismatch,
             ]}
             testID={`${testID}-status`}
           >
@@ -251,7 +292,7 @@ export function PaymentEditor({
       </Card>
 
       {rows.length === 0 ? null : (
-        <View style={{ marginTop: spacing.md }}>
+        <View style={styles.rows}>
           {rows.map((row, index) => (
             <PaymentRow
               key={row.id}

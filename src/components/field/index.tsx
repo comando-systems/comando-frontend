@@ -1,4 +1,4 @@
-import { Text, TextInput, View } from 'react-native';
+import { StyleSheet, Text, TextInput, View } from 'react-native';
 import type { StyleProp, TextInputProps, TextStyle, ViewStyle } from 'react-native';
 
 import { Icon, type IconName } from '@/components/icon';
@@ -14,7 +14,7 @@ export interface FieldProps extends Omit<TextInputProps, 'style'> {
   readonly inputStyle?: StyleProp<TextStyle>;
 }
 
-const styles = {
+const styles = StyleSheet.create({
   container: {
     width: '100%',
   },
@@ -24,6 +24,9 @@ const styles = {
   label: {
     marginBottom: spacing.xs,
   },
+  labelText: {
+    color: colors.text,
+  },
   inputWrapper: {
     alignItems: 'center',
     backgroundColor: colors.surface,
@@ -32,6 +35,9 @@ const styles = {
     borderWidth: 1,
     flexDirection: 'row',
     paddingHorizontal: spacing.md,
+  },
+  inputWrapperError: {
+    borderColor: colors.danger,
   },
   icon: {
     marginRight: spacing.sm,
@@ -46,7 +52,13 @@ const styles = {
   message: {
     marginTop: spacing.xs,
   },
-} as const;
+  messageMuted: {
+    color: colors.textMuted,
+  },
+  messageError: {
+    color: colors.danger,
+  },
+});
 
 export function Field({
   label,
@@ -60,17 +72,12 @@ export function Field({
 }: FieldProps) {
   const wide = useIsWideScreen();
   const message = error ?? helper;
-  const messageColor = error === null ? colors.textMuted : colors.danger;
+  const messageColorStyle = error === null ? styles.messageMuted : styles.messageError;
 
   return (
     <View style={[styles.container, wide ? styles.containerWide : null, containerStyle]}>
-      <Text style={[typography.label, styles.label, { color: colors.text }]}>{label}</Text>
-      <View
-        style={[
-          styles.inputWrapper,
-          { borderColor: error === null ? colors.border : colors.danger },
-        ]}
-      >
+      <Text style={[typography.label, styles.label, styles.labelText]}>{label}</Text>
+      <View style={[styles.inputWrapper, error === null ? null : styles.inputWrapperError]}>
         {icon === undefined ? null : (
           <View style={styles.icon}>
             <Icon name={icon} size="sm" color={colors.textMuted} testID="field-icon" />
@@ -85,7 +92,7 @@ export function Field({
         />
       </View>
       {message === undefined || message === null ? null : (
-        <Text style={[typography.caption, styles.message, { color: messageColor }]}>{message}</Text>
+        <Text style={[typography.caption, styles.message, messageColorStyle]}>{message}</Text>
       )}
     </View>
   );

@@ -23,7 +23,8 @@ A universal Expo client for the Comando order-management system. One TypeScript 
 - **Visual system**: white header with the cloche logo, highlighted navigation in the header on wide screens and an icon-only bottom tab bar on phones, white cards on neutral gray, and orange accents for money and active states.
 - **Icon adapter**: application code uses semantic `IconName` values, never raw vendor icon names.
 - **Logo source**: `assets/full-logo.svg` has a transparent background; regenerate the React Native PNG with `rsvg-convert -w 480 -h 400 assets/full-logo.svg -o assets/full-logo.png`.
-- **Consistent forms**: a shared `Form` component caps dedicated forms at 320px on wide screens and owns the submit/cancel actions; `Field` and full-width `Button` use the same token, so tables and counter screens stay full width.
+- **Consistent forms**: a shared `Form` component caps dedicated forms at 320px on wide screens and owns the submit/cancel actions; `Field` and full-width `Button` use the same token, so tables and counter screens stay full width. Prices are entered with a decimal reais mask.
+- **Self-contained styles**: components declare their styles in `StyleSheet.create`; JSX never uses inline `style={{ ... }}` objects. Buttons use only `primary`, `secondary`, and `tertiary` variants.
 
 ## Stack
 

@@ -49,6 +49,9 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
     ...typography.caption,
   },
+  addRow: {
+    marginTop: spacing.sm,
+  },
 });
 
 export const CategoryEditor = memo(function CategoryEditor({
@@ -122,7 +125,7 @@ export const CategoryEditor = memo(function CategoryEditor({
           {error}
         </Text>
       )}
-      <View style={{ marginTop: spacing.sm }}>
+      <View style={styles.addRow}>
         <Button
           label="Adicionar categoria"
           onPress={handleAdd}

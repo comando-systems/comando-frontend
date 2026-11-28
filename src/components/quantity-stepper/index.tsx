@@ -1,4 +1,4 @@
-import { Pressable, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Icon } from '@/components/icon';
 import { colors, radii, typography } from '@/theme';
@@ -12,7 +12,7 @@ export interface QuantityStepperProps {
   readonly testID?: string;
 }
 
-const styles = {
+const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -31,12 +31,21 @@ const styles = {
     backgroundColor: colors.surfaceMuted,
     borderColor: colors.surfaceMuted,
   },
+  pressed: {
+    opacity: 0.7,
+  },
+  notPressed: {
+    opacity: 1,
+  },
   value: {
     minWidth: 48,
     textAlign: 'center',
     ...typography.subtitle,
   },
-} as const;
+  valueText: {
+    color: colors.text,
+  },
+});
 
 export function QuantityStepper({
   value,
@@ -52,6 +61,16 @@ export function QuantityStepper({
   const current = Math.min(upperBound, Math.max(lowerBound, numericValue));
   const decreaseDisabled = current <= lowerBound;
   const increaseDisabled = current >= upperBound;
+  const decreaseStyle = ({ pressed }: { pressed: boolean }) => [
+    styles.button,
+    decreaseDisabled ? styles.disabledButton : null,
+    pressed && !decreaseDisabled ? styles.pressed : styles.notPressed,
+  ];
+  const increaseStyle = ({ pressed }: { pressed: boolean }) => [
+    styles.button,
+    increaseDisabled ? styles.disabledButton : null,
+    pressed && !increaseDisabled ? styles.pressed : styles.notPressed,
+  ];
 
   return (
     <View testID={testID} style={styles.container}>
@@ -62,11 +81,7 @@ export function QuantityStepper({
         disabled={decreaseDisabled}
         testID={`${testID}-decrease`}
         onPress={() => onChange(current - 1)}
-        style={({ pressed }) => [
-          styles.button,
-          decreaseDisabled ? styles.disabledButton : null,
-          { opacity: pressed && !decreaseDisabled ? 0.7 : 1 },
-        ]}
+        style={decreaseStyle}
       >
         <Icon
           name="remove"
@@ -74,7 +89,11 @@ export function QuantityStepper({
           color={decreaseDisabled ? colors.textMuted : colors.primaryDark}
         />
       </Pressable>
-      <Text testID={`${testID}-value`} accessibilityLabel={label} style={[styles.value, { color: colors.text }]}>
+      <Text
+        testID={`${testID}-value`}
+        accessibilityLabel={label}
+        style={[styles.value, styles.valueText]}
+      >
         {current}
       </Text>
       <Pressable
@@ -84,11 +103,7 @@ export function QuantityStepper({
         disabled={increaseDisabled}
         testID={`${testID}-increase`}
         onPress={() => onChange(current + 1)}
-        style={({ pressed }) => [
-          styles.button,
-          increaseDisabled ? styles.disabledButton : null,
-          { opacity: pressed && !increaseDisabled ? 0.7 : 1 },
-        ]}
+        style={increaseStyle}
       >
         <Icon name="add" size="sm" color={increaseDisabled ? colors.textMuted : colors.primaryDark} />
       </Pressable>

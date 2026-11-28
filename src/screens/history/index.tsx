@@ -1,6 +1,6 @@
 import { useFocusEffect, useRouter } from 'expo-router';
 import { memo, useCallback, useState } from 'react';
-import { FlatList, RefreshControl, Text, View } from 'react-native';
+import { FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
 
 import { Card } from '@/components/card';
 import { EmptyState } from '@/components/empty-state';
@@ -45,6 +45,68 @@ const typeOptions: readonly SegmentOption<HistoryTypeFilter>[] = [
   { value: 'TABLE', label: 'Mesas' },
 ];
 
+const styles = StyleSheet.create({
+  orderCard: {
+    marginBottom: spacing.md,
+  },
+  orderTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  orderTitle: {
+    ...typography.subtitle,
+    color: colors.text,
+    marginTop: spacing.md,
+  },
+  caption: {
+    ...typography.caption,
+    color: colors.textMuted,
+  },
+  captionSpaced: {
+    marginTop: spacing.xs,
+  },
+  subtitle: {
+    ...typography.subtitle,
+    color: colors.text,
+  },
+  label: {
+    ...typography.label,
+    color: colors.text,
+  },
+  summaryRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: spacing.md,
+  },
+  revenueRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: spacing.sm,
+  },
+  blockSpacing: {
+    marginTop: spacing.md,
+  },
+  blockSpacingLg: {
+    marginTop: spacing.lg,
+  },
+  filterDateRow: {
+    flexDirection: 'row',
+    marginTop: spacing.md,
+  },
+  filterColumnLeft: {
+    flex: 1,
+    marginRight: spacing.sm,
+  },
+  filterColumnRight: {
+    flex: 1,
+  },
+  listContent: {
+    paddingBottom: spacing.xl,
+  },
+});
+
 interface OrderRowProps {
   readonly order: OrderResponse;
   readonly onPress: (orderId: string) => void;
@@ -58,9 +120,9 @@ const OrderRow = memo(function OrderRow({ order, onPress }: OrderRowProps) {
     <Card
       testID={`history-order-${order.id}`}
       onPress={() => onPress(order.id)}
-      style={{ marginBottom: spacing.md }}
+      style={styles.orderCard}
     >
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+      <View style={styles.orderTop}>
         <OrderStatusBadge status={order.status} testID={`history-status-badge-${order.id}`} />
         <MoneyText
           cents={order.totalCents}
@@ -69,15 +131,15 @@ const OrderRow = memo(function OrderRow({ order, onPress }: OrderRowProps) {
         />
       </View>
       <Text
-        style={[typography.subtitle, { color: colors.text, marginTop: spacing.md }]}
+        style={styles.orderTitle}
         testID={`history-title-${order.id}`}
       >
         {title}
       </Text>
-      <Text style={[typography.caption, { color: colors.textMuted, marginTop: spacing.xs }]}>
+      <Text style={[styles.caption, styles.captionSpaced]}>
         {`${channel} · ${orderItemCountLabel(order)}`}
       </Text>
-      <Text style={[typography.caption, { color: colors.textMuted, marginTop: spacing.xs }]}>
+      <Text style={[styles.caption, styles.captionSpaced]}>
         {`Criado em ${order.createdAt.slice(0, 10)} UTC`}
       </Text>
     </Card>
@@ -211,8 +273,8 @@ export default function History() {
         submitButtonProps={{ icon: 'search', testID: 'history-apply' }}
         cancelButtonProps={{ testID: 'history-clear' }}
       >
-        <Text style={[typography.subtitle, { color: colors.text }]}>Filtros</Text>
-        <View style={{ marginTop: spacing.md }}>
+        <Text style={styles.subtitle}>Filtros</Text>
+        <View style={styles.blockSpacing}>
           <Segment
             label="Filtro de status"
             value={filters.status}
@@ -221,7 +283,7 @@ export default function History() {
             testID="history-status"
           />
         </View>
-        <View style={{ marginTop: spacing.md }}>
+        <View style={styles.blockSpacing}>
           <Segment
             label="Filtro de tipo"
             value={filters.type}
@@ -230,7 +292,7 @@ export default function History() {
             testID="history-type"
           />
         </View>
-        <View style={{ marginTop: spacing.md }}>
+        <View style={styles.blockSpacing}>
           <Field
             label="Código da mesa"
             value={filters.tableCode}
@@ -242,8 +304,8 @@ export default function History() {
             testID="history-table-code"
           />
         </View>
-        <View style={{ flexDirection: 'row', marginTop: spacing.md }}>
-          <View style={{ flex: 1, marginRight: spacing.sm }}>
+        <View style={styles.filterDateRow}>
+          <View style={styles.filterColumnLeft}>
             <Field
               label="Data inicial (UTC)"
               value={filters.fromDate}
@@ -256,7 +318,7 @@ export default function History() {
               testID="history-from"
             />
           </View>
-          <View style={{ flex: 1 }}>
+          <View style={styles.filterColumnRight}>
             <Field
               label="Data final (UTC)"
               value={filters.toDate}
@@ -272,36 +334,23 @@ export default function History() {
         </View>
       </Form>
 
-      <Card testID="history-summary" style={{ marginTop: spacing.md }}>
+      <Card testID="history-summary" style={styles.blockSpacing}>
         <Text
-          style={[typography.label, { color: colors.text }]}
+          style={styles.label}
           testID="history-result-count"
         >
           {`Exibindo ${pagination.total} ${pagination.total === 1 ? 'pedido' : 'pedidos'}`}
         </Text>
-        <View
-          style={{
-            flexDirection: 'row',
-            justifyContent: 'space-between',
-            marginTop: spacing.md,
-          }}
-        >
-          <Text style={[typography.caption, { color: colors.textMuted }]}>
+        <View style={styles.summaryRow}>
+          <Text style={styles.caption}>
             Fechados nesta página
           </Text>
-          <Text style={[typography.label, { color: colors.text }]} testID="history-closed-count">
+          <Text style={styles.label} testID="history-closed-count">
             {closedOnPage.length}
           </Text>
         </View>
-        <View
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            marginTop: spacing.sm,
-          }}
-        >
-          <Text style={[typography.caption, { color: colors.textMuted }]}>
+        <View style={styles.revenueRow}>
+          <Text style={styles.caption}>
             Faturamento nesta página
           </Text>
           <MoneyText
@@ -313,7 +362,7 @@ export default function History() {
       </Card>
 
       {error === null ? null : (
-        <View style={{ marginTop: spacing.md }}>
+        <View style={styles.blockSpacing}>
           <ErrorBanner
             message={error}
             onRetry={() => {
@@ -325,19 +374,19 @@ export default function History() {
       )}
 
       {orders.length === 0 ? null : (
-        <View style={{ marginTop: spacing.lg }}>
-          <Text style={[typography.label, { color: colors.text }]}>Pedidos</Text>
+        <View style={styles.blockSpacingLg}>
+          <Text style={styles.label}>Pedidos</Text>
         </View>
       )}
     </View>
   );
 
   const listFooter = (
-    <Card testID="history-pagination" style={{ marginTop: spacing.md }}>
-      <Text style={[typography.label, { color: colors.text }]} testID="history-page-label">
+    <Card testID="history-pagination" style={styles.blockSpacing}>
+      <Text style={styles.label} testID="history-page-label">
         {`Página ${page} de ${totalPages}`}
       </Text>
-      <View style={{ marginTop: spacing.md }}>
+      <View style={styles.blockSpacing}>
         <Pagination
           page={page}
           totalPages={totalPages}
@@ -363,7 +412,7 @@ export default function History() {
             icon="history"
           />
         }
-        contentContainerStyle={{ paddingBottom: spacing.xl }}
+        contentContainerStyle={styles.listContent}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={() => void loadOrders(true)} />
         }

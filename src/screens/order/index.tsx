@@ -1,6 +1,6 @@
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 import { Button } from '@/components/button';
 import { Card } from '@/components/card';
@@ -19,6 +19,50 @@ import type { ItemResponse, OrderResponse, SettingsResponse } from '@/types';
 import { toErrorMessage } from '@/utils/errors';
 import { orderItemCountLabel } from '@/utils/order-display';
 import { permissions } from '@/utils/permissions';
+
+const styles = StyleSheet.create({
+  errorBelow: {
+    marginTop: spacing.lg,
+  },
+  errorAbove: {
+    marginBottom: spacing.lg,
+  },
+  summaryRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  metaRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    marginTop: spacing.md,
+  },
+  metaText: {
+    color: colors.textMuted,
+    marginLeft: spacing.sm,
+    ...typography.body,
+  },
+  warningText: {
+    color: colors.warning,
+    ...typography.caption,
+  },
+  spacingMd: {
+    marginTop: spacing.md,
+  },
+  actionRow: {
+    flexDirection: 'row',
+    marginTop: spacing.md,
+  },
+  flexOne: {
+    flex: 1,
+  },
+  halfSpaced: {
+    marginRight: spacing.sm,
+  },
+  requestHalf: {
+    marginLeft: spacing.sm,
+  },
+});
 
 export default function Order() {
   const { user } = useSession();
@@ -91,7 +135,7 @@ export default function Order() {
           onAction={() => router.push('/tables')}
         />
         {error === null ? null : (
-          <View style={{ marginTop: spacing.lg }}>
+          <View style={styles.errorBelow}>
             <ErrorBanner message={error} onRetry={() => void loadOrder()} testID="order-error" />
           </View>
         )}
@@ -109,105 +153,100 @@ export default function Order() {
     (order.status === 'OPEN' || order.status === 'AWAITING_PAYMENT');
 
   return (
-    <Screen title={order.tableCode ?? `Pedido ${order.id}`} subtitle={order.label ?? undefined}>
-      <View style={{ flex: 1, paddingBottom: spacing.lg }}>
-        {error === null ? null : (
-          <View style={{ marginBottom: spacing.lg }}>
-            <ErrorBanner message={error} onRetry={() => void loadOrder()} testID="order-error" />
-          </View>
-        )}
+    <Screen scroll title={order.tableCode ?? `Pedido ${order.id}`} subtitle={order.label ?? undefined}>
+      {error === null ? null : (
+        <View style={styles.errorAbove}>
+          <ErrorBanner message={error} onRetry={() => void loadOrder()} testID="order-error" />
+        </View>
+      )}
 
-        <Card testID="order-summary">
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-            <OrderStatusBadge status={order.status} testID="order-status" />
-            <MoneyText cents={order.totalCents} size="lg" testID="order-total" />
-          </View>
-          <View style={{ marginTop: spacing.md, flexDirection: 'row', alignItems: 'center' }}>
-            <Icon name="receipt" size="sm" color={colors.primaryDark} />
-            <Text
-              style={[typography.body, { color: colors.textMuted, marginLeft: spacing.sm }]}
-              testID="order-item-count"
-            >
-              {orderItemCountLabel(order)}
+      <Card testID="order-summary">
+        <View style={styles.summaryRow}>
+          <OrderStatusBadge status={order.status} testID="order-status" />
+          <MoneyText cents={order.totalCents} size="lg" testID="order-total" />
+        </View>
+        <View style={styles.metaRow}>
+          <Icon name="receipt" size="sm" color={colors.primaryDark} />
+          <Text style={styles.metaText} testID="order-item-count">
+            {orderItemCountLabel(order)}
+          </Text>
+        </View>
+        {order.status === 'AWAITING_PAYMENT' ? (
+          <View style={styles.spacingMd}>
+            <Text style={styles.warningText}>
+              Os itens estão bloqueados enquanto o pagamento é solicitado.
             </Text>
           </View>
-          {order.status === 'AWAITING_PAYMENT' ? (
-            <View style={{ marginTop: spacing.md }}>
-              <Text style={[typography.caption, { color: colors.warning }]}>
-                Os itens estão bloqueados enquanto o pagamento é solicitado.
-              </Text>
-            </View>
-          ) : null}
-        </Card>
-
-        <View style={{ marginTop: spacing.md, flexDirection: 'row' }}>
-          <View style={{ flex: 1, marginRight: canRequestPayment ? spacing.sm : 0 }}>
-            <Button
-              label="Voltar"
-              onPress={() => router.back()}
-              variant="secondary"
-              icon="back"
-              fullWidth
-              testID="order-back"
-            />
-          </View>
-          {canRequestPayment ? (
-            <View style={{ flex: 1, marginLeft: spacing.sm }}>
-              <Button
-                label="Salvar para depois"
-                onPress={() => {
-                  void runAction(() => api.orders.requestPayment(order.id));
-                }}
-                loading={actionBusy}
-                icon="payment"
-                fullWidth
-                testID="request-payment-button"
-              />
-            </View>
-          ) : null}
-        </View>
-
-        {canOpenPayment ? (
-          <View style={{ marginTop: spacing.md }}>
-            <Button
-              label="Finalizar"
-              onPress={() => router.push(`/orders/${order.id}/payment`)}
-              variant="secondary"
-              icon="payment"
-              fullWidth
-              testID="order-payment-button"
-            />
-          </View>
         ) : null}
+      </Card>
 
-        {canCancel ? (
-          <View style={{ marginTop: spacing.md }}>
-            <Button
-              label="Cancelar pedido"
-              onPress={() => {
-                void runAction(() => api.orders.cancel(order.id));
-              }}
-              variant="danger"
-              disabled={actionBusy}
-              icon="close"
-              fullWidth
-              testID="cancel-order-button"
-            />
-          </View>
-        ) : null}
+      <View style={styles.spacingMd}>
+        <OrderBuilder
+          mode="order"
+          order={order}
+          onOrderChange={setOrder}
+          catalog={catalog}
+          settings={settings ?? undefined}
+          canEdit={canEdit}
+          onRetry={() => void loadOrder()}
+        />
+      </View>
 
-        <View style={{ flex: 1, marginTop: spacing.lg }}>
-          <OrderBuilder
-            mode="order"
-            order={order}
-            onOrderChange={setOrder}
-            catalog={catalog}
-            settings={settings ?? undefined}
-            canEdit={canEdit}
-            onRetry={() => void loadOrder()}
+      <View style={styles.actionRow}>
+        <View style={[styles.flexOne, canRequestPayment ? styles.halfSpaced : null]}>
+          <Button
+            label="Voltar"
+            onPress={() => router.back()}
+            variant="secondary"
+            icon="back"
+            fullWidth
+            testID="order-back"
           />
         </View>
+        {canRequestPayment ? (
+          <View style={[styles.flexOne, styles.requestHalf]}>
+            <Button
+              label="Salvar para depois"
+              onPress={() => {
+                void runAction(() => api.orders.requestPayment(order.id));
+              }}
+              loading={actionBusy}
+              icon="payment"
+              fullWidth
+              testID="request-payment-button"
+            />
+          </View>
+        ) : null}
       </View>
+
+      {canOpenPayment ? (
+        <View style={styles.spacingMd}>
+          <Button
+            label="Finalizar"
+            onPress={() => router.push(`/orders/${order.id}/payment`)}
+            variant="secondary"
+            icon="payment"
+            fullWidth
+            testID="order-payment-button"
+          />
+        </View>
+      ) : null}
+
+      {canCancel ? (
+        <View style={styles.spacingMd}>
+          <Button
+            label="Cancelar pedido"
+            onPress={() => {
+              void runAction(() => api.orders.cancel(order.id));
+            }}
+            variant="secondary"
+            disabled={actionBusy}
+            icon="close"
+            fullWidth
+            testID="cancel-order-button"
+          />
+        </View>
+      ) : null}
     </Screen>
   );
 }

@@ -1,4 +1,4 @@
-import { formatMoney, formatPriceInput, parsePriceToCents } from '@/utils/money';
+import { formatMoney, formatPriceInput, maskPriceInput, parsePriceToCents } from '@/utils/money';
 
 describe('formatMoney', () => {
   it('formats integer cents as currency', () => {
@@ -34,5 +34,15 @@ describe('formatPriceInput', () => {
     expect(formatPriceInput(1250)).toBe('12.50');
     expect(formatPriceInput(5)).toBe('0.05');
     expect(formatPriceInput(0)).toBe('0.00');
+  });
+});
+
+describe('maskPriceInput', () => {
+  it('masks typed digits as reais with two decimals', () => {
+    expect(maskPriceInput('1200')).toBe('12.00');
+    expect(maskPriceInput('5')).toBe('0.05');
+    expect(maskPriceInput('50')).toBe('0.50');
+    expect(maskPriceInput('12.50')).toBe('12.50');
+    expect(maskPriceInput('abc')).toBe('');
   });
 });

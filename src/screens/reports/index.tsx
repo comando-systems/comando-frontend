@@ -1,6 +1,6 @@
 import { Redirect, useFocusEffect } from 'expo-router';
 import { useCallback, useState, type ReactNode } from 'react';
-import { ScrollView, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { Card } from '@/components/card';
 import { ErrorBanner } from '@/components/error-banner';
@@ -27,6 +27,54 @@ import {
 } from '@/utils/report-range';
 import { permissions } from '@/utils/permissions';
 
+const styles = StyleSheet.create({
+  scrollContent: {
+    paddingBottom: spacing.xl,
+  },
+  subtitle: {
+    ...typography.subtitle,
+    color: colors.text,
+  },
+  blockSpacing: {
+    marginTop: spacing.md,
+  },
+  blockSpacingLg: {
+    marginTop: spacing.lg,
+  },
+  captionMuted: {
+    ...typography.caption,
+    color: colors.textMuted,
+  },
+  periodText: {
+    ...typography.body,
+    color: colors.text,
+    marginTop: spacing.xs,
+  },
+  metricRow: {
+    flexDirection: 'row',
+    marginTop: spacing.lg,
+  },
+  metric: {
+    flex: 1,
+    marginRight: spacing.sm,
+  },
+  emptyPayments: {
+    ...typography.body,
+    color: colors.textMuted,
+    marginTop: spacing.md,
+  },
+  paymentRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: spacing.md,
+  },
+  bodyText: {
+    ...typography.body,
+    color: colors.text,
+  },
+});
+
 function displayInstant(value: string): string {
   return `${value.slice(0, 10)} ${value.slice(11, 19)} UTC`;
 }
@@ -41,8 +89,8 @@ function SummaryMetric({
   readonly testID?: string;
 }) {
   return (
-    <View style={{ flex: 1, marginRight: spacing.sm }} testID={testID}>
-      <Text style={[typography.caption, { color: colors.textMuted }]}>{label}</Text>
+    <View style={styles.metric} testID={testID}>
+      <Text style={styles.captionMuted}>{label}</Text>
       {children}
     </View>
   );
@@ -127,7 +175,7 @@ export default function Reports() {
 
   return (
     <Screen title="Relatórios" subtitle="Resumo de vendas">
-      <ScrollView contentContainerStyle={{ paddingBottom: spacing.xl }}>
+      <ScrollView contentContainerStyle={styles.scrollContent}>
         <Form
           testID="reports-range"
           submit="Aplicar"
@@ -137,8 +185,8 @@ export default function Reports() {
           submitButtonProps={{ disabled: loading, testID: 'reports-apply' }}
           cancelButtonProps={{ disabled: loading, testID: 'reports-today' }}
         >
-          <Text style={[typography.subtitle, { color: colors.text }]}>Período (UTC)</Text>
-          <View style={{ marginTop: spacing.md }}>
+          <Text style={styles.subtitle}>Período (UTC)</Text>
+          <View style={styles.blockSpacing}>
             <Field
               label="Data inicial (AAAA-MM-DD)"
               value={range.fromDate}
@@ -154,7 +202,7 @@ export default function Reports() {
               testID="reports-from"
             />
           </View>
-          <View style={{ marginTop: spacing.md }}>
+          <View style={styles.blockSpacing}>
             <Field
               label="Data final (exclusiva, AAAA-MM-DD)"
               value={range.toDate}
@@ -171,7 +219,7 @@ export default function Reports() {
             />
           </View>
           {displayedError === null ? null : (
-            <View style={{ marginTop: spacing.md }}>
+            <View style={styles.blockSpacing}>
               <ErrorBanner
                 message={displayedError}
                 onRetry={validationError === null ? () => void loadSummary() : undefined}
@@ -182,13 +230,13 @@ export default function Reports() {
         </Form>
 
         {summary === null ? null : (
-          <View style={{ marginTop: spacing.lg }}>
+          <View style={styles.blockSpacingLg}>
             <Card testID="reports-summary">
-              <Text style={[typography.caption, { color: colors.textMuted }]}>Período</Text>
-              <Text style={[typography.body, { color: colors.text, marginTop: spacing.xs }]}>
+              <Text style={styles.captionMuted}>Período</Text>
+              <Text style={styles.periodText}>
                 {`${displayInstant(summary.from)} a ${displayInstant(summary.to)}`}
               </Text>
-              <View style={{ flexDirection: 'row', marginTop: spacing.lg }}>
+              <View style={styles.metricRow}>
                 <SummaryMetric label="Faturamento" testID="reports-revenue">
                   <MoneyText
                     cents={summary.revenueCents}
@@ -204,30 +252,30 @@ export default function Reports() {
                   />
                 </SummaryMetric>
               </View>
-              <View style={{ flexDirection: 'row', marginTop: spacing.lg }}>
+              <View style={styles.metricRow}>
                 <SummaryMetric label="Pedidos fechados" testID="reports-closed">
-                  <Text style={[typography.subtitle, { color: colors.text }]}>
+                  <Text style={styles.subtitle}>
                     {String(summary.closedOrders)}
                   </Text>
                 </SummaryMetric>
                 <SummaryMetric label="Pedidos cancelados" testID="reports-canceled">
-                  <Text style={[typography.subtitle, { color: colors.text }]}>
+                  <Text style={styles.subtitle}>
                     {String(summary.canceledOrders)}
                   </Text>
                 </SummaryMetric>
                 <SummaryMetric label="Pedidos abertos" testID="reports-open">
-                  <Text style={[typography.subtitle, { color: colors.text }]}>
+                  <Text style={styles.subtitle}>
                     {String(summary.openOrders)}
                   </Text>
                 </SummaryMetric>
               </View>
             </Card>
 
-            <Card testID="reports-payments" style={{ marginTop: spacing.lg }}>
-              <Text style={[typography.subtitle, { color: colors.text }]}>Pagamentos por forma de pagamento</Text>
+            <Card testID="reports-payments" style={styles.blockSpacingLg}>
+              <Text style={styles.subtitle}>Pagamentos por forma de pagamento</Text>
               {summary.byMethod.length === 0 ? (
                 <Text
-                  style={[typography.body, { color: colors.textMuted, marginTop: spacing.md }]}
+                  style={styles.emptyPayments}
                   testID="reports-no-payments"
                 >
                   Nenhum pagamento neste período.
@@ -236,15 +284,10 @@ export default function Reports() {
                 summary.byMethod.map((payment) => (
                   <View
                     key={payment.method}
-                    style={{
-                      alignItems: 'center',
-                      flexDirection: 'row',
-                      justifyContent: 'space-between',
-                      marginTop: spacing.md,
-                    }}
+                    style={styles.paymentRow}
                     testID={`reports-method-${payment.method.toLowerCase()}`}
                   >
-                    <Text style={[typography.body, { color: colors.text }]}>
+                    <Text style={styles.bodyText}>
                       {paymentMethodLabels[payment.method]}
                     </Text>
                     <MoneyText

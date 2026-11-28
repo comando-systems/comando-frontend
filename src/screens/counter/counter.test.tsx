@@ -109,7 +109,7 @@ function mockRoles(roles: readonly RoleCode[]) {
 
 async function addCoffee(): Promise<void> {
   await fireEvent.press(await screen.findByTestId('add-item-1'));
-  await waitFor(() => expect(screen.getByTestId('counter-total').props.children).toBe('R$15.00'));
+  await waitFor(() => expect(screen.getByTestId('preview-total').props.children).toBe('R$15.00'));
 }
 
 async function openExportPanel(): Promise<void> {
@@ -265,7 +265,7 @@ describe('<Counter />', () => {
     expect(push).toHaveBeenCalledWith('/orders/20');
     expect(screen.queryByTestId('counter-export-panel')).toBeNull();
     expect(screen.queryByTestId('payment-editor')).toBeNull();
-    expect(screen.getByTestId('counter-total').props.children).toBe('R$0.00');
+    expect(screen.getByTestId('preview-total').props.children).toBe('R$0.00');
     expect(screen.getByTestId('counter-label-input').props.value).toBe('');
   });
 

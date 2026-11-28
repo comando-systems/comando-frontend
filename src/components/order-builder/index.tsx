@@ -1,13 +1,5 @@
 import { memo, useCallback, useEffect, useMemo, useState } from 'react';
-import {
-  ActivityIndicator,
-  FlatList,
-  Image,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { ActivityIndicator, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Badge } from '@/components/badge';
 import { Button } from '@/components/button';
@@ -30,10 +22,10 @@ import type {
   SettingsResponse,
 } from '@/types';
 import { formatCategories } from '@/utils/categories';
+import { formatMoney, formatPriceInput, maskPriceInput, parsePriceToCents } from '@/utils/money';
 import {
   buildOrderPreview,
   clampDiscountCents,
-  parseCentsInput,
   type OrderPreview,
   type OrderPreviewLine,
   type OrderPreviewLineResult,
@@ -157,6 +149,45 @@ const styles = StyleSheet.create({
     borderRadius: radii.md,
     backgroundColor: colors.dangerSoft,
   },
+  compactLine: {
+    alignItems: 'center',
+    borderBottomColor: colors.border,
+    borderBottomWidth: 1,
+    flexDirection: 'row',
+    paddingVertical: spacing.xs,
+  },
+  compactName: {
+    flex: 1,
+    marginRight: spacing.sm,
+  },
+  compactStepper: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    marginRight: spacing.sm,
+  },
+  compactStepperButton: {
+    alignItems: 'center',
+    borderRadius: radii.sm,
+    borderColor: colors.border,
+    borderWidth: 1,
+    height: 28,
+    justifyContent: 'center',
+    width: 28,
+  },
+  compactStepperLabel: {
+    color: colors.primaryDark,
+    ...typography.label,
+  },
+  compactValue: {
+    color: colors.text,
+    minWidth: 26,
+    textAlign: 'center',
+    ...typography.caption,
+  },
+  compactRemove: {
+    marginLeft: spacing.sm,
+    padding: spacing.xs,
+  },
   summaryRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -180,6 +211,10 @@ const styles = StyleSheet.create({
   pricingActions: {
     marginTop: spacing.md,
   },
+  pricingInputsRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
   field: {
     marginBottom: spacing.md,
   },
@@ -193,6 +228,34 @@ const styles = StyleSheet.create({
   },
   busy: {
     marginLeft: spacing.sm,
+  },
+  subtitleText: {
+    color: colors.text,
+  },
+  searchField: {
+    marginTop: spacing.lg,
+  },
+  selectedLines: {
+    marginBottom: spacing.md,
+  },
+  sectionTitleSpaced: {
+    marginTop: spacing.lg,
+  },
+  flex: {
+    flex: 1,
+  },
+  pricingFieldSpaced: {
+    flex: 1,
+    marginLeft: spacing.md,
+  },
+  feeToggle: {
+    marginTop: spacing.md,
+  },
+  pricingPreview: {
+    marginTop: spacing.md,
+  },
+  captionSpaced: {
+    marginTop: spacing.sm,
   },
 });
 
@@ -210,8 +273,8 @@ function toPricingFields(
   applyServiceFee: boolean,
 ): PricingFields {
   return {
-    surcharge: String(surchargeCents),
-    discount: String(discountCents),
+    surcharge: formatPriceInput(surchargeCents),
+    discount: formatPriceInput(discountCents),
     fee: applyServiceFee ? 'on' : 'off',
   };
 }
@@ -304,45 +367,56 @@ const BuilderLine = memo(function BuilderLine({
   onRemove,
 }: BuilderLineProps) {
   return (
-    <Card testID={`builder-line-${line.itemId}`} style={styles.card}>
-      <View style={styles.lineTopRow}>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.itemName}>{line.itemName}</Text>
-          <Text style={styles.itemMeta}>
-            {`${line.quantity} x `}
-            <MoneyText cents={line.unitPriceCents} size="sm" color={colors.textMuted} />
-          </Text>
-        </View>
-        <MoneyText cents={line.lineTotalCents} size="sm" testID={`line-total-${line.itemId}`} />
-      </View>
-      <View style={styles.lineActions}>
-        {canEditQuantity ? (
-          <QuantityStepper
-            value={line.quantity}
-            onChange={(nextQuantity) => onQuantityChange(line.itemId, nextQuantity)}
-            label={line.itemName}
-            testID={`line-stepper-${line.itemId}`}
-          />
-        ) : (
-          <Text testID={`line-quantity-${line.itemId}`} style={styles.lockedQuantity}>
+    <View style={styles.compactLine} testID={`builder-line-${line.itemId}`}>
+      <Text style={[styles.itemName, styles.compactName]} numberOfLines={1}>
+        {line.itemName}
+      </Text>
+      {canEditQuantity ? (
+        <View style={styles.compactStepper}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`Diminuir ${line.itemName}`}
+            testID={`line-stepper-${line.itemId}-decrease`}
+            onPress={() => onQuantityChange(line.itemId, line.quantity - 1)}
+            style={styles.compactStepperButton}
+          >
+            <Text style={styles.compactStepperLabel}>−</Text>
+          </Pressable>
+          <Text style={styles.compactValue} testID={`line-stepper-${line.itemId}-value`}>
             {line.quantity}
           </Text>
-        )}
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={`Remover ${line.itemName}`}
-          disabled={!canRemove}
-          testID={`remove-${line.itemId}`}
-          onPress={() => onRemove(line.itemId)}
-          style={({ pressed }) => [
-            styles.removeButton,
-            { opacity: canRemove ? (pressed ? 0.7 : 1) : 0.5 },
-          ]}
-        >
-          <Icon name="trash" size="sm" color={colors.danger} />
-        </Pressable>
-      </View>
-    </Card>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`Aumentar ${line.itemName}`}
+            testID={`line-stepper-${line.itemId}-increase`}
+            onPress={() => onQuantityChange(line.itemId, line.quantity + 1)}
+            style={styles.compactStepperButton}
+          >
+            <Text style={styles.compactStepperLabel}>+</Text>
+          </Pressable>
+        </View>
+      ) : (
+        <Text testID={`line-quantity-${line.itemId}`} style={styles.compactValue}>
+          {line.quantity}
+        </Text>
+      )}
+      <MoneyText
+        cents={line.lineTotalCents}
+        size="sm"
+        color={colors.primaryDark}
+        testID={`line-total-${line.itemId}`}
+      />
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`Remover ${line.itemName}`}
+        disabled={!canRemove}
+        testID={`remove-${line.itemId}`}
+        onPress={() => onRemove(line.itemId)}
+        style={styles.compactRemove}
+      >
+        <Icon name="trash" size="sm" color={colors.textMuted} />
+      </Pressable>
+    </View>
   );
 });
 
@@ -442,8 +516,8 @@ export function OrderBuilder(props: OrderBuilderProps) {
   const preview = useMemo(
     () =>
       buildOrderPreview(previewLines, {
-        surchargeCents: parseCentsInput(fields.surcharge),
-        discountCents: parseCentsInput(fields.discount),
+        surchargeCents: parsePriceToCents(fields.surcharge) ?? 0,
+        discountCents: parsePriceToCents(fields.discount) ?? 0,
         applyServiceFee,
         serviceFeeBasisPoints,
       }),
@@ -567,9 +641,9 @@ export function OrderBuilder(props: OrderBuilderProps) {
       return;
     }
 
-    const nextSurchargeCents = parseCentsInput(fields.surcharge);
+    const nextSurchargeCents = parsePriceToCents(fields.surcharge) ?? 0;
     const nextDiscountCents = clampDiscountCents(
-      parseCentsInput(fields.discount),
+      parsePriceToCents(fields.discount) ?? 0,
       preview.maxDiscountCents,
     );
     const nextApplyServiceFee = fields.fee === 'on';
@@ -607,10 +681,10 @@ export function OrderBuilder(props: OrderBuilderProps) {
     onRetry?.();
   }
 
-  const listHeader = (
+  const header = (
     <View style={styles.header}>
       <View style={styles.titleRow}>
-        <Text style={[typography.subtitle, { color: colors.text }]}>Montagem do pedido</Text>
+        <Text style={[typography.subtitle, styles.subtitleText]}>Montagem do pedido</Text>
         {isEditable ? null : <Badge label="Bloqueado" tone="warning" icon="lock" />}
         {busy ? (
           <ActivityIndicator color={colors.primary} testID="order-builder-busy" style={styles.busy} />
@@ -634,48 +708,80 @@ export function OrderBuilder(props: OrderBuilderProps) {
         onChangeText={setQuery}
         placeholder="Buscar por nome ou categoria"
         editable={isEditable}
-        containerStyle={{ marginTop: spacing.lg }}
+        containerStyle={styles.searchField}
       />
+    </View>
+  );
 
-      {preview.lines.length === 0 ? null : (
-        <View>
-          <Text style={[typography.label, styles.sectionTitle, { marginTop: spacing.lg }]}>
-            Itens
-          </Text>
-          {preview.lines.map((line) => (
-            <BuilderLine
-              key={line.itemId}
-              line={line}
-              canEditQuantity={isEditable && isSellable(catalogById.get(line.itemId))}
-              canRemove={isEditable}
-              onQuantityChange={handleQuantityChange}
-              onRemove={handleRemove}
-            />
-          ))}
+  const selectedLines = preview.lines.length === 0 ? null : (
+    <View style={styles.selectedLines}>
+      <Text style={[typography.label, styles.sectionTitle, styles.sectionTitleSpaced]}>Itens</Text>
+      {preview.lines.map((line) => (
+        <BuilderLine
+          key={line.itemId}
+          line={line}
+          canEditQuantity={isEditable && isSellable(catalogById.get(line.itemId))}
+          canRemove={isEditable}
+          onQuantityChange={handleQuantityChange}
+          onRemove={handleRemove}
+        />
+      ))}
+    </View>
+  );
+
+  const catalogRows =
+    filteredItems.length === 0 ? (
+      <EmptyState
+        title="Nenhum item encontrado"
+        description="Tente outro termo de busca ou adicione itens no catálogo."
+        icon="search"
+      />
+    ) : (
+      filteredItems.map((item) => {
+        const quantity = currentLines.find((line) => line.itemId === item.id)?.quantity ?? 0;
+
+        return (
+          <CatalogRow
+            key={item.id}
+            item={item}
+            quantity={quantity}
+            disabled={!isEditable || busy}
+            onAdd={handleAdd}
+            onQuantityChange={handleQuantityChange}
+          />
+        );
+      })
+    );
+
+  const pricingCard = (
+    <Card style={styles.card} testID="pricing-card">
+      <Text style={[typography.label, styles.sectionTitle]}>Preços</Text>
+      <View style={styles.pricingInputsRow}>
+        <View style={styles.flex}>
+          <Field
+            label="Acréscimo (R$)"
+            testID="surcharge-input"
+            value={fields.surcharge}
+            onChangeText={(value) => updateFields({ surcharge: maskPriceInput(value) })}
+            placeholder="0.00"
+            keyboardType="decimal-pad"
+            editable={isEditable}
+          />
         </View>
-      )}
-
-      <Card style={styles.card} testID="pricing-card">
-        <Text style={[typography.label, styles.sectionTitle]}>Preços</Text>
-        <Field
-          label="Acréscimo (centavos)"
-          testID="surcharge-input"
-          value={fields.surcharge}
-          onChangeText={(value) => updateFields({ surcharge: value })}
-          keyboardType="number-pad"
-          editable={isEditable}
-          containerStyle={styles.field}
-        />
-        <Field
-          label="Desconto (centavos)"
-          testID="discount-input"
-          value={fields.discount}
-          onChangeText={(value) => updateFields({ discount: value })}
-          keyboardType="number-pad"
-          editable={isEditable}
-          containerStyle={styles.field}
-        />
-        {showFeeToggle ? (
+        <View style={styles.pricingFieldSpaced}>
+          <Field
+            label="Desconto (R$)"
+            testID="discount-input"
+            value={fields.discount}
+            onChangeText={(value) => updateFields({ discount: maskPriceInput(value) })}
+            placeholder="0.00"
+            keyboardType="decimal-pad"
+            editable={isEditable}
+          />
+        </View>
+      </View>
+      {showFeeToggle ? (
+        <View style={styles.feeToggle}>
           <Segment
             label="Taxa de serviço"
             testID="service-fee-segment"
@@ -686,32 +792,29 @@ export function OrderBuilder(props: OrderBuilderProps) {
               { label: 'Sem taxa', value: 'off', disabled: !isEditable },
             ]}
           />
-        ) : null}
-        <Text style={styles.caption}>
-          {`Desconto máximo: ${preview.maxDiscountCents} centavos`}
-        </Text>
-        <View style={styles.pricingActions}>
-          <Button
-            label="Aplicar preços"
-            onPress={handleApplyPricing}
-            disabled={!isEditable || busy}
-            variant="secondary"
-            fullWidth
-            testID="apply-pricing-button"
-          />
         </View>
-      </Card>
-
-      <Card style={styles.card} testID="pricing-preview">
+      ) : null}
+      <View style={styles.pricingActions}>
+        <Button
+          label="Aplicar preços"
+          onPress={handleApplyPricing}
+          disabled={!isEditable || busy}
+          variant="secondary"
+          fullWidth
+          testID="apply-pricing-button"
+        />
+      </View>
+      <View testID="pricing-preview" style={styles.pricingPreview}>
         <SummaryRow label="Subtotal" cents={preview.subtotalCents} testID="preview-subtotal" />
         <SummaryRow label="Acréscimo" cents={preview.surchargeCents} testID="preview-surcharge" />
         <SummaryRow label="Desconto" cents={-preview.discountCents} testID="preview-discount" />
         <SummaryRow label="Taxa de serviço" cents={preview.serviceFeeCents} testID="preview-fee" />
         <SummaryRow label="Total" cents={preview.totalCents} testID="preview-total" total />
-      </Card>
-
-      <Text style={[typography.label, styles.sectionTitle]}>Catálogo</Text>
-    </View>
+      </View>
+      <Text style={[styles.caption, styles.captionSpaced]}>
+        {`Desconto máximo: ${formatMoney(preview.maxDiscountCents)}`}
+      </Text>
+    </Card>
   );
 
   if (loading) {
@@ -719,33 +822,12 @@ export function OrderBuilder(props: OrderBuilderProps) {
   }
 
   return (
-    <FlatList
-      testID="order-builder"
-      data={filteredItems}
-      keyExtractor={(item) => item.id}
-      ListHeaderComponent={listHeader}
-      ListEmptyComponent={
-        <EmptyState
-          title="Nenhum item encontrado"
-          description="Tente outro termo de busca ou adicione itens no catálogo."
-          icon="search"
-        />
-      }
-      renderItem={({ item }) => {
-        const quantity = currentLines.find((line) => line.itemId === item.id)?.quantity ?? 0;
-
-        return (
-          <CatalogRow
-            item={item}
-            quantity={quantity}
-            disabled={!isEditable || busy}
-            onAdd={handleAdd}
-            onQuantityChange={handleQuantityChange}
-          />
-        );
-      }}
-      contentContainerStyle={styles.container}
-      keyboardShouldPersistTaps="handled"
-    />
+    <View testID="order-builder" style={styles.container}>
+      {header}
+      {selectedLines}
+      <Text style={[typography.label, styles.sectionTitle]}>Catálogo</Text>
+      {catalogRows}
+      {pricingCard}
+    </View>
   );
 }

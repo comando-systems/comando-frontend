@@ -1,6 +1,6 @@
 import { Redirect, useFocusEffect } from 'expo-router';
 import { memo, useCallback, useMemo, useState } from 'react';
-import { FlatList, Image, RefreshControl, Switch, Text, View } from 'react-native';
+import { FlatList, Image, RefreshControl, StyleSheet, Switch, Text, View } from 'react-native';
 
 import { Button } from '@/components/button';
 import { Card } from '@/components/card';
@@ -30,11 +30,85 @@ import {
   filterCatalogItems,
 } from '@/utils/catalog-filters';
 import { toErrorMessage } from '@/utils/errors';
-import { formatPriceInput, parsePriceToCents } from '@/utils/money';
+import { formatPriceInput, maskPriceInput, parsePriceToCents } from '@/utils/money';
 import { permissions } from '@/utils/permissions';
 
 const PAGE_SIZE = 20;
 const IMAGE_URL_PATTERN = /^https?:\/\/\S+$/i;
+
+const styles = StyleSheet.create({
+  spacingMd: {
+    marginTop: spacing.md,
+  },
+  spacingLg: {
+    marginTop: spacing.lg,
+  },
+  flexOne: {
+    flex: 1,
+  },
+  labelText: {
+    color: colors.text,
+    ...typography.label,
+  },
+  subtitleText: {
+    color: colors.text,
+    ...typography.subtitle,
+  },
+  bodyText: {
+    color: colors.text,
+    ...typography.body,
+  },
+  captionMutedSpaced: {
+    color: colors.textMuted,
+    marginTop: spacing.xs,
+    ...typography.caption,
+  },
+  enabledRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: spacing.lg,
+  },
+  enabledCopy: {
+    flex: 1,
+    marginRight: spacing.md,
+  },
+  actionRow: {
+    flexDirection: 'row',
+  },
+  actionRowSm: {
+    marginTop: spacing.sm,
+  },
+  actionRowMd: {
+    marginTop: spacing.md,
+  },
+  actionHalf: {
+    flex: 1,
+    marginRight: spacing.sm,
+  },
+  confirmPanel: {
+    backgroundColor: colors.warningSoft,
+    borderRadius: radii.md,
+    marginTop: spacing.md,
+    padding: spacing.md,
+  },
+  itemRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    marginBottom: spacing.md,
+  },
+  itemImageWrap: {
+    marginRight: spacing.md,
+  },
+  itemImage: {
+    borderRadius: radii.sm,
+    height: 32,
+    width: 32,
+  },
+  listContent: {
+    paddingBottom: spacing.xl,
+  },
+});
 
 const visibilityOptions: readonly SegmentOption<'active' | 'all'>[] = [
   { value: 'active', label: 'Catálogo ativo' },
@@ -147,7 +221,7 @@ function ItemForm({ initialItem, busy, error, onSubmit, onCancel, onAction }: It
           editable={!busy}
           testID="catalog-item-name"
         />
-        <View style={{ marginTop: spacing.md }}>
+        <View style={styles.spacingMd}>
           <Field
             label="Descrição (opcional)"
             value={values.description}
@@ -159,7 +233,7 @@ function ItemForm({ initialItem, busy, error, onSubmit, onCancel, onAction }: It
             testID="catalog-item-description"
           />
         </View>
-        <View style={{ marginTop: spacing.md }}>
+        <View style={styles.spacingMd}>
           <CategoryEditor
             value={values.categories}
             onChange={(categories) => update('categories', categories)}
@@ -167,11 +241,11 @@ function ItemForm({ initialItem, busy, error, onSubmit, onCancel, onAction }: It
             testID="catalog-item-categories"
           />
         </View>
-        <View style={{ marginTop: spacing.md }}>
+        <View style={styles.spacingMd}>
           <Field
             label="Preço"
             value={values.price}
-            onChangeText={(price) => update('price', price)}
+            onChangeText={(price) => update('price', maskPriceInput(price))}
             placeholder="12.50"
             helper="Valor em reais com até duas casas decimais."
             keyboardType="decimal-pad"
@@ -180,7 +254,7 @@ function ItemForm({ initialItem, busy, error, onSubmit, onCancel, onAction }: It
             testID="catalog-item-price"
           />
         </View>
-        <View style={{ marginTop: spacing.md }}>
+        <View style={styles.spacingMd}>
           <Field
             label="URL da imagem (opcional)"
             value={values.imageUrl}
@@ -193,17 +267,10 @@ function ItemForm({ initialItem, busy, error, onSubmit, onCancel, onAction }: It
             testID="catalog-item-image"
           />
         </View>
-        <View
-          style={{
-            alignItems: 'center',
-            flexDirection: 'row',
-            justifyContent: 'space-between',
-            marginTop: spacing.lg,
-          }}
-        >
-          <View style={{ flex: 1, marginRight: spacing.md }}>
-            <Text style={[typography.label, { color: colors.text }]}>Ativado</Text>
-            <Text style={[typography.caption, { color: colors.textMuted, marginTop: spacing.xs }]}>
+        <View style={styles.enabledRow}>
+          <View style={styles.enabledCopy}>
+            <Text style={styles.labelText}>Ativado</Text>
+            <Text style={styles.captionMutedSpaced}>
               Produtos desativados não podem ser vendidos, mas continuam editáveis.
             </Text>
           </View>
@@ -219,10 +286,10 @@ function ItemForm({ initialItem, busy, error, onSubmit, onCancel, onAction }: It
         </View>
 
         {isEdit && initialItem.isActive ? (
-          <View style={{ marginTop: spacing.lg }}>
-            <Text style={[typography.label, { color: colors.text }]}>Ações do produto</Text>
-            <View style={{ flexDirection: 'row', marginTop: spacing.sm }}>
-              <View style={{ flex: 1, marginRight: spacing.sm }}>
+          <View style={styles.spacingLg}>
+            <Text style={styles.labelText}>Ações do produto</Text>
+            <View style={[styles.actionRow, styles.actionRowSm]}>
+              <View style={styles.actionHalf}>
                 <Button
                   label={initialItem.enabled ? 'Desativar' : 'Ativar'}
                   onPress={() =>
@@ -236,11 +303,11 @@ function ItemForm({ initialItem, busy, error, onSubmit, onCancel, onAction }: It
                   testID={`catalog-${initialItem.enabled ? 'disable' : 'enable'}-${initialItem.id}`}
                 />
               </View>
-              <View style={{ flex: 1 }}>
+              <View style={styles.flexOne}>
                 <Button
                   label="Remover item"
                   onPress={() => setPendingAction({ kind: 'remove', item: initialItem })}
-                  variant="danger"
+                  variant="secondary"
                   disabled={busy}
                   testID={`catalog-remove-${initialItem.id}`}
                 />
@@ -250,19 +317,12 @@ function ItemForm({ initialItem, busy, error, onSubmit, onCancel, onAction }: It
         ) : null}
 
         {pendingAction === null ? null : (
-          <View
-            style={{
-              backgroundColor: colors.warningSoft,
-              borderRadius: radii.md,
-              marginTop: spacing.md,
-              padding: spacing.md,
-            }}
-          >
-            <Text style={[typography.body, { color: colors.text }]} testID="catalog-confirm-copy">
+          <View style={styles.confirmPanel}>
+            <Text style={styles.bodyText} testID="catalog-confirm-copy">
               {actionCopy(pendingAction)}
             </Text>
-            <View style={{ flexDirection: 'row', marginTop: spacing.md }}>
-              <View style={{ flex: 1, marginRight: spacing.sm }}>
+            <View style={[styles.actionRow, styles.actionRowMd]}>
+              <View style={styles.actionHalf}>
                 <Button
                   label="Cancelar"
                   onPress={() => setPendingAction(null)}
@@ -271,12 +331,12 @@ function ItemForm({ initialItem, busy, error, onSubmit, onCancel, onAction }: It
                   testID="catalog-action-cancel"
                 />
               </View>
-              <View style={{ flex: 1 }}>
+              <View style={styles.flexOne}>
                 <Button
                   label={actionButtonLabel(pendingAction.kind)}
                   onPress={() => onAction(pendingAction.kind, pendingAction.item)}
                   loading={busy}
-                  variant={pendingAction.kind === 'remove' ? 'danger' : 'primary'}
+                  variant="primary"
                   testID="catalog-action-confirm"
                 />
               </View>
@@ -285,7 +345,7 @@ function ItemForm({ initialItem, busy, error, onSubmit, onCancel, onAction }: It
         )}
 
         {validationError === null && error === null ? null : (
-          <View style={{ marginTop: spacing.md }}>
+          <View style={styles.spacingMd}>
             <ErrorBanner
               message={validationError ?? error ?? ''}
               testID="catalog-item-form-error"
@@ -326,9 +386,9 @@ const ItemRow = memo(function ItemRow({ item, onEdit }: ItemRowProps) {
     <Card
       testID={`catalog-item-${item.id}`}
       onPress={() => onEdit(item)}
-      style={{ alignItems: 'center', flexDirection: 'row', marginBottom: spacing.md }}
+      style={styles.itemRow}
     >
-      <View style={{ marginRight: spacing.md }}>
+      <View style={styles.itemImageWrap}>
         {item.imageUrl === null ? (
           <Icon
             name="food"
@@ -339,14 +399,14 @@ const ItemRow = memo(function ItemRow({ item, onEdit }: ItemRowProps) {
         ) : (
           <Image
             source={{ uri: item.imageUrl }}
-            style={{ borderRadius: radii.sm, height: 32, width: 32 }}
+            style={styles.itemImage}
             testID={`catalog-item-image-${item.id}`}
           />
         )}
       </View>
-      <View style={{ flex: 1 }}>
+      <View style={styles.flexOne}>
         <Text
-          style={[typography.label, { color: colors.text }]}
+          style={styles.labelText}
           numberOfLines={1}
           testID={`catalog-item-name-${item.id}`}
         >
@@ -553,8 +613,8 @@ export default function Catalog() {
   const listHeader = (
     <View>
       <Card testID="catalog-filters">
-        <Text style={[typography.subtitle, { color: colors.text }]}>Catálogo</Text>
-        <View style={{ marginTop: spacing.md }}>
+        <Text style={styles.subtitleText}>Catálogo</Text>
+        <View style={styles.spacingMd}>
           <Segment
             label="Visibilidade do catálogo"
             value={includeRemoved ? 'all' : 'active'}
@@ -566,7 +626,7 @@ export default function Catalog() {
             testID="catalog-visibility"
           />
         </View>
-        <View style={{ marginTop: spacing.md }}>
+        <View style={styles.spacingMd}>
           <Field
             label="Buscar"
             value={filters.search}
@@ -577,7 +637,7 @@ export default function Catalog() {
             testID="catalog-search"
           />
         </View>
-        <View style={{ marginTop: spacing.md }}>
+        <View style={styles.spacingMd}>
           <Field
             label="Categorias"
             value={filters.category}
@@ -589,7 +649,7 @@ export default function Catalog() {
           />
         </View>
         {hasFilters ? (
-          <View style={{ marginTop: spacing.md }}>
+          <View style={styles.spacingMd}>
             <Button
               label="Limpar filtros"
               onPress={() => setFilters(EMPTY_CATALOG_FILTERS)}
@@ -598,7 +658,7 @@ export default function Catalog() {
             />
           </View>
         ) : null}
-        <View style={{ marginTop: spacing.md }}>
+        <View style={styles.spacingMd}>
           <Button
             label="Adicionar item"
             onPress={openCreate}
@@ -608,7 +668,7 @@ export default function Catalog() {
           />
         </View>
         {error === null ? null : (
-          <View style={{ marginTop: spacing.md }}>
+          <View style={styles.spacingMd}>
             <ErrorBanner
               message={error}
               onRetry={() => {
@@ -623,11 +683,11 @@ export default function Catalog() {
   );
 
   const listFooter = (
-    <Card testID="catalog-pagination" style={{ marginTop: spacing.md }}>
-      <Text style={[typography.label, { color: colors.text }]} testID="catalog-page-label">
+    <Card testID="catalog-pagination" style={styles.spacingMd}>
+      <Text style={styles.labelText} testID="catalog-page-label">
         {`Página ${page} de ${totalPages}`}
       </Text>
-      <View style={{ marginTop: spacing.md }}>
+      <View style={styles.spacingMd}>
         <Pagination
           page={page}
           totalPages={totalPages}
@@ -653,7 +713,7 @@ export default function Catalog() {
             icon="food"
           />
         }
-        contentContainerStyle={{ paddingBottom: spacing.xl }}
+        contentContainerStyle={styles.listContent}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={() => void loadItems(page, includeRemoved, true)} />
         }
