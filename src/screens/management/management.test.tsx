@@ -42,10 +42,10 @@ describe('<Management />', () => {
   it('links administrators to management sections', async () => {
     await render(<Management />);
 
-    expect(screen.getByText('Users')).toBeTruthy();
-    expect(screen.getByText('Catalog')).toBeTruthy();
-    expect(screen.getByText('Settings')).toBeTruthy();
-    expect(screen.getByText('Reports')).toBeTruthy();
+    expect(screen.getByText('Usuários')).toBeTruthy();
+    expect(screen.getByText('Catálogo')).toBeTruthy();
+    expect(screen.getByText('Configurações')).toBeTruthy();
+    expect(screen.getByText('Relatórios')).toBeTruthy();
 
     await fireEvent.press(screen.getByTestId('management-users-link'));
     await fireEvent.press(screen.getByTestId('management-catalog-link'));

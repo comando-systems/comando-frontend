@@ -48,12 +48,12 @@ function makeItemPage(items: readonly ItemResponse[]): PageResponse<ItemResponse
   };
 }
 
-function makeOrder(id: string): OrderResponse {
+function makeOrder(id: string, tableCode = 'T-02'): OrderResponse {
   return {
     id,
     type: 'TABLE',
     status: 'OPEN',
-    tableCode: 'T-02',
+    tableCode,
     label: null,
     openedByUserId: 'user-1',
     closedByUserId: null,
@@ -89,7 +89,7 @@ function makeOrder(id: string): OrderResponse {
 function makeOrderPage(orders: readonly OrderResponse[]): PageResponse<OrderResponse> {
   return {
     data: orders,
-    pagination: { page: 1, pageSize: 1, total: orders.length, totalPages: 1 },
+    pagination: { page: 1, pageSize: 100, total: orders.length, totalPages: 1 },
   };
 }
 
@@ -112,9 +112,9 @@ async function addCoffee(): Promise<void> {
   await waitFor(() => expect(screen.getByTestId('counter-total').props.children).toBe('R$15.00'));
 }
 
-async function chooseTableExport(code = 'T-02'): Promise<void> {
-  await fireEvent.press(screen.getByTestId('counter-type-TABLE'));
-  await fireEvent.changeText(await screen.findByTestId('counter-table-code-input'), code);
+async function openExportPanel(): Promise<void> {
+  await fireEvent.press(screen.getByTestId('counter-export-button'));
+  expect(await screen.findByTestId('counter-export-panel')).toBeTruthy();
 }
 
 describe('<Counter />', () => {
@@ -141,13 +141,24 @@ describe('<Counter />', () => {
     jest.spyOn(api.orders, 'addItems').mockResolvedValue(makeOrder('21'));
   });
 
-  it('creates one closed and paid counter order', async () => {
+  it('keeps payments hidden and creates the counter order only after Confirm sale', async () => {
     await render(<Counter />);
     await addCoffee();
 
+    expect(screen.queryByTestId('payment-editor')).toBeNull();
+    expect(screen.queryByTestId('counter-confirm-sale-button')).toBeNull();
+
     await fireEvent.changeText(screen.getByTestId('counter-label-input'), 'Ana');
-    await fireEvent.changeText(screen.getByTestId('payment-editor-amount-0'), '1500');
     await fireEvent.press(screen.getByTestId('counter-finish-button'));
+
+    expect(screen.getByTestId('payment-editor')).toBeTruthy();
+    expect(screen.getByTestId('counter-confirm-sale-button')).toBeTruthy();
+    expect(api.orders.createCounter).not.toHaveBeenCalled();
+
+    await fireEvent.press(screen.getByTestId('payment-editor-add'));
+    expect(screen.getByTestId('payment-editor-amount-0').props.value).toBe('15.00');
+
+    await fireEvent.press(screen.getByTestId('counter-confirm-sale-button'));
 
     await waitFor(() =>
       expect(api.orders.createCounter).toHaveBeenCalledWith({
@@ -162,16 +173,55 @@ describe('<Counter />', () => {
     expect(push).toHaveBeenCalledWith('/orders/10');
   });
 
-  it('blocks a sale when payments do not match the preview total', async () => {
+  it('blocks Finish when the draft is empty', async () => {
+    await render(<Counter />);
+
+    await fireEvent.press(await screen.findByTestId('counter-finish-button'));
+
+    expect(screen.getByText('Adicione pelo menos um item para continuar.')).toBeTruthy();
+    expect(screen.queryByTestId('payment-editor')).toBeNull();
+    expect(api.orders.createCounter).not.toHaveBeenCalled();
+  });
+
+  it('blocks Confirm sale when decimal payments do not match the preview total', async () => {
     await render(<Counter />);
     await addCoffee();
 
-    await fireEvent.changeText(screen.getByTestId('payment-editor-amount-0'), '500');
     await fireEvent.press(screen.getByTestId('counter-finish-button'));
+    await fireEvent.press(screen.getByTestId('payment-editor-add'));
+    await fireEvent.changeText(screen.getByTestId('payment-editor-amount-0'), '5.00');
+    await fireEvent.press(screen.getByTestId('counter-confirm-sale-button'));
 
-    expect(screen.getByText('Payment amounts must equal the order total.')).toBeTruthy();
+    expect(
+      screen.getByText('Os valores dos pagamentos devem somar o total do pedido.'),
+    ).toBeTruthy();
     expect(api.orders.createCounter).not.toHaveBeenCalled();
     expect(push).not.toHaveBeenCalled();
+  });
+
+  it('sends split payments as integer cents with decimal inputs', async () => {
+    await render(<Counter />);
+    await addCoffee();
+
+    await fireEvent.press(screen.getByTestId('counter-finish-button'));
+    await fireEvent.press(screen.getByTestId('payment-editor-add'));
+    await fireEvent.changeText(screen.getByTestId('payment-editor-amount-0'), '6.00');
+    await fireEvent.press(screen.getByTestId('payment-editor-add'));
+    expect(screen.getByTestId('payment-editor-amount-1').props.value).toBe('9.00');
+
+    await fireEvent.press(screen.getByTestId('payment-editor-method-1-PIX'));
+    await fireEvent.press(screen.getByTestId('counter-confirm-sale-button'));
+
+    await waitFor(() =>
+      expect(api.orders.createCounter).toHaveBeenCalledWith(
+        expect.objectContaining({
+          payments: [
+            { method: 'CASH', amountCents: 600 },
+            { method: 'PIX', amountCents: 900 },
+          ],
+        }),
+      ),
+    );
   });
 
   it('hides counter sales from a server', async () => {
@@ -179,44 +229,53 @@ describe('<Counter />', () => {
 
     await render(<Counter />);
 
-    expect(await screen.findByText('Not available')).toBeTruthy();
+    expect(await screen.findByText('Indisponível')).toBeTruthy();
     expect(screen.queryByTestId('order-builder')).toBeNull();
     expect(screen.queryByTestId('counter-finish-button')).toBeNull();
+    expect(screen.queryByTestId('counter-export-button')).toBeNull();
   });
 
-  it('reuses an existing open table order when exporting', async () => {
+  it('lists open tables and exports to a selected table, discarding all counter data', async () => {
     jest.spyOn(api.orders, 'list').mockResolvedValue(makeOrderPage([makeOrder('20')]));
     jest.spyOn(api.orders, 'addItems').mockResolvedValue(makeOrder('20'));
 
     await render(<Counter />);
     await addCoffee();
-    await chooseTableExport(' T-02 ');
-    await fireEvent.press(screen.getByTestId('counter-export-button'));
+    await fireEvent.changeText(screen.getByTestId('counter-label-input'), 'Ana');
+    await openExportPanel();
 
     await waitFor(() =>
       expect(api.orders.list).toHaveBeenCalledWith({
-        tableCode: 'T-02',
-        status: 'OPEN',
+        statuses: ['OPEN', 'AWAITING_PAYMENT'],
         type: 'TABLE',
-        pageSize: 1,
+        pageSize: 100,
       }),
     );
-    expect(api.orders.openTable).not.toHaveBeenCalled();
+    expect(screen.getByTestId('counter-export-table-20')).toBeTruthy();
+    expect(screen.getByTestId('counter-export-table-NEW')).toBeTruthy();
+
+    await fireEvent.press(screen.getByTestId('counter-export-table-20'));
+
     await waitFor(() =>
       expect(api.orders.addItems).toHaveBeenCalledWith('20', {
         items: [{ itemId: '1', quantity: 1 }],
       }),
     );
+    expect(api.orders.openTable).not.toHaveBeenCalled();
     expect(push).toHaveBeenCalledWith('/orders/20');
+    expect(screen.queryByTestId('counter-export-panel')).toBeNull();
+    expect(screen.queryByTestId('payment-editor')).toBeNull();
+    expect(screen.getByTestId('counter-total').props.children).toBe('R$0.00');
+    expect(screen.getByTestId('counter-label-input').props.value).toBe('');
   });
 
-  it('opens a free table before exporting built lines', async () => {
+  it('opens a generated new table before exporting built lines', async () => {
     await render(<Counter />);
     await addCoffee();
-    await chooseTableExport();
-    await fireEvent.press(screen.getByTestId('counter-export-button'));
+    await openExportPanel();
+    await fireEvent.press(screen.getByTestId('counter-export-table-NEW'));
 
-    await waitFor(() => expect(api.orders.openTable).toHaveBeenCalledWith({ tableCode: 'T-02' }));
+    await waitFor(() => expect(api.orders.openTable).toHaveBeenCalledWith({ tableCode: 'Mesa 1' }));
     await waitFor(() =>
       expect(api.orders.addItems).toHaveBeenCalledWith('21', {
         items: [{ itemId: '1', quantity: 1 }],
@@ -225,7 +284,20 @@ describe('<Counter />', () => {
     expect(push).toHaveBeenCalledWith('/orders/21');
   });
 
-  it('navigates to the existing order when the export table is occupied', async () => {
+  it('uses the next free sequential name when opening a new table', async () => {
+    jest
+      .spyOn(api.orders, 'list')
+      .mockResolvedValue(makeOrderPage([makeOrder('20', 'Mesa 1'), makeOrder('22', 'Mesa 2')]));
+
+    await render(<Counter />);
+    await addCoffee();
+    await openExportPanel();
+    await fireEvent.press(screen.getByTestId('counter-export-table-NEW'));
+
+    await waitFor(() => expect(api.orders.openTable).toHaveBeenCalledWith({ tableCode: 'Mesa 3' }));
+  });
+
+  it('navigates to the existing order when the generated table is occupied', async () => {
     jest.spyOn(api.orders, 'openTable').mockRejectedValue(
       new ApiError({
         status: 409,
@@ -236,12 +308,13 @@ describe('<Counter />', () => {
 
     await render(<Counter />);
     await addCoffee();
-    await chooseTableExport();
-    await fireEvent.press(screen.getByTestId('counter-export-button'));
+    await openExportPanel();
+    await fireEvent.press(screen.getByTestId('counter-export-table-NEW'));
 
     await waitFor(() => expect(push).toHaveBeenCalledWith('/orders/99'));
     expect(api.orders.addItems).not.toHaveBeenCalled();
     expect(screen.queryByTestId('counter-error')).toBeNull();
+    expect(screen.queryByTestId('counter-export-panel')).toBeNull();
   });
 
   it('blocks export when a built item is no longer in the catalog', async () => {
@@ -256,12 +329,108 @@ describe('<Counter />', () => {
     await act(async () => {
       focusEffect?.();
     });
-    await chooseTableExport();
     await fireEvent.press(screen.getByTestId('counter-export-button'));
 
     expect(
-      screen.getByText('Some items are no longer available. Refresh the catalog and try again.'),
+      screen.getByText(
+        'Alguns produtos não estão mais disponíveis. Atualize o catálogo e tente novamente.',
+      ),
     ).toBeTruthy();
+    expect(api.orders.list).not.toHaveBeenCalled();
+    expect(screen.queryByTestId('counter-export-panel')).toBeNull();
+  });
+
+  it('blocks Confirm sale when a built item is no longer in the catalog', async () => {
+    let loadCount = 0;
+    jest.spyOn(api.items, 'list').mockImplementation(async () => {
+      loadCount += 1;
+      return makeItemPage(loadCount === 1 ? [coffee] : []);
+    });
+
+    await render(<Counter />);
+    await addCoffee();
+
+    await fireEvent.press(screen.getByTestId('counter-finish-button'));
+    expect(screen.getByTestId('payment-editor')).toBeTruthy();
+
+    await act(async () => {
+      focusEffect?.();
+    });
+    await fireEvent.press(screen.getByTestId('payment-editor-add'));
+    await fireEvent.press(screen.getByTestId('counter-confirm-sale-button'));
+
+    expect(
+      screen.getByText(
+        'Alguns produtos não estão mais disponíveis. Atualize o catálogo e tente novamente.',
+      ),
+    ).toBeTruthy();
+    expect(api.orders.createCounter).not.toHaveBeenCalled();
+  });
+
+  it('shows an error when the counter order cannot be created', async () => {
+    jest
+      .spyOn(api.orders, 'createCounter')
+      .mockRejectedValue(new ApiError({ status: 500, code: 'INTERNAL_ERROR' }));
+
+    await render(<Counter />);
+    await addCoffee();
+
+    await fireEvent.press(screen.getByTestId('counter-finish-button'));
+    await fireEvent.press(screen.getByTestId('payment-editor-add'));
+    await fireEvent.press(screen.getByTestId('counter-confirm-sale-button'));
+
+    expect(await screen.findByTestId('counter-error')).toBeTruthy();
+    expect(push).not.toHaveBeenCalled();
+  });
+
+  it('shows a load error and retries the catalog', async () => {
+    jest.spyOn(api.items, 'list').mockRejectedValue(new ApiError({ status: 500, code: 'INTERNAL_ERROR' }));
+
+    await render(<Counter />);
+
+    expect(await screen.findByTestId('counter-error')).toBeTruthy();
+    await fireEvent.press(screen.getByTestId('counter-error-retry'));
+    await waitFor(() => expect(api.items.list).toHaveBeenCalledTimes(2));
+  });
+
+  it('shows an error when opening a new table fails', async () => {
+    jest
+      .spyOn(api.orders, 'openTable')
+      .mockRejectedValue(new ApiError({ status: 500, code: 'INTERNAL_ERROR' }));
+
+    await render(<Counter />);
+    await addCoffee();
+    await openExportPanel();
+    await fireEvent.press(screen.getByTestId('counter-export-table-NEW'));
+
+    expect(await screen.findByTestId('counter-error')).toBeTruthy();
     expect(api.orders.addItems).not.toHaveBeenCalled();
+    expect(push).not.toHaveBeenCalled();
+  });
+
+  it('shows an error when adding lines to the chosen table fails', async () => {
+    jest
+      .spyOn(api.orders, 'addItems')
+      .mockRejectedValue(new ApiError({ status: 409, code: 'INVARIANT_VIOLATION' }));
+    jest.spyOn(api.orders, 'list').mockResolvedValue(makeOrderPage([makeOrder('20')]));
+
+    await render(<Counter />);
+    await addCoffee();
+    await openExportPanel();
+    await fireEvent.press(screen.getByTestId('counter-export-table-20'));
+
+    expect(await screen.findByTestId('counter-error')).toBeTruthy();
+    expect(push).not.toHaveBeenCalled();
+  });
+
+  it('shows an error and hides the export panel when tables cannot be loaded', async () => {
+    jest.spyOn(api.orders, 'list').mockRejectedValue(new ApiError({ status: 500, code: 'INTERNAL_ERROR' }));
+
+    await render(<Counter />);
+    await addCoffee();
+    await fireEvent.press(screen.getByTestId('counter-export-button'));
+
+    expect(await screen.findByTestId('counter-error')).toBeTruthy();
+    expect(screen.queryByTestId('counter-export-panel')).toBeNull();
   });
 });

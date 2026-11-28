@@ -7,18 +7,18 @@ describe('<Card />', () => {
   it('renders static content', async () => {
     await render(
       <Card>
-        <Text>Card content</Text>
+        <Text>Conteúdo do cartão</Text>
       </Card>,
     );
 
-    expect(screen.getByText('Card content')).toBeTruthy();
+    expect(screen.getByText('Conteúdo do cartão')).toBeTruthy();
   });
 
   it('handles presses when interactive', async () => {
     const onPress = jest.fn();
     await render(
       <Card onPress={onPress}>
-        <Text>Open order</Text>
+        <Text>Abrir pedido</Text>
       </Card>,
     );
 
@@ -30,12 +30,12 @@ describe('<Card />', () => {
   it('applies pressed feedback to interactive cards', async () => {
     await render(
       <Card onPress={jest.fn()}>
-        <Text>Press me</Text>
+        <Text>Pressione aqui</Text>
       </Card>,
     );
 
     await fireEvent(screen.getByTestId('card'), 'pressIn');
 
-    expect(screen.getByText('Press me')).toBeTruthy();
+    expect(screen.getByText('Pressione aqui')).toBeTruthy();
   });
 });

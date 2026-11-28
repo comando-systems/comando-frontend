@@ -82,18 +82,18 @@ export const CategoryEditor = memo(function CategoryEditor({
   return (
     <View testID={testID}>
       <Field
-        label="Categories"
+        label="Categorias"
         value={draft}
         onChangeText={(text) => {
           setDraft(text);
           setError(null);
         }}
         onSubmitEditing={disabled || full ? undefined : handleAdd}
-        placeholder="e.g. Drinks"
+        placeholder="Ex.: Bebidas"
         maxLength={81}
         autoCorrect={false}
         editable={!disabled && !full}
-        helper={`Add up to ${MAX_ITEM_CATEGORIES} categories. The first one is the primary category.`}
+        helper={`Adicione até ${MAX_ITEM_CATEGORIES} categorias. A primeira é a categoria principal.`}
         testID={`${testID}-input`}
       />
       <View style={styles.chips}>
@@ -101,7 +101,7 @@ export const CategoryEditor = memo(function CategoryEditor({
           <Pressable
             key={`${category.toLocaleLowerCase('en-US')}-${index}`}
             accessibilityRole="button"
-            accessibilityLabel={`Remove ${category}`}
+            accessibilityLabel={`Remover ${category}`}
             disabled={disabled}
             onPress={() => handleRemove(index)}
             style={styles.chip}
@@ -115,7 +115,7 @@ export const CategoryEditor = memo(function CategoryEditor({
         ))}
       </View>
       <Text style={styles.counter} testID={`${testID}-count`}>
-        {`${value.length}/${MAX_ITEM_CATEGORIES} categories`}
+        {`${value.length}/${MAX_ITEM_CATEGORIES} categorias`}
       </Text>
       {error === null ? null : (
         <Text style={styles.error} testID={`${testID}-error`}>
@@ -124,7 +124,7 @@ export const CategoryEditor = memo(function CategoryEditor({
       )}
       <View style={{ marginTop: spacing.sm }}>
         <Button
-          label="Add category"
+          label="Adicionar categoria"
           onPress={handleAdd}
           variant="secondary"
           disabled={disabled || full}

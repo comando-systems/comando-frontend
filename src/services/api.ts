@@ -33,29 +33,29 @@ import { toRoleSet } from '@/utils/roles';
 const configuredApiUrl = process.env.EXPO_PUBLIC_API_URL;
 
 const errorMessages: Record<string, string> = {
-  VALIDATION_ERROR: 'Please check the entered information.',
-  UNAUTHORIZED: 'Authentication is required.',
-  FORBIDDEN: 'You are not allowed to perform this action.',
-  NOT_FOUND: 'The requested resource was not found.',
-  CONFLICT: 'The request conflicts with the current state.',
-  TABLE_OCCUPIED: 'This table is already occupied.',
-  INVALID_VALUE: 'Please check the entered values.',
-  INVARIANT_VIOLATION: 'This operation cannot be completed in the current state.',
-  INVALID_STATE_TRANSITION: 'This operation cannot be completed in the current state.',
-  PAYLOAD_TOO_LARGE: 'The request is too large.',
-  TOO_MANY_REQUESTS: 'Too many attempts. Please try again later.',
-  SERVICE_UNAVAILABLE: 'The service is unavailable. Please try again later.',
-  INTERNAL_ERROR: 'Something went wrong. Please try again.',
-  CANNOT_DEACTIVATE_SELF: 'You cannot deactivate your own account.',
-  CANNOT_REMOVE_OWN_ADMIN: 'You cannot remove your own administrator role.',
-  LAST_ADMIN: 'The last active administrator cannot be removed.',
-  NETWORK_ERROR: 'The server could not be reached. Check your connection.',
-  SESSION_EXPIRED: 'Your session has expired. Please sign in again.',
-  CONFIG_ERROR: 'The API URL is not configured.',
+  VALIDATION_ERROR: 'Verifique as informações informadas.',
+  UNAUTHORIZED: 'É necessário entrar com sua conta.',
+  FORBIDDEN: 'Você não tem permissão para realizar esta ação.',
+  NOT_FOUND: 'O recurso solicitado não foi encontrado.',
+  CONFLICT: 'A solicitação conflita com o estado atual.',
+  TABLE_OCCUPIED: 'Esta mesa já está ocupada.',
+  INVALID_VALUE: 'Verifique os valores informados.',
+  INVARIANT_VIOLATION: 'Esta operação não pode ser concluída no estado atual.',
+  INVALID_STATE_TRANSITION: 'Esta operação não pode ser concluída no estado atual.',
+  PAYLOAD_TOO_LARGE: 'A solicitação é muito grande.',
+  TOO_MANY_REQUESTS: 'Muitas tentativas. Tente novamente mais tarde.',
+  SERVICE_UNAVAILABLE: 'O serviço está indisponível. Tente novamente mais tarde.',
+  INTERNAL_ERROR: 'Algo deu errado. Tente novamente.',
+  CANNOT_DEACTIVATE_SELF: 'Você não pode desativar sua própria conta.',
+  CANNOT_REMOVE_OWN_ADMIN: 'Você não pode remover seu próprio perfil de administrador.',
+  LAST_ADMIN: 'O último administrador ativo não pode ser removido.',
+  NETWORK_ERROR: 'Não foi possível contatar o servidor. Verifique sua conexão.',
+  SESSION_EXPIRED: 'Sua sessão expirou. Entre novamente.',
+  CONFIG_ERROR: 'A URL da API não está configurada.',
 };
 
 export function getErrorMessage(code: string): string {
-  return errorMessages[code] ?? 'The request could not be completed.';
+  return errorMessages[code] ?? 'A solicitação não pôde ser concluída.';
 }
 
 function toUserResponse(user: BackendUserResponse): UserResponse {

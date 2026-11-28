@@ -48,7 +48,7 @@ function redirectedHref(): unknown {
 function renderGuard() {
   return render(
     <AuthGuard>
-      <Text>Protected content</Text>
+      <Text>Conteúdo protegido</Text>
     </AuthGuard>,
   );
 }
@@ -66,7 +66,7 @@ describe('<AuthGuard />', () => {
     const { getByTestId, queryByText } = await renderGuard();
 
     expect(getByTestId('auth-loading')).toBeTruthy();
-    expect(queryByText('Protected content')).toBeNull();
+    expect(queryByText('Conteúdo protegido')).toBeNull();
     expect(Redirect).not.toHaveBeenCalled();
   });
 
@@ -90,7 +90,7 @@ describe('<AuthGuard />', () => {
   it('renders protected content for a signed-in user', async () => {
     const { getByText } = await renderGuard();
 
-    expect(getByText('Protected content')).toBeTruthy();
+    expect(getByText('Conteúdo protegido')).toBeTruthy();
     expect(Redirect).not.toHaveBeenCalled();
   });
 });

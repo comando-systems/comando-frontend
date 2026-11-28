@@ -17,6 +17,7 @@ import { api } from '@/services/api';
 import { colors, spacing, typography } from '@/theme';
 import type { OrderResponse } from '@/types';
 import { toErrorMessage } from '@/utils/errors';
+import { formatPriceInput } from '@/utils/money';
 import { orderItemCountLabel } from '@/utils/order-display';
 import {
   createPaymentRow,
@@ -35,15 +36,16 @@ function rowsFromOrder(order: OrderResponse): readonly PaymentDraftRow[] {
   }
 
   if (order.payments.length === 0) {
-    return [createPaymentRow({ amountCents: String(order.totalCents) })];
+    return [createPaymentRow({ amountCents: formatPriceInput(order.totalCents) })];
   }
 
   return order.payments.map((payment, index) =>
     createPaymentRow({
       id: `existing-${index}`,
       method: payment.method,
-      amountCents: String(payment.amountCents),
-      receivedCents: payment.receivedCents === null ? '' : String(payment.receivedCents),
+      amountCents: formatPriceInput(payment.amountCents),
+      receivedCents:
+        payment.receivedCents === null ? '' : formatPriceInput(payment.receivedCents),
     }),
   );
 }
@@ -115,20 +117,20 @@ export default function Payment() {
 
   if (loading) {
     return (
-      <Screen title="Payment">
-        <LoadingState message="Loading payment details..." testID="payment-loading" />
+      <Screen title="Pagamento">
+        <LoadingState message="Carregando detalhes do pagamento..." testID="payment-loading" />
       </Screen>
     );
   }
 
   if (order === null || orderId.length === 0) {
     return (
-      <Screen title="Payment">
+      <Screen title="Pagamento">
         <EmptyState
-          title="Order not found"
-          description="This order is no longer available."
+          title="Pedido não encontrado"
+          description="Este pedido não está mais disponível."
           icon="receipt"
-          actionLabel="Back to tables"
+          actionLabel="Voltar às mesas"
           onAction={() => router.push('/tables')}
         />
         {error === null ? null : (
@@ -147,7 +149,7 @@ export default function Payment() {
   const actionDisabled = busy !== null;
 
   return (
-    <Screen scroll title={order.tableCode ?? `Order ${order.id}`} subtitle="Payment">
+    <Screen scroll title={order.tableCode ?? `Pedido ${order.id}`} subtitle="Pagamento">
       <View style={{ paddingBottom: spacing.xl }}>
         {error === null ? null : (
           <View style={{ marginBottom: spacing.lg }}>
@@ -171,14 +173,14 @@ export default function Payment() {
               style={[typography.caption, { color: colors.warning, marginTop: spacing.md }]}
               testID="payment-saved-later"
             >
-              This order is saved for later payment.
+              Este pedido foi salvo para pagamento posterior.
             </Text>
           ) : null}
         </Card>
 
         {order.payments.length === 0 ? null : (
           <Card testID="recorded-payments" style={{ marginTop: spacing.md }}>
-            <Text style={[typography.label, { color: colors.text }]}>Recorded payments</Text>
+            <Text style={[typography.label, { color: colors.text }]}>Pagamentos registrados</Text>
             {order.payments.map((payment, index) => (
               <View
                 key={`${payment.method}-${index}`}
@@ -199,7 +201,7 @@ export default function Payment() {
                   <View
                     style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
                   >
-                    <Text style={[typography.caption, { color: colors.textMuted }]}>Change</Text>
+                    <Text style={[typography.caption, { color: colors.textMuted }]}>Troco</Text>
                     <MoneyText
                       cents={payment.changeCents}
                       size="sm"
@@ -215,7 +217,7 @@ export default function Payment() {
         {!isActive || !canClose ? null : (
           <Form
             testID="payment-form"
-            submit="Close order"
+            submit="Fechar pedido"
             onSubmit={handleClose}
             submitButtonProps={{
               loading: busy === 'close',
@@ -238,7 +240,7 @@ export default function Payment() {
           <View style={{ marginTop: spacing.md }}>
             {order.status === 'OPEN' ? (
               <Button
-                label="Request payment"
+                label="Solicitar pagamento"
                 onPress={() => {
                   void runAction('request-payment', () => api.orders.requestPayment(order.id));
                 }}
@@ -250,7 +252,7 @@ export default function Payment() {
               />
             ) : (
               <Button
-                label="Reopen order"
+                label="Reabrir pedido"
                 onPress={() => {
                   void runAction('reopen', () => api.orders.reopen(order.id));
                 }}
@@ -267,7 +269,7 @@ export default function Payment() {
         {!isActive || !canCancel ? null : (
           <View style={{ marginTop: spacing.md }}>
             <Button
-              label="Cancel order"
+              label="Cancelar pedido"
               onPress={() => {
                 void runAction('cancel', () => api.orders.cancel(order.id));
               }}
@@ -286,13 +288,13 @@ export default function Payment() {
             style={[typography.caption, { color: colors.textMuted, marginTop: spacing.md }]}
             testID="payment-close-restricted"
           >
-            An administrator or cashier must close this order.
+            Um administrador ou operador de caixa deve fechar este pedido.
           </Text>
         )}
 
         <View style={{ marginTop: spacing.lg }}>
           <Button
-            label="Back"
+            label="Voltar"
             onPress={() => router.back()}
             variant="secondary"
             icon="back"

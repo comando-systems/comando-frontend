@@ -3,7 +3,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react-nativ
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 
 import { useSession } from '@/providers/session-provider';
-import { api } from '@/services/api';
+import { api, ApiError } from '@/services/api';
 import Payment from '@/screens/payment';
 import type { OrderPaymentResponse, OrderResponse, RoleCode } from '@/types';
 import { toRoleSet } from '@/utils/roles';
@@ -108,15 +108,22 @@ describe('<Payment />', () => {
     jest.spyOn(api.orders, 'cancel').mockResolvedValue(makeOrder({ status: 'CANCELED' }));
   });
 
+  it('starts with the order total in decimal currency format', async () => {
+    await render(<Payment />);
+
+    expect(await screen.findByTestId('payment-editor-amount-0')).toBeTruthy();
+    expect(screen.getByTestId('payment-editor-amount-0').props.value).toBe('15.00');
+  });
+
   it('closes an order with an exact split payment and navigates back', async () => {
     await render(<Payment />);
 
     expect(await screen.findByTestId('payment-editor')).toBeTruthy();
 
-    await fireEvent.changeText(screen.getByTestId('payment-editor-amount-0'), '600');
+    await fireEvent.changeText(screen.getByTestId('payment-editor-amount-0'), '6.00');
     await fireEvent.press(screen.getByTestId('payment-editor-add'));
     await fireEvent.press(screen.getByTestId('payment-editor-method-1-DEBIT_CARD'));
-    await fireEvent.changeText(screen.getByTestId('payment-editor-amount-1'), '900');
+    await fireEvent.changeText(screen.getByTestId('payment-editor-amount-1'), '9.00');
 
     await fireEvent.press(screen.getByTestId('payment-close-button'));
 
@@ -134,10 +141,12 @@ describe('<Payment />', () => {
   it('blocks a close when the payment total does not match the order total', async () => {
     await render(<Payment />);
 
-    await fireEvent.changeText(await screen.findByLabelText('Amount (cents)'), '1000');
+    await fireEvent.changeText(await screen.findByTestId('payment-editor-amount-0'), '10.00');
     await fireEvent.press(screen.getByTestId('payment-close-button'));
 
-    expect(screen.getByText('Payment amounts must equal the order total.')).toBeTruthy();
+    expect(
+      screen.getByText('Os valores dos pagamentos devem somar o total do pedido.'),
+    ).toBeTruthy();
     expect(api.orders.close).not.toHaveBeenCalled();
     expect(back).not.toHaveBeenCalled();
   });
@@ -174,7 +183,7 @@ describe('<Payment />', () => {
     await fireEvent.press(await screen.findByTestId('payment-request-button'));
 
     await waitFor(() => expect(api.orders.requestPayment).toHaveBeenCalledWith('10'));
-    await waitFor(() => expect(screen.getByText('Awaiting payment')).toBeTruthy());
+    await waitFor(() => expect(screen.getByText('Aguardando pagamento')).toBeTruthy());
     expect(screen.getByTestId('payment-saved-later')).toBeTruthy();
 
     mockRoles(['CASHIER']);
@@ -182,7 +191,69 @@ describe('<Payment />', () => {
     await fireEvent.press(screen.getByTestId('payment-reopen-button'));
 
     await waitFor(() => expect(api.orders.reopen).toHaveBeenCalledWith('10'));
-    await waitFor(() => expect(screen.getByText('Open')).toBeTruthy());
+    await waitFor(() => expect(screen.getByText('Aberto')).toBeTruthy());
+  });
+
+  it('accepts a zero-total order without payment rows', async () => {
+    jest.spyOn(api.orders, 'get').mockResolvedValue(makeOrder({ totalCents: 0 }));
+
+    await render(<Payment />);
+
+    expect(await screen.findByTestId('payment-editor')).toBeTruthy();
+    expect(screen.queryByTestId('payment-editor-amount-0')).toBeNull();
+
+    await fireEvent.press(screen.getByTestId('payment-close-button'));
+
+    await waitFor(() => expect(api.orders.close).toHaveBeenCalledWith('10', { payments: [] }));
+  });
+
+  it('shows an error state when the order cannot be loaded', async () => {
+    jest.spyOn(api.orders, 'get').mockRejectedValue(new ApiError({ status: 404, code: 'NOT_FOUND' }));
+
+    await render(<Payment />);
+
+    expect(await screen.findByText('Pedido não encontrado')).toBeTruthy();
+    expect(screen.getByTestId('payment-error')).toBeTruthy();
+
+    await fireEvent.press(screen.getByTestId('empty-state-action'));
+    expect(push).toHaveBeenCalledWith('/tables');
+
+    await fireEvent.press(screen.getByTestId('payment-error-retry'));
+
+    await waitFor(() => expect(api.orders.get).toHaveBeenCalledTimes(2));
+  });
+
+  it('keeps the order open when closing fails', async () => {
+    jest
+      .spyOn(api.orders, 'close')
+      .mockRejectedValue(new ApiError({ status: 409, code: 'INVALID_STATE_TRANSITION' }));
+
+    await render(<Payment />);
+
+    await fireEvent.press(await screen.findByTestId('payment-close-button'));
+
+    expect(await screen.findByTestId('payment-error')).toBeTruthy();
+    expect(back).not.toHaveBeenCalled();
+
+    await fireEvent.press(screen.getByTestId('payment-error-retry'));
+    await waitFor(() => expect(api.orders.get).toHaveBeenCalledTimes(2));
+  });
+
+  it('cancels an order and navigates back', async () => {
+    await render(<Payment />);
+
+    await fireEvent.press(await screen.findByTestId('payment-cancel-button'));
+
+    await waitFor(() => expect(api.orders.cancel).toHaveBeenCalledWith('10'));
+    expect(back).toHaveBeenCalled();
+  });
+
+  it('navigates back from the back button', async () => {
+    await render(<Payment />);
+
+    await fireEvent.press(await screen.findByTestId('payment-back-button'));
+
+    expect(back).toHaveBeenCalled();
   });
 
   it('displays the backend-derived change for recorded cash payments', async () => {

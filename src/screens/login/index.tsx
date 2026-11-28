@@ -21,12 +21,12 @@ export default function Login() {
     const normalizedEmail = email.trim();
 
     if (!/^\S+@\S+\.\S+$/.test(normalizedEmail)) {
-      setError('Enter a valid email address.');
+      setError('Informe um e-mail válido.');
       return;
     }
 
     if (password.length === 0) {
-      setError('Enter your password.');
+      setError('Informe sua senha.');
       return;
     }
 
@@ -73,12 +73,12 @@ export default function Login() {
           <Text
             style={[typography.body, { color: colors.textMuted, marginTop: spacing.xs, textAlign: 'center' }]}
           >
-            Sign in to manage your orders.
+            Entre para gerenciar seus pedidos.
           </Text>
         </View>
 
         <Form
-          submit="Sign in"
+          submit="Entrar"
           onSubmit={() => {
             void handleSubmit();
           }}
@@ -90,27 +90,27 @@ export default function Login() {
           }}
         >
           <Field
-            label="Email"
+            label="E-mail"
             testID="email-input"
             value={email}
             onChangeText={setEmail}
             autoCapitalize="none"
             autoComplete="email"
             keyboardType="email-address"
-            placeholder="you@example.com"
+            placeholder="voce@exemplo.com"
             editable={!isSubmitting}
             containerStyle={{ marginBottom: spacing.lg }}
           />
 
           <Field
-            label="Password"
+            label="Senha"
             testID="password-input"
             value={password}
             onChangeText={setPassword}
             autoCapitalize="none"
             autoComplete="current-password"
             secureTextEntry
-            placeholder="Enter your password"
+            placeholder="Informe sua senha"
             editable={!isSubmitting}
           />
 

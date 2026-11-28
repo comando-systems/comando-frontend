@@ -1,10 +1,11 @@
 import { usePathname, useRouter } from 'expo-router';
 import { useCallback } from 'react';
 import type { ReactNode } from 'react';
-import { Image, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Icon, type IconName } from '@/components/icon';
+import { useIsWideScreen } from '@/hooks/use-wide-screen';
 import { useSession } from '@/providers/session-provider';
 import { colors, radii, spacing, typography } from '@/theme';
 import { ROLE_CODES, type RoleCode } from '@/types';
@@ -13,16 +14,19 @@ import { permissions } from '@/utils/permissions';
 type NavHref = '/tables' | '/counter' | '/history' | '/management';
 
 interface NavItem {
+  readonly id: string;
   readonly href: NavHref;
   readonly label: string;
   readonly icon: IconName;
   readonly enabled: boolean;
 }
 
+const TAB_BAR_HEIGHT = 56;
+
 const roleLabels: Record<RoleCode, string> = {
-  ADMIN: 'Administrator',
-  CASHIER: 'Cashier',
-  SERVER: 'Server',
+  ADMIN: 'Administrador',
+  CASHIER: 'Caixa',
+  SERVER: 'Garçom',
 };
 
 const styles = StyleSheet.create({
@@ -44,11 +48,11 @@ const styles = StyleSheet.create({
   },
   logo: {
     height: 40,
-    width: 158,
+    width: 40,
   },
   logoCompact: {
-    height: 30,
-    width: 120,
+    height: 32,
+    width: 32,
   },
   nav: {
     flex: 1,
@@ -110,6 +114,31 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     width: 40,
   },
+  content: {
+    flex: 1,
+  },
+  contentMobile: {
+    paddingBottom: TAB_BAR_HEIGHT,
+  },
+  bottomBar: {
+    backgroundColor: colors.surface,
+    borderTopColor: colors.border,
+    borderTopWidth: 1,
+    bottom: 0,
+    flexDirection: 'row',
+    left: 0,
+    position: 'absolute',
+    right: 0,
+  },
+  tab: {
+    alignItems: 'center',
+    flex: 1,
+    height: TAB_BAR_HEIGHT,
+    justifyContent: 'center',
+  },
+  tabActive: {
+    backgroundColor: colors.primarySoft,
+  },
 });
 
 interface AppShellProps {
@@ -121,31 +150,34 @@ export function AppShell({ children }: AppShellProps) {
   const pathname = usePathname();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { width } = useWindowDimensions();
-  const wide = width >= 700;
+  const wide = useIsWideScreen();
 
   const items: readonly NavItem[] = [
     {
+      id: 'tables',
       href: '/tables',
-      label: 'Tables',
+      label: 'Mesas',
       icon: 'table',
       enabled: permissions.canUseTables(user),
     },
     {
+      id: 'counter',
       href: '/counter',
-      label: 'Counter',
+      label: 'Balcão',
       icon: 'counter',
       enabled: permissions.canUseCounter(user),
     },
     {
+      id: 'history',
       href: '/history',
-      label: 'History',
+      label: 'Histórico',
       icon: 'history',
       enabled: permissions.canViewHistory(user),
     },
     {
+      id: 'management',
       href: '/management',
-      label: 'Management',
+      label: 'Gerenciamento',
       icon: 'settings',
       enabled: permissions.canManage(user),
     },
@@ -160,13 +192,13 @@ export function AppShell({ children }: AppShellProps) {
 
   const roleText =
     user === null
-      ? 'Team member'
+      ? 'Membro da equipe'
       : ROLE_CODES.filter((role) => user.roles[role] === role)
           .map((role) => roleLabels[role])
           .join(' · ');
   const initials =
     user === null
-      ? 'TM'
+      ? 'ME'
       : user.name
           .split(' ')
           .map((part) => part[0])
@@ -183,9 +215,10 @@ export function AppShell({ children }: AppShellProps) {
         style={[
           styles.header,
           {
-            paddingTop: insets.top + spacing.sm,
-            paddingHorizontal: wide ? spacing.xl : spacing.md,
             gap: wide ? spacing.lg : spacing.sm,
+            justifyContent: wide ? 'flex-start' : 'space-between',
+            paddingHorizontal: wide ? spacing.xl : spacing.md,
+            paddingTop: insets.top + spacing.sm,
           },
         ]}
       >
@@ -198,53 +231,56 @@ export function AppShell({ children }: AppShellProps) {
           />
         </View>
 
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.nav}
-          contentContainerStyle={styles.navContent}
-        >
-          {visibleItems.map((item) => {
-            const active = isActive(item.href);
+        {wide ? (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.nav}
+            contentContainerStyle={styles.navContent}
+            testID="header-nav"
+          >
+            {visibleItems.map((item) => {
+              const active = isActive(item.href);
 
-            return (
-              <Pressable
-                key={item.href}
-                accessibilityRole="button"
-                accessibilityLabel={item.label}
-                accessibilityState={{ selected: active }}
-                testID={`nav-${item.label.toLowerCase()}`}
-                onPress={() => navigate(item.href)}
-                style={[styles.navItem, active ? styles.navItemActive : null]}
-              >
-                <Icon
-                  name={item.icon}
-                  size="sm"
-                  color={active ? colors.primaryDark : colors.textMuted}
-                />
-                <Text style={[styles.navLabel, active ? styles.navLabelActive : null]}>
-                  {item.label}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </ScrollView>
+              return (
+                <Pressable
+                  key={item.href}
+                  accessibilityRole="button"
+                  accessibilityLabel={item.label}
+                  accessibilityState={{ selected: active }}
+                  testID={`nav-${item.id}`}
+                  onPress={() => navigate(item.href)}
+                  style={[styles.navItem, active ? styles.navItemActive : null]}
+                >
+                  <Icon
+                    name={item.icon}
+                    size="sm"
+                    color={active ? colors.primaryDark : colors.textMuted}
+                  />
+                  <Text style={[styles.navLabel, active ? styles.navLabelActive : null]}>
+                    {item.label}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+        ) : null}
 
-        <View style={styles.user}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{initials}</Text>
-          </View>
-          {wide ? (
+        {wide ? (
+          <View style={styles.user}>
+            <View style={styles.avatar}>
+              <Text style={styles.avatarText}>{initials}</Text>
+            </View>
             <View>
               <Text style={styles.userName}>{user?.name ?? roleText}</Text>
               <Text style={styles.userRole}>{roleText}</Text>
             </View>
-          ) : null}
-        </View>
+          </View>
+        ) : null}
 
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Sign out"
+          accessibilityLabel="Sair"
           testID="sign-out-button"
           onPress={() => {
             void signOut();
@@ -255,7 +291,43 @@ export function AppShell({ children }: AppShellProps) {
         </Pressable>
       </View>
 
-      <View style={{ flex: 1 }}>{children}</View>
+      <View
+        testID="app-shell-content"
+        style={[
+          styles.content,
+          wide
+            ? null
+            : [styles.contentMobile, { paddingBottom: TAB_BAR_HEIGHT + insets.bottom }],
+        ]}
+      >
+        {children}
+      </View>
+
+      {wide ? null : (
+        <View testID="bottom-tab-bar" style={[styles.bottomBar, { paddingBottom: insets.bottom }]}>
+          {visibleItems.map((item) => {
+            const active = isActive(item.href);
+
+            return (
+              <Pressable
+                key={item.href}
+                accessibilityRole="button"
+                accessibilityLabel={item.label}
+                accessibilityState={{ selected: active }}
+                testID={`nav-${item.id}`}
+                onPress={() => navigate(item.href)}
+                style={[styles.tab, active ? styles.tabActive : null]}
+              >
+                <Icon
+                  name={item.icon}
+                  size="md"
+                  color={active ? colors.primaryDark : colors.textMuted}
+                />
+              </Pressable>
+            );
+          })}
+        </View>
+      )}
     </View>
   );
 }

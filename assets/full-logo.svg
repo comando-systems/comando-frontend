@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 200" fill="none">
+  <title>Comando cloche logo</title>
+  <g fill="#FF9026">
+    <path d="M4 92 60 85 58 95 6 103Z"/>
+    <path d="M0 116 58 108 57 119 2 128Z"/>
+    <path d="M8 141 60 133 59 144 12 152Z"/>
+  </g>
+  <path d="M53 148C53 91 82 52 120 52C158 52 187 91 187 148H53Z" fill="#FFFFFF" stroke="#4A4A4A" stroke-width="6" stroke-linejoin="round"/>
+  <path d="M120 52V40" stroke="#4A4A4A" stroke-width="6" stroke-linecap="round"/>
+  <circle cx="120" cy="34" r="12" fill="#FFFFFF" stroke="#4A4A4A" stroke-width="6"/>
+  <path d="M36 148C72 160 168 160 204 148L199 164C160 178 80 178 41 164L36 148Z" fill="#FFFFFF" stroke="#4A4A4A" stroke-width="6" stroke-linejoin="round"/>
+</svg>

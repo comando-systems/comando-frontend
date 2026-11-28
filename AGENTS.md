@@ -8,8 +8,9 @@ The product covers authentication, the catalog, counter sales, table orders, ord
 
 ## Language and communication
 
-- All source identifiers, filenames, comments, tests, UI copy, commit messages, pull request titles/descriptions, issue content, and documentation must be written in **English only**.
-- No Portuguese words or accents in committed artifacts. The backend may return Portuguese messages; present a fixed English translation in the UI instead of leaking raw backend text.
+- All source identifiers, filenames, comments, tests, commit messages, pull request titles/descriptions, issue content, and documentation must be written in **English only**.
+- User-facing UI copy is written in **Brazilian Portuguese** (including buttons, labels, placeholders, accessibility labels, validation and error messages). Product terms such as `Mesa N` are Portuguese by design. Backend messages are never leaked raw: present a fixed Portuguese translation instead.
+- Keep code identifiers and test IDs in English; only the displayed text and accessibility labels are Portuguese.
 - Commit messages and PR titles follow Conventional Commits and use imperative wording.
 
 ## Repository, branches, and delivery
@@ -108,14 +109,14 @@ src/
 
 ### Tables
 
-- The tables screen lists live table orders and lets an authorized user open a free table. Opening an occupied table returns `409 TABLE_OCCUPIED` with the existing order ID in `error.details.orderId`; navigate to that order instead of showing an error.
+- The tables screen lists live table orders and lets an authorized user open a free table in one tap. The client picks the first free sequential name (`Mesa 1`, `Mesa 2`, …) from live table codes; the user can optionally rename it at open time. The backend still requires a non-empty `tableCode`, so the generated name is sent in the request. Opening an occupied table returns `409 TABLE_OCCUPIED` with the existing order ID in `error.details.orderId`; navigate to that order instead of showing an error.
 - A table order can be saved for later payment with `request-payment` (`AWAITING_PAYMENT`) or reopened with `reopen`. Lines are locked while awaiting payment.
-- Payment screen shows the chosen methods and amounts, supports split payments (`CASH`, `DEBIT_CARD`, `CREDIT_CARD`, `PIX`, `OTHER`), and only `CASH` may record `receivedCents`; the backend derives change. Payments must sum exactly to the total.
+- The order screen offers **Save for later** (`request-payment`) and **Finish** (payment screen). Payment rows stay hidden until the user presses **Add payment**; amounts are entered in reais with two decimals and default to the amount due when a card/Pix method is selected. Only `CASH` may record `receivedCents`; the backend derives change and payments must sum exactly to the total.
 
 ### Counter
 
-- The counter screen reuses the order builder. Ending the operation immediately creates a closed order with its payments.
-- Include an order type selector. The **Export to table** action asks for a destination table, reuses that table's open order when one exists, otherwise opens a new one, then adds the built lines to it.
+- The counter screen reuses the order builder. **Finish** reveals the payment area and **Confirm sale** creates the closed order.
+- **Export to table** sits next to Finish and opens a select of live tables plus a **New table** option. It adds the built lines to the chosen order (or opens a generated `Mesa N` table) and discards the counter draft afterwards.
 - Counter orders cannot be saved for later; the backend persists them as `CLOSED`.
 
 ### Management (admin only)
@@ -123,14 +124,16 @@ src/
 - Users: create, edit, reactivate, and deactivate. No public sign-up and no physical deletion. An admin cannot deactivate or demote themselves, and the last active admin cannot be removed.
 - Catalog: create, edit, assign up to eight unique categories per item, enable/disable items and images, and remove items from the active catalog without destroying historical orders. Search and category filters are local to the loaded page and match any assigned category; pagination and `includeRemoved` come from the backend.
 - Settings: service fee switch and rate in basis points (1000 = 10%). Only whole values from 0 to 10000 are accepted.
-- Reports: sales summary for a date range, including revenue, ticket average, canceled and open orders, and totals by payment method. The range defaults to today in UTC and accepts explicit ISO 8601 instants; all totals come from the backend.
+- Reports: sales summary for a date range, including revenue, ticket average, canceled and open orders, and totals by payment method. The range defaults to today in UTC and is entered with simple `YYYY-MM-DD` date fields (endpoint still receives ISO 8601 instants); all totals come from the backend.
 
 ## UI, state, and performance
 
 - Build with React Native primitives (`View`, `Text`, `Pressable`, `ScrollView`, `FlatList`, `TextInput`, `Image`), never web-only DOM in shared code.
 - Use safe-area-aware layouts, keyboard-friendly forms, loading and error states, and a consistent theme in one place.
-- Visual direction follows the supplied design references: a full-width white header with the brand at left and highlighted navigation at right, white cards on a neutral gray background, and black primary text with orange money/active accents. Button variants are `primary` (orange fill), `secondary` (transparent with orange border/text), and `tertiary` (orange text only); `ghost` remains as a compatibility alias. The logo asset is `assets/full-logo.png`.
-- Use the `theme.layout.formMaxWidth` token (20rem = 320px) to cap `Field` and full-width `Button` components; it must not constrain whole screens. Tables, Counter, and the order builder keep their full-width containers.
+- Visual direction follows the supplied design references: a full-width white header with the brand at left and highlighted navigation at right, white cards on a neutral gray background, and black primary text with orange money/active accents. Button variants are `primary` (orange fill), `secondary` (transparent with orange border/text), and `tertiary` (orange text only); `ghost` remains as a compatibility alias. The logo source is `assets/full-logo.svg` (transparent background); `assets/full-logo.png` is generated from it with `rsvg-convert -w 480 -h 400 assets/full-logo.svg -o assets/full-logo.png` for React Native.
+- On screens narrower than 700px, navigation becomes an icon-only bottom tab bar and the header shows only the logo; sign-out stays available as a header icon. Wide screens keep the header navigation and user details.
+- Use the `theme.layout.formMaxWidth` token (320px) to cap `Field`, full-width `Button`, and `Form` on wide screens only; small screens use the full width. It must not constrain whole screens. Tables, Counter, and the order builder keep their full-width containers.
+- List pages use the shared `Pagination` component with numbered page buttons instead of Previous/Next.
 - Dedicated form screens use the `Form` component from `src/components/form/`. It centers the form, owns the submit and optional cancel actions, and limits its own width to the same token. The submit button is full width only when it is the only action; with cancel, both actions sit side by side. Pass loading, disabled, icon, and test ID through `submitButtonProps` / `cancelButtonProps`.
 - Keep state close to its screen; use providers only for session and shared read-only data. Refresh order data after mutations rather than duplicating server calculations locally.
 - Memoize expensive list rows and callbacks. Avoid storing volatile UI state in global stores.

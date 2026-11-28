@@ -9,7 +9,7 @@ describe('<CategoryEditor />', () => {
 
     await render(<CategoryEditor value={[]} onChange={onChange} testID="editor" />);
 
-    expect(screen.getByTestId('editor-count').props.children).toBe('0/8 categories');
+    expect(screen.getByTestId('editor-count').props.children).toBe('0/8 categorias');
     await fireEvent.changeText(screen.getByTestId('editor-input'), '  Drinks  ');
     await fireEvent.press(screen.getByTestId('editor-add'));
 
@@ -33,12 +33,12 @@ describe('<CategoryEditor />', () => {
     await render(<CategoryEditor value={['Drinks']} onChange={onChange} testID="editor" />);
 
     await fireEvent.press(screen.getByTestId('editor-add'));
-    expect(screen.getByTestId('editor-error').props.children).toBe('Enter a category name.');
+    expect(screen.getByTestId('editor-error').props.children).toBe('Informe o nome da categoria.');
 
     await fireEvent.changeText(screen.getByTestId('editor-input'), 'drinks');
     await fireEvent.press(screen.getByTestId('editor-add'));
     expect(screen.getByTestId('editor-error').props.children).toBe(
-      'This category is already listed.',
+      'Esta categoria já está na lista.',
     );
     expect(onChange).not.toHaveBeenCalled();
   });
@@ -66,7 +66,7 @@ describe('<CategoryEditor />', () => {
 
     await render(<CategoryEditor value={value} onChange={onChange} testID="editor" />);
 
-    expect(screen.getByTestId('editor-count').props.children).toBe('8/8 categories');
+    expect(screen.getByTestId('editor-count').props.children).toBe('8/8 categorias');
     expect(screen.getByTestId('editor-add').props.accessibilityState.disabled).toBe(true);
     expect(screen.getByTestId('editor-input').props.editable).toBe(false);
   });

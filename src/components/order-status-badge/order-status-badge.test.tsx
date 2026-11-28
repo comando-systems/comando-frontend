@@ -3,10 +3,10 @@ import { render, screen } from '@testing-library/react-native';
 import { OrderStatusBadge } from '@/components/order-status-badge';
 
 describe('<OrderStatusBadge />', () => {
-  it('renders the English status label', async () => {
+  it('renders the localized status label', async () => {
     await render(<OrderStatusBadge status="AWAITING_PAYMENT" />);
 
-    expect(screen.getByText('Awaiting payment')).toBeTruthy();
+    expect(screen.getByText('Aguardando pagamento')).toBeTruthy();
   });
 
   it('supports a custom test identifier', async () => {

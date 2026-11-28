@@ -4,6 +4,7 @@ import type { StyleProp, ViewStyle } from 'react-native';
 
 import { Button, type ButtonProps } from '@/components/button';
 import { Card } from '@/components/card';
+import { useIsWideScreen } from '@/hooks/use-wide-screen';
 import { layout, spacing } from '@/theme';
 
 type ActionButtonProps = Omit<ButtonProps, 'label' | 'onPress' | 'fullWidth'>;
@@ -23,8 +24,10 @@ export interface FormProps {
 const styles = {
   container: {
     alignSelf: 'center',
-    maxWidth: layout.formMaxWidth,
     width: '100%',
+  },
+  containerWide: {
+    maxWidth: layout.formMaxWidth,
   },
   actions: {
     flexDirection: 'row',
@@ -50,6 +53,7 @@ export function Form({
   style,
   testID = 'form',
 }: FormProps) {
+  const wide = useIsWideScreen();
   const hasCancel = cancel !== undefined && onCancel !== undefined;
   const {
     size: submitSize = 'md',
@@ -74,7 +78,10 @@ export function Form({
   );
 
   return (
-    <Card testID={testID} style={[styles.container, style]}>
+    <Card
+      testID={testID}
+      style={[styles.container, wide ? styles.containerWide : null, style]}
+    >
       {children}
       {hasCancel ? (
         <View style={styles.actions}>

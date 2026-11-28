@@ -63,19 +63,19 @@ export function validateHistoryFilters(filters: HistoryFilters): string | null {
   const to = parseDateInput(filters.toDate);
 
   if (filters.fromDate.trim().length > 0 && from === null) {
-    return 'Enter the start date as YYYY-MM-DD.';
+    return 'Informe a data inicial no formato AAAA-MM-DD.';
   }
 
   if (filters.toDate.trim().length > 0 && to === null) {
-    return 'Enter the end date as YYYY-MM-DD.';
+    return 'Informe a data final no formato AAAA-MM-DD.';
   }
 
   if (from !== null && to !== null && from > to) {
-    return 'The start date must be before the end date.';
+    return 'A data inicial deve ser anterior à data final.';
   }
 
   if (filters.tableCode.trim().length > 64) {
-    return 'Table code must be 64 characters or fewer.';
+    return 'O nome da mesa deve ter no máximo 64 caracteres.';
   }
 
   return null;

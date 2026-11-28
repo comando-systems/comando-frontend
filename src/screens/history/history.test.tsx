@@ -159,31 +159,32 @@ describe('<History />', () => {
     await render(<History />);
 
     expect(await screen.findByTestId('history-order-10')).toBeTruthy();
-    expect(screen.getByTestId('history-previous').props.accessibilityState.disabled).toBe(true);
-    expect(screen.getByTestId('history-next').props.accessibilityState.disabled).toBe(false);
-    expect(screen.getByTestId('history-result-count').props.children).toBe('Showing 2 orders');
+    expect(screen.getByTestId('history-pages-page-1').props.accessibilityState.selected).toBe(true);
+    expect(screen.getByTestId('history-pages-page-2').props.accessibilityState.selected).toBe(false);
+    expect(screen.getByTestId('history-result-count').props.children).toBe('Exibindo 2 pedidos');
     expect(screen.getByTestId('history-page-revenue').props.children).toBe('R$15.00');
 
-    await fireEvent.press(screen.getByTestId('history-next'));
+    await fireEvent.press(screen.getByTestId('history-pages-page-2'));
 
     await waitFor(() =>
       expect(api.orders.list).toHaveBeenLastCalledWith({ page: 2, pageSize: 20 }),
     );
     expect(await screen.findByTestId('history-order-11')).toBeTruthy();
-    expect(screen.getByTestId('history-page-label').props.children).toBe('Page 2 of 2');
-    expect(screen.getByTestId('history-previous').props.accessibilityState.disabled).toBe(false);
-    expect(screen.getByTestId('history-next').props.accessibilityState.disabled).toBe(true);
+    expect(screen.getByTestId('history-page-label').props.children).toBe('Página 2 de 2');
+    expect(screen.getByTestId('history-pages-page-1').props.accessibilityState.selected).toBe(false);
+    expect(screen.getByTestId('history-pages-page-2').props.accessibilityState.selected).toBe(true);
   });
 
   it('shows a stable empty state with a single available page', async () => {
     await render(<History />);
 
-    expect(await screen.findByText('No orders found')).toBeTruthy();
-    expect(screen.getByTestId('history-result-count').props.children).toBe('Showing 0 orders');
+    expect(await screen.findByText('Nenhum pedido encontrado')).toBeTruthy();
+    expect(screen.getByTestId('history-result-count').props.children).toBe('Exibindo 0 pedidos');
     expect(screen.getByTestId('history-closed-count').props.children).toBe(0);
     expect(screen.getByTestId('history-page-revenue').props.children).toBe('R$0.00');
-    expect(screen.getByTestId('history-page-label').props.children).toBe('Page 1 of 1');
-    expect(screen.getByTestId('history-next').props.accessibilityState.disabled).toBe(true);
+    expect(screen.getByTestId('history-page-label').props.children).toBe('Página 1 de 1');
+    expect(screen.getByTestId('history-pages-page-1').props.accessibilityState.selected).toBe(true);
+    expect(screen.queryByTestId('history-pages-page-2')).toBeNull();
   });
 
   it('opens order details for a role that can read history', async () => {
@@ -203,7 +204,7 @@ describe('<History />', () => {
 
     await render(<History />);
 
-    expect(await screen.findByText('Not available')).toBeTruthy();
+    expect(await screen.findByText('Indisponível')).toBeTruthy();
     expect(screen.queryByTestId('history-list')).toBeNull();
     expect(api.orders.list).not.toHaveBeenCalled();
   });
@@ -217,11 +218,11 @@ describe('<History />', () => {
     await fireEvent.changeText(screen.getByTestId('history-to'), '2026-02-02');
     await fireEvent.press(screen.getByTestId('history-apply'));
 
-    expect(screen.getByText('The start date must be before the end date.')).toBeTruthy();
+    expect(screen.getByText('A data inicial deve ser anterior à data final.')).toBeTruthy();
     expect(api.orders.list).toHaveBeenCalledTimes(1);
   });
 
-  it('shows a fixed English error when the request fails', async () => {
+  it('shows a fixed Portuguese error when the request fails', async () => {
     jest.spyOn(api.orders, 'list').mockRejectedValue(new Error('Unexpected failure'));
 
     await render(<History />);

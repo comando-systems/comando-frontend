@@ -42,10 +42,10 @@ describe('history filter helpers', () => {
   it('rejects invalid dates, reversed ranges, and long table codes', () => {
     expect(validateHistoryFilters(EMPTY_HISTORY_FILTERS)).toBeNull();
     expect(validateHistoryFilters({ ...EMPTY_HISTORY_FILTERS, fromDate: '01/01/2026' })).toBe(
-      'Enter the start date as YYYY-MM-DD.',
+      'Informe a data inicial no formato AAAA-MM-DD.',
     );
     expect(validateHistoryFilters({ ...EMPTY_HISTORY_FILTERS, toDate: '2026-02-30' })).toBe(
-      'Enter the end date as YYYY-MM-DD.',
+      'Informe a data final no formato AAAA-MM-DD.',
     );
     expect(
       validateHistoryFilters({
@@ -53,9 +53,9 @@ describe('history filter helpers', () => {
         fromDate: '2026-02-02',
         toDate: '2026-02-01',
       }),
-    ).toBe('The start date must be before the end date.');
+    ).toBe('A data inicial deve ser anterior à data final.');
     expect(validateHistoryFilters({ ...EMPTY_HISTORY_FILTERS, tableCode: 'x'.repeat(65) })).toBe(
-      'Table code must be 64 characters or fewer.',
+      'O nome da mesa deve ter no máximo 64 caracteres.',
     );
   });
 });
